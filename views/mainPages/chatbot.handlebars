@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
+    <script src="/Assets/Scripts/main.js"></script>
     <style>
         :root {
             --bg-dark: #0d1117;
@@ -155,9 +156,12 @@
         }
 
         .chat-header-title {
+            text-decoration: none;
+            font-size: 20px;
             font-weight: bold;
             color: white;
         }
+
 
         .chat-content {
             flex-grow: 1;
@@ -381,6 +385,110 @@
         pre:hover .code-copy-button {
             opacity: 1;
         }
+
+        .profile-btn {
+            font-size: 30px;
+        }
+
+        @media(max-width: 376px) {
+            nav .logout-btn {
+                top: 15px;
+            }
+        }
+
+        @media(max-width: 339px) {
+            nav .logout-btn {
+                font-size: 0;
+            }
+        }
+
+        .logout-btn {
+            color: #fff;
+            right: 8px;
+            top: 18px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        .profile-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-menu .fas {
+            font-size: 35px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .dropdown-content {
+            border: solid .1rem var(--main-border-color);
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #151b23;
+            min-width: 160px;
+            z-index: 999;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .dropdown-content .a {
+            color: #fff;
+            padding: 8px 20px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s ease;
+            border: .1rem solid transparent;
+        }
+
+        .dropdown-content .a:hover {
+            border: .1rem solid var(--main-border-color);
+        }
+
+        .dropdown-content .a1 {
+            color: rgb(62, 177, 171);
+            padding: 8px 20px;
+            font-size: 20px;
+            font-weight: 500;
+            text-decoration: none;
+            display: block;
+            background-color: #262f3b;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        .message-bubble code {
+            background-color: #383838;
+            border-radius: 2px;
+            padding: 1px;
+        }
+
+        .chat-header-title span,
+        .chat-header-title span a,
+        .chat-header-title span a:visited {
+            font-size: 10px;
+            color: white;
+        }
+
+        /* Additional CSS for scroll-down button */
+        .scroll-down-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 50%;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(145deg, #3d444d, #0d1117);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, .15);
+            transition: all .3s ease;
+        }
     </style>
 </head>
 
@@ -389,6 +497,9 @@
     <aside class="chat-list-container" id="chat-list-container">
         <div class="chat-list-header">
             <span>Chat History</span>
+            <button id="new-chat-button">
+                <i class="fas fa-plus"></i>
+            </button>
             <button id="close-chat-list-button" aria-label="Close Chat List">
                 <i class="fas fa-arrow-left"></i>
             </button>
@@ -396,7 +507,7 @@
         <ul class="chat-list" id="chat-list">
             <!-- Chat history items will be inserted here -->
         </ul>
-        <div class="chat-footer">
+        <div class="chat-footer" style="display: none;">
             <button class="footer-button">
                 <i class="fas fa-gear"></i> Settings
             </button>
@@ -412,17 +523,39 @@
             <button id="open-chat-list-button" aria-label="Open Chat List">
                 <i class="fas fa-arrow-right"></i>
             </button>
-            <div class="chat-header-title">Chat</div>
-            <button id="new-chat-button">
-                <i class="fas fa-plus"></i> New Chat
-            </button>
+            <div class="chat-header-title">AI Chat Bot<span> by <a href="https://mbktechstudio.com">MBK Tech
+                        Studio</a></span></div>
+            <div class="logout-btn">
+                <div class="profile-menu">
+                    <i class="fas fa-user-circle" onclick="toggleProfileMenu()"></i>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a class="a1" style="text-align:center;">
+                            <div id="headerProfileUserName"></div>
+                        </a>
+                        <a class="a" href="/user/settings">Settings</a>
+                        <a class="a" onclick="logout()">Logout</a>
+                    </div>
+                </div>
+            </div>
         </header>
 
+        <script>
+            const headerElement = document.getElementById('headerProfileUserName');
+            headerElement.textContent = getCookieValue('username') || 'Not Logged In';
+            function toggleProfileMenu() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.style.display = dropdown.style.display === 'block'
+                    ? 'none'
+                    : 'block';
+            } 
+        </script>
         <section class="chat-content">
             <div class="chat-messages" id="chat-messages">
                 <!-- Messages will be inserted here -->
             </div>
-
+            <div id="scroll-down-btn" class="scroll-down-btn">
+                <i class="fas fa-arrow-down"></i>
+            </div>
             <div class="chat-input-container">
                 <form class="chat-input-form" id="chat-form">
                     <input type="text" class="chat-input" id="chat-input" placeholder="Type your message here..."
@@ -437,6 +570,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+
+
+
         // DOM Elements
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
@@ -449,6 +585,26 @@
         const closeChatListButton = document.getElementById('close-chat-list-button');
         const chatContainer = document.getElementById('chat-container');
 
+        const scrollDownBtn = document.getElementById('scroll-down-btn');
+
+        function updateScrollDownBtnVisibility() {
+            // if the gap between scrollTop and maximum scroll is over a threshold, show the button
+            const threshold = 20;
+            if (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight > threshold) {
+                scrollDownBtn.style.display = 'flex';
+            } else {
+                scrollDownBtn.style.display = 'none';
+            }
+        }
+
+        // Update button visibility on scroll
+        chatMessages.addEventListener('scroll', updateScrollDownBtnVisibility);
+
+        // On button click, scroll to the bottom of messages
+        scrollDownBtn.addEventListener('click', () => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            updateScrollDownBtnVisibility();
+        });
         // State variables
         let currentChatId = null;
         let isChatListVisible = true;
@@ -785,5 +941,6 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
+<script src="/Assets/Scripts/main.js"></script>
 
 </html>

@@ -17,7 +17,7 @@ import Handlebars from "handlebars";
 
 import { marked, use } from 'marked';
 
-import { pool, pool1 } from "./pool.js";
+import { pool1 } from "./pool.js";
 import { authenticate } from "./auth.js";
 import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./validateSessionAndRole.js";
 import fetch from 'node-fetch';
@@ -38,7 +38,7 @@ router.use(express.urlencoded({ extended: true }));
 router.use(
   session({
     store: new PgSession({
-      pool: pool, // Connection pool
+      pool: pool1, // Connection pool
       tableName: "session", // Use another table-name than the default "session" one
     }),
     secret: process.env.session_seceret_key, // Replace with your secret key
@@ -77,7 +77,7 @@ router.use(async (req, res, next) => {
       maxAge: cookieExpireTime,
     });
     const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const result = await pool.query(query, [req.session.user.username]);
+    const result = await pool1.query(query, [req.session.user.username]);
     if (result.rows.length > 0) {
       req.session.user.role = result.rows[0].Role;
       res.cookie("userRole", req.session.user.role, {
@@ -101,10 +101,10 @@ router.get(["/login", "/signin"], (req, res) => {
 // Terminate all sessions route
 router.post("/terminateAllSessions", authenticate(process.env.Main_SECRET_TOKEN), async (req, res) => {
   try {
-    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
+    await pool1.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
 
     // Clear the session table
-    await pool.query('DELETE FROM "session"');
+    await pool1.query('DELETE FROM "session"');
 
     // Destroy all sessions on the server
     req.session.destroy((err) => {
@@ -156,7 +156,7 @@ router.post("/login", async (req, res) => {
   try {
     // Query to check if the username exists
     const userQuery = `SELECT * FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const userResult = await pool.query(userQuery, [username]);
+    const userResult = await pool1.query(userQuery, [username]);
 
     if (userResult.rows.length === 0) {
       console.log(`Login attempt with non-existent username: \"${username}\"`);
@@ -183,49 +183,10 @@ router.post("/login", async (req, res) => {
       return res
         .status(403)
         .json({ success: false, message: "Account is inactive" });
-    }
-    let sharedSecret;
-
-    const query = `SELECT "TwoFAStatus", "TwoFASecret" FROM "TwoFA" WHERE "UserName" = $1`;
-    const twoFAResult = await pool.query(query, [username]);
-    sharedSecret = twoFAResult.rows[0].TwoFASecret;
-    if (twoFAResult.rows.length > 0 && twoFAResult.rows[0].TwoFAStatus &&
-      !token) {
-      return res.status(401).json({ success: false, message: "Please Enter 2FA code" });
-    }
-
-    if (token && twoFAResult.rows[0].TwoFAStatus) {
-
-      if (!sharedSecret) {
-        console.error("Server configuration error: Missing SUPERADMIN_2FA_KEY");
-        return res.status(500).json({ error: "Server configuration error." });
-      }
-
-      const expectedToken = speakeasy.totp({
-        secret: sharedSecret,
-        encoding: "base32",
-      });
-
-      const tokenValidates = speakeasy.totp.verify({
-        secret: sharedSecret,
-        encoding: "base32",
-        token: token,
-        window: 1, // Allows a margin for clock drift, optional
-      });
-
-      if (!tokenValidates) {
-        console.log(
-          `Invalid 2FA code for SuperAdmin: \"${username}\". Expected code: ${expectedToken} and received code: ${token}`
-        );
-        return res
-          .status(401)
-          .json({ success: false, message: "Invalid 2FA code" });
-      }
-    }
-
+    } 
     // Generate session ID
     const sessionId = crypto.randomBytes(256).toString("hex"); // Generate a secure random session ID
-    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
+    await pool1.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
       sessionId,
       user.id,
     ]);
@@ -254,7 +215,7 @@ router.post("/logout", async (req, res) => {
     try {
       const { id, username } = req.session.user;
       const query = `SELECT "Active" FROM "${UserCredentialTable}" WHERE "id" = $1`;
-      const result = await pool.query(query, [id]);
+      const result = await pool1.query(query, [id]);
 
       if (result.rows.length > 0 && !result.rows[0].Active) {
         console.log("Account is inactive during logout");

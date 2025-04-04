@@ -25,33 +25,6 @@ export const pool1 = new Pool(pool1Config);
   }
 })();
 
-// PostgreSQL connection pool for pool
-const poolConfig =
-  process.env.IsDeployed === "true"
-    ? {
-        connectionString: process.env.NEON_POSTGRES,
-        ssl: {
-          rejectUnauthorized: true,
-        },
-      }
-    : {
-        connectionString: process.env.LOCAL_POSTGRES,
-      };
-
-export const pool = new Pool(poolConfig);
-
-// Test connection for pool
-(async () => {
-  try {
-    const client = await pool.connect();
-    const dbName = process.env.IsDeployed === "true" ? "Neon" : "local";
-    console.log("Connected to " + dbName + " PostgreSQL database (pool)!");
-    client.release();
-  } catch (err) {
-    console.error("Database connection error (pool):", err);
-  }
-})();
-
 /*
 import { v2 as cloudinary } from 'cloudinary';
 

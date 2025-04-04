@@ -3,7 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mainRoutes from "./routes/main.js";
-import { pool } from "./routes/pool.js";
 import { engine } from "express-handlebars";
 import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./routes/validateSessionAndRole.js";
 import Handlebars from "handlebars";
