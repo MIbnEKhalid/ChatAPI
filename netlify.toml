@@ -1,0 +1,7 @@
+[build]
+  # Replace "npm run build" with your actual build command.
+  command = "npm run build"
+  publish = "public"
+
+[dev]
+  port = 8080
