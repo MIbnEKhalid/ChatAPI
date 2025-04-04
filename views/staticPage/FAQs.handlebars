@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <title>FAQs</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@600;600&family=Lato:wght@400;700&display=swap"
+            rel="stylesheet">
+        <meta
+            name="description"
+            content="Find answers to common questions about using portal.mbktechstudio.com, including account management,
+                troubleshooting, and service features.">
+        <meta
+            name="keywords"
+            content="MBK Tech Studio, Web-Portal, Web, Portal, Admin-Panel, Admin, FAQs, Frequently Asked Questions">
+        <meta property="og:title" content="FAQs | Portal MBK Tech STudio"/>
+        <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png"/>
+        <meta property="og:url" content="https://portal.mbktechstudio.com/FAQs">
+        <script type="application/ld+json">
+            { "@context": "https://schema.org", "@type": "Organization", "name": "MBK Tech Studio", "url":
+            "https://portal.mbktechstudio.com/FAQs", "logo": "https://www.mbktechstudio.com/Assets/Images/Icon/logo.png",
+            "description": "Find answers to common questions about using portal.mbktechstudio.com, including account management,
+            troubleshooting, and service features." }
+        </script>
+    </head>
+    {{> header1 }}
+    <style>
+        .about {
+            height: auto !important;
+        }
+        /* FAQ Container */
+        .faq-container {
+            display: block;
+            width: 90%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* FAQ Item Styles */
+        .faq-item {
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .faq-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+        /* FAQ Question */
+        .faq-question {
+            font-size: 18px;
+            font-weight: 800;
+            padding: 20px;
+            background: #377a77;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+            transition: all 0.4s ease;
+        }
+        .faq-question:hover {
+            background: #377a77;
+            color: #fff;
+            transition: all 0.4s ease;
+        }
+        .faq-question:hover::after {
+            color: #fff !important;
+        }
+        .faq-question::after {
+            content: "\f078";
+            font-family: "Font Awesome 5 Free";
+            font-size: 18px;
+            padding: 5px;
+            color: #fff;
+            transition: all 0.4s ease;
+        }
+        .faq-item.active .faq-question::after {
+            content: "\f077";
+            transform: rotate(180deg);
+        }
+        /* FAQ Answer */
+        .faq-answer {
+            padding: 0 auto;
+            font-size: 16px;
+            line-height: 1.6;
+            max-height: 0;
+            font-weight: 550;
+            opacity: 0;
+            overflow: hidden;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        /* When the FAQ Item is Active */
+        .faq-item.active .faq-answer {
+            max-height: 1000px;
+            opacity: 1;
+            visibility: visible;
+            padding: 0 auto;
+            transition: all 1.2s ease;
+            background-color: #1e1e1e;
+        }
+        /* List Style for Answers */
+        .faq-answer ul {
+            padding-left: 20px;
+        }
+        .faq-answer ul li {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        /* Media Queries for Responsiveness */
+        @media(max-width: 768px) {
+            .faq-question {
+                font-size: 16px;
+            }
+            .faq-answer {
+                font-size: 14px;
+            }
+        }
+        /* About Section */
+        .about {
+            display: block;
+        }
+        h1,
+        h2,
+        h3 {
+            font-family: 'Lato', sans-serif;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        h4,
+        h5,
+        h6 {
+            font-family: 'Lato', sans-serif;
+            font-weight: 400;
+            color: #999;
+            margin-bottom: 15px;
+        }
+        .link {
+            font-family: 'Open Sans', sans-serif;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .faq-question {
+            font-family: 'Lato', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            color: #fff;
+        }
+        .faq-answer {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #666;
+        }
+        @media(max-width: 768px) {
+            .faq-question {
+                font-size: 16px;
+            }
+            .faq-answer {
+                font-size: 14px;
+            }
+        }
+        .title {
+            font-family: "Poppins", sans-serif;
+        }
+    </style>
+    <body>
+        <div class="scroll-button">
+            <a href="#" style="display: none;">
+                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            </a>
+        </div>
+        <section class="about" id=".">
+            <br> <br> <br>
+            <div class="title">
+                <span>Frequently Asked Questions</span>
+            </div>
+            <div class="faq-container" id="faq-container"></div>
+        </section>
+    </body>
+    {{> footer }}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput-jquery.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('https://www.mbktechstudio.com/FAQs/faq.json')
+                .then(response => response.json())
+                .then(data => {
+                    const faqContainer = document.getElementById('faq-container');
+                    // Get the query parameter value for 'Q'
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const queryId = urlParams.get('Q'); // Extracts the 'Q' parameter
+                    let scrollToFaq = null;
+                    // Render FAQs
+                    data.forEach(item => { // Check if item.display is true
+                        const validDisplayValues = [
+                            "true",
+                            "True",
+                            "1",
+                            "Yes",
+                            "yes",
+                            "Y",
+                            "y"
+                        ];
+                        if (validDisplayValues.includes(item.display)) {
+                            const faqItem = document.createElement('div');
+                            faqItem.classList.add('faq-item');
+                            const faqQuestion = document.createElement('div');
+                            faqQuestion.classList.add('faq-question');
+                            faqQuestion.id = item.id; // Set ID for matching
+                            faqQuestion.innerHTML = item.question;
+                            const faqAnswer = document.createElement('div');
+                            faqAnswer.classList.add('faq-answer');
+                            // Capitalize text outside <a> tags
+                            const capitalizedAnswer = item.answer.replace(/(<a\b[^>]*>.*?<\/a>)|(\b\w)/g, (match, anchor, word) => {
+                                return anchor
+                                    ? anchor
+                                    : word.toUpperCase(); // Skip <a> content, capitalize other words
+                            });
+                            faqAnswer.innerHTML = `<div style='padding: 20px;'>${capitalizedAnswer}</div>`;
+                            faqItem.appendChild(faqQuestion);
+                            faqItem.appendChild(faqAnswer);
+                            faqContainer.appendChild(faqItem);
+                            // Check if this FAQ matches the query parameter
+                            if (item.id === queryId) {
+                                faqItem.classList.add('active'); // Open the matching FAQ
+                                scrollToFaq = faqItem; // Store reference to scroll later
+                            }
+                        }
+                    });
+                    // Scroll to the matched FAQ if found
+                    if (scrollToFaq) {
+                        const headerOffset = document.querySelector('header').offsetHeight || 0; // Get header height
+                        const elementPosition = scrollToFaq.getBoundingClientRect().top + window.scrollY;
+                        const offsetPosition = elementPosition - headerOffset - 100; // Adjust by header height and add extra spacing
+                        window.scrollTo({top: offsetPosition, behavior: 'smooth'});
+                        setTimeout(function () {
+                            const url = new URL(window.location);
+                            url.search = ''; // Remove query parameters
+                            window.history.replaceState({}, document.title, url);
+                            console.log("url");
+                        }, 500);
+                    }
+                    // FAQ Item Toggle
+                    document.querySelectorAll('.faq-question').forEach(item => {
+                        item.addEventListener('click', function () {
+                            const faqItem = this.parentNode;
+                            faqItem.classList.toggle('active');
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching FAQ data:', error));
+        });
+    </script>
+    
+</html>

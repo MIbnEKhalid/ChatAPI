@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <title>Credits</title>
+        <script src="/Assets/Scripts/logout.js"></script>
+        <style>
+            .eee {
+                font-size: 3rem !important;
+                margin-bottom: 10px;
+                margin-top: 40px;
+                background: linear-gradient(90deg, #00ff00, #00bfff);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                display: inline-block;
+                animation: glow 2s infinite alternate;
+                text-align: center;
+            }
+            @keyframes glow {
+                0% {
+                    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+                }
+                100% {
+                    text-shadow: 0 0 20px #00bfff, 0 0 40px #00bfff;
+                }
+            }
+            /* Credits List Styles */
+            .credits-list {
+                list-style-type: none;
+                padding: 0;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            .credits-list li {
+                font-size: 1.2rem;
+                margin: 10px 0;
+                padding: 20px;
+                background-color: transparent;
+                border-radius: 10px;
+                width: 100%;
+                max-width: 300px;                
+                border: 0.125rem solid var(--main-border-color);
+                text-align: center;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .credits-list li span {
+                font-weight: bold;
+                background: linear-gradient(90deg, #00ff00, #00bfff);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .credits-list li p {
+                margin: 10px 0 0;
+                font-size: 1rem;
+                color: #ccc;
+            }
+            .about {
+                height: auto !important;
+            }
+            section .title span::before,
+            section .title span::after {
+                content: "";
+                position: absolute;
+                height: 3px;
+                width: 0 !important;
+                background: none !important;
+                left: 0;
+                bottom: 0;
+            }
+            section .title {
+                margin-bottom: 20px !important;
+            }
+        </style>
+    </head>
+    {{> header1 }}
+    <body>
+        <section class="about" id="about">
+            <div class="content">
+                <div class="title">
+                    <span class="eee">Credits</span>
+                </div>
+                <ul class="credits-list">
+                    <li>
+                        <span>Developers:</span>
+                        <br>
+                        <a class="links" href="/ibnekhalid">Muhammad Bin Khalid</a>
+                        <br>
+                        <a class="links" href="/Maaz.Waheed">Maaz Waheed</a>
+                    </li>
+                    <li>
+                        <span>Debuggers:</span>
+                        <br>
+                        <a class="links" href="/ibnekhalid">Muhammad Bin Khalid</a>
+                        <br>
+                        <a class="links" href="/Maaz.Waheed">Maaz Waheed</a>
+                    </li>
+                    <li>
+                        <span>Testers:</span>
+                        <br>
+                        <a class="links" href="/ibnekhalid">Muhammad Bin Khalid</a>
+                        <br>
+                        <a class="links" href="/Maaz.Waheed">Maaz Waheed</a>
+                        <br>
+                        <a class="links" href="/Hafiz.Ibrahim">Hafiz Ibrahim Ijaz</a>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        {{> footer }}
+    </body>
+    
+</html>

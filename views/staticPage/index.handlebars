@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta
+            name="description"
+            content="A private MBK Tech Studio for the MBK Tech Studio team, offering streamlined operations and powerful administration
+                tools.">
+        <meta name="keywords" content="MBK Tech Studio, Web-Portal, Web, Portal, Admin-Panel, Admin">
+        <meta property="og:title" content="Portal | MBK Tech STudio"/>
+        <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png"/>
+        <meta property="og:url" content="https://portal.mbktechstudio.com/">
+        <!--script type="application/ld+json">
+            { "@context": "https://schema.org", "@type": "Organization", "name": "MBK Tech Studio", "url":
+            "https://portal.mbktechstudio.com/", "logo": "https://www.mbktechstudio.com/Assets/Images/Icon/logo.png", "description":
+            "MBK Tech Studio: A private MBK Tech Studio for the MBK Tech Studio team, offering streamlined operations and powerful
+            administration tools." }
+        </script>-->
+        <title>Portal | MBK Tech Studio</title>
+        <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="/Assets/Style/doc.css">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            body {
+                background: linear-gradient(45deg, rgba(26, 26, 26, 0.9), rgba(26, 26, 26, 0.7));
+                color: #f8f9fa;
+                line-height: 1.6;
+            }
+            .hero {
+                display: block;
+                align-items: center;
+                padding: 0 5%;
+                background: #1a1a1a;
+            }
+            .hero-content {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .hero h1 {
+                font-size: 3.0rem;
+                margin-bottom: 1.5rem;
+            }
+            .hero p {
+                font-size: 1.2rem;
+                margin-bottom: 2rem;
+                color: #cccccc;
+                max-width: 600px;
+            }
+            .cta-buttons {
+                text-align: center;
+                display: flex;
+                gap: 1rem;
+            }
+            .btn {
+                padding: 10px 15px;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                text-decoration: none;
+                text-align: center;
+                font-weight: bold;
+                transition: transform 0.3s ease;
+            }
+            .btn-primary {
+                background: linear-gradient(45deg, #4361ee, #3f37c9);
+                color: white;
+            }
+            .btn-secondary {
+                border: 2px solid #4361ee;
+                color: #4361ee;
+            }
+            .btn:hover {
+                transform: translateY(-3px);
+            }
+            .btn-primary:visited {
+                color: #fff;
+            }
+            .btn-secondary:visited {
+                color: #4361ee;
+            }
+            .features {
+                padding: 3rem 5%;
+                background-color: #121212;
+            }
+            .features h1 {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .features.se {
+                background: #1a1a1a;
+            }
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .feature-card {
+                background-color: #1a1a1a;
+                padding: 2rem;
+                border-radius: 12px;
+                text-align: center;
+            }
+            .feature-card h3 {
+                color: #4361ee;
+            }
+            .feature-card.se {
+                background-color: #121212;
+            }
+            .aboutBox h1 {
+                color: #4361ee;
+            }
+            .feature-icon {
+                font-size: 2.5rem;
+                color: #4361ee;
+                margin-bottom: 1rem;
+            }
+            footer {
+                background-color: #121212;
+                padding: 2rem 5%;
+                text-align: center;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .dashboard-preview {
+                max-width: 1200px;
+                margin: 5rem auto;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            }
+            .dashboard-image {
+                width: 100%;
+                height: 500px;
+                background-color: #2d2d2d;
+                /* Replace with actual dashboard screenshot */
+            }
+            nav .menu-btn {
+                top: 20px;
+            }
+            nav {
+                z-index: 970 !important;
+                padding: 10px 0;
+            }
+            nav .navbar {
+                width: 94%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: auto;
+            }
+            nav .menu-btn a {
+                color: #4361ee !important;
+                font-weight: bold;
+                font-size: 23px;
+            }
+            nav.sticky .menu-btn a {
+                color: #ffff !important;
+                font-weight: bold;
+            }
+            nav .menu-btn a:hover {
+                color: #9eb5f7 !important;
+            }
+            nav .menu-btn {
+                display: block;
+            }
+            nav.sticky {
+                background: rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(8px);
+            }
+            .aboutBox {
+                opacity: 1;
+                visibility: visible;
+                border: 3px solid #333;
+                background-color: #1a1a1a;
+                max-width: 400px;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 6px 6px rgb(0 0 0 / 25%);
+                font-family: 'Poppins', sans-serif;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+                transition: opacity 0.4s ease, visibility 0.4s ease;
+                display: block;
+                margin: 0 auto;
+                text-align: center;
+            }
+            .scroll-button {
+                display: none;
+            }
+            footer {
+                padding: 10px 2px;
+                text-align: center;
+                font-family: 'Poppins', sans-serif;
+            }
+            footer span {
+                font-size: 17px;
+                font-weight: 400;
+                color: #fff;
+            }
+            footer span a {
+                font-weight: 500;
+                color: #b7b7b7;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            .menu-btn i {
+                display: none;
+                transition: all 0.3s ease;
+            }
+            .menu-btn i:hover {
+                color: #fff;
+                transition: all 0.3s ease;
+            }
+            .menu-btn a {
+                display: block;
+            }
+            @media(max-width: 495px) {
+                .menu-btn i {
+                    display: block;
+                }
+                .menu-btn a {
+                    display: none;
+                }
+                nav .menu-btn {
+                    top: 27px;
+                    font-size: 25px;
+                }
+            }
+            @media(max-width: 390px) {
+                nav .navbar .logo a {
+                    font-size: 23.5px;
+                }
+                .logo img {
+                    width: 11%;
+                    height: 80%;
+                }
+                nav .menu-btn {
+                    top: 18px;
+                }
+            }
+            @media(max-width: 392px) {
+                .hero h1 {
+                    margin-top: 40px;
+                }
+            }
+            @media(max-width: 339px) {
+                .hero h1 {
+                    margin-top: 150px;
+                }
+            }
+        </style>
+    </head>
+    <header>
+        <nav>
+            <div class="navbar">
+                <div class="logo">
+                    <div class="image">
+                        <img src="/Assets/Images/dg.svg" alt=""/>
+                    </div>
+                    <div class="text">
+                        <a href="#">MBK Tech Studio</a>
+                    </div>
+                </div>
+                <div class="menu-btn">
+                    <a href="/login">Login</a>
+                    <i onclick="loadpage('/login')" class="fa-solid fa-right-to-bracket"></i>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <body>
+        <section class="hero">
+            <div class="hero-content">
+                <br> <br><br>
+                <h1>Portal App For<br>MBK Tech Studio Team</h1>
+                <p>Streamline your operations with our powerful administration panel. Get started in minutes with ready-to-use modules
+                    and intuitive interface.</p>
+                <div class="cta-buttons">
+                    <a href="/login?username=demo&password=demo" class="btn btn-primary">Try Live Demo</a>
+                    <a href="https://github.com/MIbnEKhalid/NodeJsUserPortal" class="btn btn-secondary">Get Source Code</a>
+                </div>
+            </div>
+        </section>
+        <section class="features" id="features">
+            <div class="aboutBox">
+                <h1 style="text-align: center; margin-bottom:10px;">About Our Product</h1>
+                <p>Our product is designed to help you manage your business efficiently. With a user-friendly interface and powerful
+                    features, you can easily keep track of your operations, manage your team, and analyze your data. Whether you are a small
+                    business or a large enterprise, our product is tailored to meet your needs and help you achieve your goals.</p>
+            </div>
+        </section>
+        <section class="features se" id="features">
+            <h1>Frequently Asked Questions</h1>
+            <div class="features-grid">
+                <div class="feature-card se">
+                    <h3>How Can I Gain Access?</h3>
+                    <p>To access the portal, you must be a member of the MBK Tech Studio team or an affiliated partner. For more
+                        information,
+                        <a class="links" href="#">click here</a>.
+                    </p>
+                </div>
+                <div class="feature-card se">
+                    <h3>How Can I Reset My Password?</h3>
+                    <p>For security reasons, you cannot directly reset your password. For more
+                        information,
+                        <a class="links" href="#">click here</a>.
+                    </p>
+                </div>
+                <div class="feature-card se">
+                    <h3>Is This Project Open Source?</h3>
+                    <p>Yes, this project is open source. You can find the source code on our
+                        <a class="links" href="https://github.com/MIbnEKhalid" target="_blank">GitHub repository</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+        <div class="scroll-button">
+            <a href="#">
+                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            </a>
+        </div>
+    </body>
+    <footer>
+        <div class="footer-links">
+            <span>
+                ©
+                <span id="year"></span>
+                <a class="links" href="https://github.com/MIbnEKhalid" target="_blank">Muhammad Bin Khalid</a>. All Rights Reserved |
+                <a class="links" href="/info/Terms&Conditions" target="_blank">Terms &amp; Conditions</a>
+                |
+                <a class="links" href="/FAQs" target="_blank">FAQs</a>
+                |
+                <a class="links" href="https://mbktechstudio.com/Support/" target="_blank">Support &amp; Contact</a>
+            </span>
+        </div>
+    </footer>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+    <script>
+        function loadpage(page) {
+            window.location.href = page;
+        }
+    </script>
+    <script src="/Assets/Scripts/header.js"></script>
+    
+</html>

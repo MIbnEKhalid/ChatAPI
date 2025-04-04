@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Roles and Members</title>
+</head>
+{{> header }}
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+
+    /* Main Section */
+    .roles-section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .roles {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .role-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        padding: 20px 0;
+    }
+
+    .role-card {
+        background-color: transparent; 
+        border: solid 0.1rem var(--main-border-color);
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        width: 280px;
+        padding: 25px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .role-card:hover {
+        border-color: #ffa726;
+        transition: all 0.3s ease;
+    }
+
+    .role-card h3 {
+        font-size: 1.6em;
+        color: #fff;
+        margin-bottom: 15px;
+    }
+
+    .role-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .role-card ul li {
+        font-size: 1.1em;
+        color: #e0e0e0;
+        margin: 8px 0;
+    }
+
+    .role-label {
+        font-size: 0.9em;
+        color: #9e9e9e;
+        margin-top: 15px;
+        font-style: italic;
+    }
+
+    /* Media Queries for Responsiveness */
+    @media(max-width: 768px) {
+        .role-group {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .role-card {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+
+    @media(max-width: 480px) {
+        .role-card h3 {
+            font-size: 1.4em;
+        }
+
+        .role-card ul li {
+            font-size: 1em;
+        }
+    }
+
+    .roles-explanation {
+        background-color: transparent;
+        border: solid 0.1rem var(--main-border-color);
+        padding: 20px;
+        border-radius: 12px;
+        width: 100%;
+    }
+
+    .roles-explanation h2 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        color: #ffa726;
+        text-align: center;
+    }
+
+    .roles-explanation ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .roles-explanation li {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-left: 4px solid #ffa726;
+        border-top: 0.125rem solid var(--main-border-color);
+        border-right: 0.125rem solid var(--main-border-color);
+        border-bottom: 0.125rem solid var(--main-border-color);
+        background-color: transparent;
+        border-radius: 6px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .roles-explanation li strong {
+        display: block;
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+        color: #80d8ff;
+    }
+
+    .roles-explanation p {
+        color: rgb(219, 219, 219);
+    }
+</style>
+
+<body>
+    <br><br> <br><br>
+    <section class="about" id="about">
+        <div class="content">
+            <div class="title">
+                <span>System Level Power Distribution</span>
+            </div>
+            
+            <div class="roles-section">
+                <div class="role-group">
+                    {{#each roles}}
+                    <a href="/{{UserName}}" class="role-card">
+                        <h3>{{Role}}</h3>
+                        <ul>
+                            <li>{{FullName}}</li>
+                        </ul>
+                        <span class="role-label">{{RoleDescription}}</span>
+                    </a>
+                    {{/each}}
+                </div>
+
+            </div> 
+            <div class="roles-explanation">
+                <h2>Role Descriptions</h2>
+                <ul>
+                    <li>
+                        <strong>Super Admin:</strong>
+                        <p>
+                            Has full access to all system features and settings including database</p>
+                    </li>
+                    <li>
+                        <strong>Normal User:</strong>
+                        <p>
+                            Can use the main features of the system but cannot manage other users or access
+                            administrative settings.
+                        </p>
+                    </li>
+                    <li>
+                        <strong>Guest User:</strong>
+                        <p>
+                            Has limited access to specific features and services, typically restricted to certain pages.
+                            Guest users are automatically removed from the system after their access end date.
+                        </p>
+                    </li>
+                </ul>
+            </div>
+            <br>
+    </section>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () { // Set the value of the input field with the page URL
+        });
+    </script>
+</body>
+{{> footer }}</body>
+
+</html>

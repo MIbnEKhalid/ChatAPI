@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <title>Terms & Conditions | MBK Tech Studio Portal</title>
+        <meta charset="UTF-8"/>
+        <link rel="stylesheet" href="/Assets/Style/doc.css">
+        <script src="https://kit.fontawesome.com/0934e8e9d3.js" crossorigin="anonymous"></script>
+        <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
+        <link rel="stylesheet" href="/Assets/Style/style.css">
+        <script src="/Assets/Scripts/main.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta
+            name="description"
+            content="Read the Terms & Conditions for portal.mbktechstudio.com to understand the rules, policies, and guidelines for
+                using our services securely and responsibly.">
+        <meta name="keywords" content="MBK Tech Studio, Web-Portal, Terms & Conditions, Privacy Policy, User Agreement"/>
+        <meta property="og:title" content="Terms & Conditions | MBK Tech STudio"/>
+        <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png"/>
+        <meta property="og:url" content="https://portal.mbktechstudio.com/info/Terms&Conditions">
+ 
+        <style>
+            /* Base Styles */
+            * {
+                box-sizing: border-box;
+            }
+            .a {
+                color: #27ae60;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+            .a:hover {
+                color: rgb(33, 131, 72);
+                text-decoration: none;
+            }
+            /* Sections */
+            .Section {
+                margin-bottom: 2.5rem;
+                padding: 1.5rem;
+                background:transparent;
+                border-radius: 8px;
+                border-left: 4px solid #27ae60;
+                border-right: 0.125rem solid var(--main-border-color);
+                border-top: 0.125rem solid var(--main-border-color);
+                border-bottom: 0.125rem solid var(--main-border-color);
+            }
+            .Section h3 {
+                color: #27ae60;
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+            .Section h4 {
+                color: #27ae60;
+                margin-bottom: 0.8rem;
+                font-size: 1.1rem;
+            }
+            .Section p {
+                margin-bottom: 1rem;
+                font-size: 1rem;
+                color: rgb(103, 127, 150);
+            }
+            /* Lists */
+            ul {
+                padding-left: 2rem;
+                margin: 1rem 0;
+            }
+            ul li {
+                margin-bottom: 0.8rem;
+                color: rgb(103, 127, 150);
+            }
+            ul ul {
+                padding-left: 1.5rem;
+                margin-top: 0.5rem;
+            }
+            /* Special Notices */
+            strong {
+                color: #377a77;
+                font-weight: 600;
+            }
+            .Section:nth-of-type(8) {
+                /* License Section */
+                background: #fff9e6;
+                border-color: #f1c40f;
+            }
+            .Section:nth-of-type(8) h3 {
+                color: #e67e22;
+            }
+            #CommentoTerms {
+                background: #e6f3ff;
+                border-color: #3498db;
+            }
+            /* Version Info */
+            .DateTimePara {
+                text-align: center;
+                color: #7f8c8d;
+                font-size: 0.9rem;
+                margin-top: 2rem;
+            }
+            /* Responsive Design */
+            @media(max-width: 768px) {
+                .title span {
+                    font-size: 2rem;
+                }
+                .Section {
+                    padding: 1rem;
+                }
+                .Section h3 {
+                    font-size: 1.3rem;
+                }
+                ul {
+                    padding-left: 1.5rem;
+                }
+            }
+            @media(max-width: 480px) {
+                .title span {
+                    font-size: 1.75rem;
+                }
+                .Section {
+                    margin-bottom: 2rem;
+                }
+            }
+            /* Print Styles */
+            @media print {
+                body {
+                    background: white;
+                    color: black;
+                    font-size: 12pt;
+                }
+                .Section {
+                    page-break-inside: avoid;
+                }
+            }
+            .DateTimePara {
+                font-style: italic;
+                font-size: 0.85rem;
+            }
+            section .title span {
+                color: #fff;
+            }
+            .Section:nth-of-type(8) {
+                /* License Section */
+                background: #fff9e6;
+                border-color: #f1c40f;
+            }
+            .Section:nth-of-type(8) h3 {
+                color: #e67e22;
+            }
+            .Section:nth-of-type(8) strong {
+                color: rebeccapurple;
+            }
+            .about {
+                height: auto !important;
+            }
+        </style>
+    </head>
+    {{> header1 }}
+    <body>
+        <div class="scroll-button">
+            <a href="#" style="display: none;">
+                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            </a>
+        </div>
+        <section class="about" id="about">
+            <div class="content">
+                <br> <br>
+                <div class="title">
+                    <span>Terms And Conditions</span>
+                </div>
+                <div class="modal" id="modal">
+                    <h4 style="color:lightgreen; text-align: center; font-weight: 800; font-size: 22px;">
+                        Welcome to MBK Tech Studios Portal - Terms and Conditions
+                    </h4>
+                    <br>
+                    <div class="Section">
+                        <h3 id="Section1">Section 1: Access and Usage</h3>
+                        <p>This portal is a private web application accessible only to specific authorized users. By accessing
+                            <a class="links" href="https://portal.mbktechstudio.com/">this portal</a>, you agree to comply with these Terms and
+                                Conditions. Unauthorized access is strictly prohibited. If you do not agree with these terms, you must refrain from
+                                using this portal.</p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section2">Section 2: User Data and Privacy</h3>
+                        <p>Your data is not shared with third parties. However,
+                            <span onclick="SuperAdminsinfo()" class="a">SuperAdmins</span>
+                            have access to review user data as necessary for administrative purposes. This access is restricted solely to the
+                            identified
+                            <span onclick="SuperAdminsinfo()" class="a">SuperAdmins</span>
+                            and will not extend beyond them.</p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section3">Section 3: Content and Licensing</h3>
+                        <p>
+                            This portal is a private web application, designed exclusively for authorized users as part of the MBK Tech Studios
+                            team. The following conditions apply to all content and credentials associated with this portal:
+                        </p>
+                        <h4>1. Confidentiality of Content and Credentials</h4>
+                        <ul>
+                            <li>All data, user credentials, and content within this portal are strictly confidential and must not be shared or
+                                disclosed outside the authorized team.</li>
+                            <li>Sharing credentials, content, or any part of the portal’s functionality with unauthorized individuals is strictly
+                                prohibited.</li>
+                        </ul>
+                        <h4>2. Access and Use of Content</h4>
+                        <ul>
+                            <li>Content and user information available on the portal are accessible only to specific authorized users, as outlined
+                                by the MBK Tech Studios organizational team.</li>
+                            <li>
+                                <span onclick="SuperAdminsinfo()" class="a">SuperAdmins</span>, designated for overseeing operations, are the only
+                                    individuals with the ability to view user credentials or data. This role is limited to two individuals, and their access
+                                    will not extend beyond the original scope of this designation.
+                            </li>
+                        </ul>
+                        <h4>3. Prohibited Actions</h4>
+                        <ul>
+                            <li>
+                                Any attempt to copy, share, or distribute content or user credentials without explicit authorization is a violation of
+                                these terms and may result in access termination and further action.
+                            </li>
+                        </ul>
+                        <p>By using this portal, you agree to uphold these confidentiality and licensing terms.</p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section4">Section 4: Cookies</h3>
+                        <p>All cookies will reset on login and logout (when logging out using the logout button). The following cookies are used
+                            on this website:
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>connect.sid:</strong>
+                                Stores the user session ID. Changing it will log you out and reset your session.
+                            </li>
+                            <li>
+                                <strong>username:</strong>
+                                Displays the username in the header profile menu and on the login page. Changing it won't affect the actual username or
+                                permissions.
+                            </li>
+                            <li>
+                                <strong>userRole:</strong>
+                                Checks if the user is a SuperAdmin to hide notifications. Changing the role in the cookie has no effect.
+                            </li>
+                            <li>
+                                <strong>donationNotice:</strong>
+                                Tracks if the user has seen the donation notice.
+                            </li>
+                            <li>
+                                <strong>agreed:</strong>
+                                You may also see this cookie if you have visited
+                                <a class="links" href="https://mbktechstudio.com">mbktechstudio.com</a>
+                                or its other subdomains and accepted the terms and conditions. However, this cookie is not used on this
+                                subdomain.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section5">Section 5: Governing Law</h3>
+                        <p>These Terms and Conditions are governed by the laws of Pakistan. Any disputes will be resolved through binding
+                            arbitration under the rules of the Pakistan International Arbitration Centre.</p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section6">Section 6: Changes to Terms</h3>
+                        <p>
+                            Terms and conditions may be updated periodically. By logging in, users are automatically agreeing to the latest terms
+                            and conditions. There is no need to check or save any cookies for this purpose.
+                        </p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section7">Section 7: Data Protection Disclaimer</h3>
+                        <p>We are committed to maintaining the security of user data within the scope of authorized use. However, no system is
+                            immune to security risks. By using this portal, you acknowledge and accept the associated risks.</p>
+                    </div>
+                    <div class="Section">
+                        <h3 id="Section8">Section 8: Website Code License</h3>
+                        <p>The
+                            <a class="links" href="https://github.com/MIbnEKhalid/NodeJsUserPortal/" target="_blank">Source Code</a>
+                            of this
+                            <a class="links" href="https://portal.mbktechstudio.com/" target="_blank">Website</a>
+                            is provided under the
+                            <strong>MIT License</strong>. You may view, copy, modify, distribute, and use it for any purpose, including commercial
+                                purposes, without requiring further permission from
+                            <a class="links" href="https://github.com/MIbnEKhalid/" target="_blank">Muhammad Bin Khalid</a>. However, this Source Code is provided "as is," without warranty of any kind, express or implied.
+                            <a class="links" href="https://github.com/MIbnEKhalid/" target="_blank">Muhammad Bin Khalid</a>
+                            holds no liability for any damages arising from the use of this
+                            <a class="links" href="https://github.com/MIbnEKhalid/NodeJsUserPortal/" target="_blank">Source Code</a>.
+                        </p>
+                        <p>
+                            <strong>Important Note:</strong>
+                            This license applies solely to the website's
+                            <strong>source code</strong>. All
+                            <strong>user data, project documentation, project secret keys, images, blog posts, and other content</strong>
+                            on the website are
+                            <strong>not</strong>
+                            covered under the MIT License and are protected by copyright law. These materials
+                            <strong>may not be reproduced, modified, displayed, sold, or distributed without prior written permission</strong>. <br>
+                            <strong>Furthermore</strong>, other project repositories may be licensed under separate terms, including the
+                            <a class="links" href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">GNU GPL v3</a>,
+                            <a class="links" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>, or as
+                            <strong>private code</strong>
+                            owned by the
+                            <strong>MBK Tech Studio organization</strong>. The specific license applicable to each repository is detailed within the respective repository.
+                        </p>
+                    </div>
+                    <p class="DateTimePara" style="margin-bottom: 10px;">
+                        <span id="termVersionPrivacy">Version: 1.0</span>
+                        |
+                        <span>Last Updated On 11/02/2025</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </body>
+    <script>
+        function SuperAdminsinfo() {
+            showMessage(
+                " SuperAdmins, Muhammad Bin Khalid (<a class='links'>ibnekhalid@mbktechstudio.com</a>) and Maaz Waheed (<a class='links'>" +
+                        "maaz.waheed@mbktechstudio.com</a>), oversee portal operations and ensure user data security. They are bound by confident" +
+                        "iality agreements and access data only for administrative purposes. Contact MBK Tech Studios for any concerns.",
+                "SuperAdmins Information"
+            );
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            scrollToHash();
+        });
+        window.addEventListener('hashchange', function () {
+            scrollToHash();
+        });
+    </script>
+    {{> footer }}
+    
+</html></html>

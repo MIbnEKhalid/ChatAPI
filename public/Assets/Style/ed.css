@@ -1,0 +1,655 @@
+body {
+    background-color: #000000;
+    color: #d4d4d4;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+html,
+body,
+.markdown-editor-container {
+    height: 100%;
+}
+
+.markdown-editor-container {
+    font-family: 'Roboto', sans-serif;
+    max-width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #252526;
+    border: 1px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+/* ========================================= */
+/*                Top Bar                    */
+/* ========================================= */
+
+.top-bar {
+    background-color: #000000;
+    /* Darker top bar */
+    color: #fff;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+    /* Separator line for top bar */
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 8px;
+    /* Spacing between buttons */
+}
+
+.toolbar-button {
+    background: none;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    border-radius: 3px;
+}
+
+.toolbar-button:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.2);
+    /* Slightly lighter hover background */
+}
+
+.file-name {
+    font-weight: bold;
+    font-size: 16px;
+    color: #ccc;
+    /* Slightly lighter file name text */
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* Spacing between elements on the right */
+}
+
+.top-bar-right button {
+    background: none;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    border-radius: 3px;
+}
+
+.top-bar-right button:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Settings Icon Styles */
+.top-bar-right button#settings-button i {
+    transition: color 0.3s ease, transform 1s linear;
+    /* Smooth color change and rotate */
+    color: #fff;
+    /* Default white color */
+    font-size: 1.5em;
+    /* Increased icon size */
+}
+
+.top-bar-right button#settings-button i.saving {
+    color: #ffe600;
+    /* Yellow/Amber for saving */
+    animation: rotate 1s linear infinite;
+}
+
+.top-bar-right button#settings-button i.saved {
+    color: #28a745;
+    /* Green for saved */
+    animation: none;
+    /* Stop rotation */
+    transform: rotate(0deg);
+    /* Reset rotation */
+}
+
+.top-bar-right button#settings-button i.error {
+    color: #dc3545;
+    /* Red for error */
+    animation: none;
+    /* Stop rotation */
+    transform: rotate(0deg);
+    /* Reset rotation */
+}
+
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================= */
+/*               Toolbar                     */
+/* ========================================= */
+
+.editor-toolbar {
+    display: flex;
+    gap: 8px;
+    /* Spacing between toolbar buttons */
+    background-color: #2d2d2d;
+    /* Toolbar background same as top bar in snippet 1, slightly darker than container */
+    padding: 5px 10px;
+    border-bottom: 1px solid #333;
+    /* Separator line for toolbar */
+}
+
+.toolbar-button i {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.toolbar-button span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* ========================================= */
+/*          Editor & Preview Area           */
+/* ========================================= */
+
+.editor-content-area {
+    display: flex;
+    flex-grow: 1;
+    height: 100%;
+    /* Make sure editor-content-area takes full height */
+    overflow: hidden;
+    /* Prevent content area scrollbars */
+}
+
+.editor-area-wrapper {
+    display: flex;
+    border-right: 1px solid #555;
+    overflow: hidden;
+    flex: 1;
+    background-color: #333;
+    /* Slightly lighter editor background */
+    height: 100%;
+    /* Make sure editor-area-wrapper takes full height */
+}
+
+.line-numbers {
+    width: 30px;
+    background-color: #333;
+    color: #aaa;
+    text-align: right;
+    padding: 10px 5px;
+    font-size: 14px;
+    font-family: monospace;
+    line-height: 1.5;
+    overflow-y: hidden;
+    box-sizing: border-box;
+    height: 100%;
+    /* Make sure line-numbers takes full height */
+}
+
+.editor-area {
+    flex-grow: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    height: 100%;
+    tab-size: 4;
+    -moz-tab-size: 4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #333;
+    /* Slightly lighter editor background - same as wrapper for seamless look */
+    color: #d4d4d4;
+    overflow-y: auto;
+}
+
+/* Ensure line numbers and textarea scroll together */
+.editor-area-wrapper {
+    overflow: hidden;
+    /* Important to prevent double scrollbars */
+}
+
+
+.preview-content {
+    flex: 1;
+    /* Take equal width */
+    padding: 15px;
+    background-color: #1e1e1e;
+    /* Very dark preview background */
+    color: #d4d4d4;
+    /* Light grey preview text color */
+    overflow-x: auto;
+    word-wrap: break-word;
+    border-left: 1px solid #555;
+    /* Darker preview border */
+    height: 100%;
+    /* Take full height of content area */
+    box-sizing: border-box;
+    /* Include padding and border in height calculation */
+
+}
+
+/* ========================================= */
+/*         View Mode Specific Styles         */
+/* ========================================= */
+
+/* Initially hide the preview content by default */
+.preview-content {
+    display: none;
+    /* Initially hidden */
+}
+
+/* Make editor-area-wrapper take full width when preview is hidden */
+.editor-content-area.preview-hidden .editor-area-wrapper {
+    flex: 1;
+    /* Take all available space */
+    width: 100%;
+    /* Ensure it's full width */
+    border-right: none;
+    /* Remove right border when preview is hidden */
+}
+
+/* When only preview is shown */
+.editor-content-area.editor-hidden .editor-area-wrapper {
+    display: none;
+    /* Hide editor area */
+}
+
+.editor-content-area.editor-hidden .preview-content {
+    display: flex;
+    /* Show preview area */
+    flex: 1;
+    /* Take all available space */
+    width: 100%;
+    /* Ensure it's full width */
+    border-left: none;
+    /* Remove left border when editor is hidden */
+}
+
+/* When both are shown (default, or when toggled to 'both') - reset to side-by-side */
+.editor-content-area.both-visible .editor-area-wrapper {
+    display: flex;
+    /* Ensure editor area is displayed */
+    flex: 1;
+    /* Take equal space */
+    width: auto;
+    /* Reset width to auto */
+    border-right: 1px solid #555;
+    /* Restore right border */
+}
+
+.editor-content-area.both-visible .preview-content {
+    display: flex;
+    /* Ensure preview area is displayed */
+    flex: 1;
+    /* Take equal space */
+    width: auto;
+    /* Reset width to auto */
+    border-left: 1px solid #555;
+    /* Restore left border */
+}
+
+/* For smaller screens, always start with editor only */
+@media (max-width: 768px) {
+    .preview-content {
+        display: none;
+        /* Hide preview on smaller screens initially as well */
+    }
+
+    .editor-content-area.preview-hidden .editor-area-wrapper,
+    .editor-content-area:not(.both-visible) .editor-area-wrapper {
+        /* Apply full width in mobile view by default */
+        flex: 1;
+        width: 100%;
+        border-right: none;
+    }
+}
+
+
+/* Message area styles for dark theme - HIDDEN NOW */
+.message-area {
+    display: none;
+    /* Hidden by default */
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.message-area.error {
+    background-color: #440000;
+    /* Darker red error background */
+    color: #ffdddd;
+    /* Lighter red error text */
+    border: 1px solid #ffdddd;
+}
+
+.message-area.success {
+    background-color: #004400;
+    /* Darker green success background */
+    color: #ddffdd;
+    /* Lighter green success text */
+    border: 1px solid #ddffdd;
+}
+
+.message-area.saving {
+    background-color: #000044;
+    /* Darker blue saving background */
+    color: #ddddff;
+    /* Lighter blue saving text */
+    border: 1px solid #ddddff;
+}
+
+
+/* Icon styling for toolbar buttons */
+.toolbar-button i {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.toolbar-button span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+
+/* Media query for smaller screens - HIDE PREVIEW SECTION - REPEATED - REMOVE THIS SECTION AS ALREADY DEFINED ABOVE UNDER VIEW MODES*/
+/* @media (max-width: 768px) {
+    .preview-content {
+        display: none;
+        /* Hide preview on smaller screens */
+/* }
+} */
+
+/* Custom Context Menu Styles */
+#custom-context-menu {
+    display: none;
+    position: absolute;
+    background-color: #333;
+    /* Simpler dark grey background */
+    color: #eee;
+    /* Lighter text for better contrast */
+    border: 1px solid #666;
+    /* Slightly lighter border */
+    padding: 5px 0;
+    border-radius: 5px;
+    /* Slightly more rounded corners for softer look */
+    z-index: 1000;
+    min-width: 150px;
+    /* Make it wider */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /*  Softer shadow */
+    pointer-events: none;
+    /* Initially disable pointer events when hidden */
+    opacity: 0;
+    /* Initially transparent for smoother transition (optional) */
+    transition: opacity 0.1s ease-out;
+    /* Smooth opacity transition (optional) */
+}
+
+#custom-context-menu.show {
+    /* Class to indicate when menu is shown */
+    display: block;
+    pointer-events: auto;
+    /* Enable pointer events when shown */
+    opacity: 1;
+    /* Make visible with opacity transition (optional) */
+}
+
+#custom-context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#custom-context-menu li {
+    padding: 8px 15px;
+    /* Slightly less horizontal padding for a bit simpler look */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    /* Simpler transition */
+    border-bottom: 1px solid #555;
+    /* Add bottom border for lines between items */
+    position: relative;
+    /* ADD THIS LINE */
+}
+
+#custom-context-menu li:last-child {
+    /* Remove border from the last item */
+    border-bottom: none;
+}
+
+#custom-context-menu li:hover {
+    background-color: #555;
+    /*  Slightly lighter hover */
+    color: #fff;
+    /* White text on hover for simplicity */
+}
+
+.shortcut {
+    color: #aaa;
+    /* Lighter color for shortcuts */
+    float: right;
+    /* Align shortcuts to the right */
+    margin-left: 15px;
+    /* Space between text and shortcut */
+}
+
+.menu-separator {
+    border-bottom: 1px solid #555;
+    margin: 5px 10px;
+    /* Add some vertical margin and horizontal inset */
+}
+
+/* Custom Dialog Styles */
+.custom-dialog {
+    display: none;
+    /* Hidden by default, controlled by JavaScript */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1001;
+    /* Sit on top of everything else (higher than context menu) */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black w/ opacity, for background overlay */
+}
+
+.dialog-content {
+    background-color: #333;
+
+    padding: 20px;
+    border: 1px solid #666;
+    /* Dialog border */
+    /* Maximum width for the dialog */
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    color: #eee;
+}
+
+.dialog-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #fff;
+    /* White heading text */
+}
+
+.dialog-content label {
+    display: block;
+    /* Labels on their own line */
+    margin-bottom: 5px;
+    color: #ccc;
+    /* Slightly lighter label text */
+}
+
+.dialog-content input[type="text"] {
+    width: 100%;
+    /* Full width input fields */
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #555;
+    /* Input border */
+    background-color: #2d2d2d;
+    /* Dark input background */
+    color: #d4d4d4;
+    /* Light input text color */
+    border-radius: 3px;
+    box-sizing: border-box;
+    /* To include padding and border in width */
+}
+
+.dialog-buttons {
+    text-align: right;
+    /* Align buttons to the right */
+}
+
+.dialog-buttons button {
+    background-color: #555;
+    /* Button background */
+    color: #fff;
+    /* Button text color */
+    border: none;
+    padding: 8px 15px;
+    margin-left: 10px;
+    /* Spacing between buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.dialog-buttons button:hover {
+    background-color: #777;
+    /* Lighter hover background */
+}
+
+
+/* Dropdown Content Style - REMOVED AS DROPDOWN REMOVED FROM CONTEXT MENU */
+/* .dropdown-content { ... }
+.dropdown-content a { ... }
+.dropdown-content a:hover { ... }
+.show-dropdown { ... }
+#context-share-menu:hover>.dropdown-content { ... }
+#context-share-menu::after { ... } */
+
+
+/* CodeMirror Styles - Adjust if needed, basic styles already included via linked CSS */
+.CodeMirror {
+    height: 100%;
+    flex-grow: 1;
+    /* Allow CodeMirror to take available space */
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    direction: ltr;
+    text-align: left;
+    /* basic-setup */
+    -webkit-rtl-ordering: logical;
+    -moz-rtl-ordering: logical;
+    caret-color: rgb(250, 250, 250);
+    background-color: #333;
+    /* Slightly lighter editor background - same as wrapper */
+    /* Match editor background */
+    color: #d4d4d4;
+    /* Match editor text color */
+    /* Ensure no border or outline, as these are handled by the container */
+    border: none;
+    outline: none;
+}
+
+.CodeMirror-scroll {
+    overflow: auto;
+    /* Ensure scrollbars appear when content overflows */
+    margin-bottom: -30px;
+    margin-right: -30px;
+    /* Compensate for scrollbar width/height */
+    height: 100%;
+    outline: none;
+    box-sizing: content-box;
+}
+
+.CodeMirror-gutters {
+    background: #333;
+    /* Match line number background */
+    color: #aaa;
+    /* Match line number color */
+    border-right: 0px;
+}
+
+.CodeMirror-linenumber {
+    padding: 0 5px 0 5px;
+    text-align: right;
+    line-height: 1.5;
+    font-size: 14px;
+    font-family: monospace;
+    white-space: pre;
+    display: block;
+}
+
+.CodeMirror-lines {
+    padding: 10px 0;
+    /* Top/bottom padding to match textarea */
+}
+
+/* Monokai Theme Adjustments - ensure good integration */
+.cm-s-monokai.CodeMirror {
+    background-color: #333;
+    /* CodeMirror editor background - slightly lighter than container */
+    color: #f8f8f2;
+    /* Text color from monokai theme */
+}
+
+.cm-s-monokai .CodeMirror-gutters {
+    background-color: #333;
+    /* Gutter background (line numbers area) - match editor background */
+    border-right: 1px solid #555;
+    /* Gutter border - subtle separator */
+    color: #8f908a;
+    /* Line number color from monokai theme */
+}
+
+.cm-s-monokai .CodeMirror-linenumber {
+    color: #8f908a;
+    /* Ensure line numbers are visible */
+}
+
+.cm-s-monokai .CodeMirror-cursor {
+    border-left: 1px solid #f8f8f0;
+    /* Cursor color */
+}
+
+.cm-s-monokai .cm-selectionBackground,
+.cm-s-monokai ::selection {
+    background: rgba(119, 119, 119, 0.5);
+    /* Selection background */
+}
+
+.cm-s-monokai .cm-activeLine-background {
+    background: rgba(0, 0, 0, 0.3);
+    /* Active line background */
+}
