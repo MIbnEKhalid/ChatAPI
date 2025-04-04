@@ -5,7 +5,7 @@ let scrollBtn = document.querySelector(".scroll-button a");
 if (nav && scrollBtn) {
     console.log(scrollBtn);
     let val;
-    window.onscroll = function() {
+    window.onscroll = function () {
         if (document.documentElement.scrollTop > 20) {
             nav.classList.add("sticky");
             scrollBtn.style.display = "block";
@@ -27,14 +27,14 @@ let cancelBtn = document.querySelector(".cancel-btn");
 
 
 if (navBar && menuBtn && cancelBtn) {
-    menuBtn.onclick = function() {
+    menuBtn.onclick = function () {
         navBar.classList.add("active");
         menuBtn.style.opacity = "0";
         menuBtn.style.pointerEvents = "none";
         if (body) body.style.overflow = "hidden";
         if (scrollBtn) scrollBtn.style.pointerEvents = "none";
     };
-    cancelBtn.onclick = function() {
+    cancelBtn.onclick = function () {
         navBar.classList.remove("active");
         menuBtn.style.opacity = "1";
         menuBtn.style.pointerEvents = "auto";
@@ -52,14 +52,14 @@ let lftmenuBtn = document.querySelector(".menu-btn-left");
 let lftcancelBtn = document.querySelector(".cancel-btn-left");
 
 if (navBar && lftmenuBtn && lftcancelBtn) {
-    lftmenuBtn.onclick = function() {
+    lftmenuBtn.onclick = function () {
         navBar.classList.add("active");
         lftmenuBtn.style.opacity = "0";
         lftmenuBtn.style.pointerEvents = "none";
         if (body) body.style.overflow = "hidden";
         if (scrollBtn) scrollBtn.style.pointerEvents = "none";
     };
-    lftcancelBtn.onclick = function() {
+    lftcancelBtn.onclick = function () {
         navBar.classList.remove("active");
         lftmenuBtn.style.opacity = "1";
         lftmenuBtn.style.pointerEvents = "auto";
@@ -76,7 +76,7 @@ let navLinks = document.querySelectorAll(".menu li a");
 
 if (navLinks.length > 0) {
     for (var i = 0; i < navLinks.length; i++) {
-        navLinks[i].addEventListener("click", function() {
+        navLinks[i].addEventListener("click", function () {
             if (navBar) navBar.classList.remove("active");
             if (menuBtn) {
                 menuBtn.style.opacity = "1";
@@ -94,7 +94,7 @@ let navLinksl = document.querySelectorAll(".menu li a");
 
 if (navLinksl.length > 0) {
     for (var i = 0; i < navLinksl.length; i++) {
-        navLinksl[i].addEventListener("click", function() {
+        navLinksl[i].addEventListener("click", function () {
             if (navBar) navBar.classList.remove("active");
             if (lftmenuBtn) {
                 lftmenuBtn.style.opacity = "1";
@@ -104,4 +104,8 @@ if (navLinksl.length > 0) {
     }
 } else {
     console.log("No elements found with class 'menu li a'.");
+}
+
+function reloadPage() {
+    location.reload();
 }

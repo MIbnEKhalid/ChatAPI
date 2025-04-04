@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
-    "build": "nodemon index.js",
-    "start": "nodemon index.js"
+    "build": "node index.js",
+    "start": "node index.js"
   },
   "author": "Muhammad Bin Khalid",
   "license": "MIT",

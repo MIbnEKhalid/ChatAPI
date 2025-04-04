@@ -208,7 +208,7 @@
                     clearAllCookies();
                     const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
                     loginButton.innerText = "Redirecting.....";
-                    window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : '/home';
+                    window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : '/chatbot';
                 } else {
                     grecaptcha.reset();
                     showMessage(data.message, "Error");

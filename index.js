@@ -83,6 +83,10 @@ router.get(["/", "/info/main"], (req, res) => {
   return res.render("staticPage/index.handlebars");
 });
 
+router.get(["/home", "/dashboard"], (req, res) => {
+  return res.redirect("/chatbot");
+});
+
 router.get("/info/Terms&Conditions", (req, res) => {
   return res.render("staticPage/Terms&Conditions");
 });
