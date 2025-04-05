@@ -1135,7 +1135,7 @@
 
             listItem.addEventListener('click', function (event) {
                 if (!event.target.closest('button')) {
-                    window.location.href = `/dashboard/admin/chatbot/${history.id}`;
+                    window.location.href = `/chatbot/${history.id}`;
                 }
             });
         }
@@ -1144,7 +1144,7 @@
             currentChatId = null;
             chatMessagesArea.innerHTML = '';
             chatInput.value = '';
-            window.history.pushState({}, '', '/dashboard/admin/chatbot');
+            window.history.pushState({}, '', '/chatbot');
         }
 
         function loadChat(chatId) {
