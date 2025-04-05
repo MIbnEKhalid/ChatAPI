@@ -10,3 +10,29 @@ CREATE TABLE Ai_history (
 CREATE INDEX idx_ai_history_username ON Ai_history(username);
 CREATE INDEX idx_ai_history_id ON Ai_history(id);
 ```
+
+
+
+CREATE TABLE user_settings (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    theme VARCHAR(20) DEFAULT 'dark',
+    font_size INTEGER DEFAULT 16,
+    ai_model VARCHAR(50) DEFAULT 'default',
+    temperature FLOAT DEFAULT 1.0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_user_settings_updated_at
+BEFORE UPDATE ON user_settings
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
