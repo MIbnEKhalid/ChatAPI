@@ -137,8 +137,12 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            width: 100%;
+            width: calc(100% - 250px);
             transition: margin-left var(--transition-speed) ease-in-out;
+        }
+
+        .chat-container.full {
+            width: 100%;
         }
 
         .chat-header {
@@ -1266,6 +1270,7 @@
             pointer-events: auto !important;
             opacity: 1;
         }
+
         .generating-message {
             justify-content: flex-start;
         }
@@ -1275,7 +1280,7 @@
             color: var(--ai-message-text);
             font-style: italic;
             text-align: center;
-        } 
+        }
     </style>
 </head>
 
@@ -1510,8 +1515,10 @@
             if (window.innerWidth <= 768) {
                 hideChatList();
                 isChatListVisible = false;
+                chatContainer.classList.add('full');
             } else {
                 showChatList();
+                chatContainer.classList.remove('full');
                 isChatListVisible = true;
             }
 
