@@ -246,22 +246,27 @@ router.post("/logout", async (req, res) => {
 });
 
 
-// --- bot Generator Chat (Integrated with Gemini API) ---
+
 
 router.get("/chatbot/:chatId?", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
     const chatId = req.params.chatId;
-    res.render('mainPages/chatbot.handlebars', { chatId: chatId }); // Pass chatId to the template if needed
+    const username = req.session.user.username; // Get username from session
+    const userSettings = await fetchUserSettings(username); // Fetch user settings
+    res.render('mainPages/chatbot.handlebars', {
+      chatId: chatId,
+      settings: userSettings // Pass settings to the template
+    });
   } catch (err) {
     console.error("Error rendering chatbot page:", err);
-    res.status(500).render("templates/Error/500", { error: err }); // Assuming you have a 500 error template
+    res.status(500).render("templates/Error/500", { error: err });
   }
 });
 
 async function fetchChatHistories(username) {
   try {
     const historyResult = await pool1.query(
-      'SELECT id, created_at FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
+      'SELECT id, created_at, temperature FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
       [username]
     );
     return historyResult.rows.map(row => {
@@ -285,7 +290,8 @@ async function fetchChatHistories(username) {
 
       return {
         ...row,
-        created_at: formattedTime
+        created_at: formattedTime,
+        temperature: row.temperature || 0.5 // Default if null
       };
     });
   } catch (error) {
@@ -294,14 +300,13 @@ async function fetchChatHistories(username) {
   }
 }
 
-// Modified to fetch a single chat history by ID, including conversation_history
 async function fetchChatHistoryById(chatId) {
   try {
     const historyResult = await pool1.query(
-      'SELECT id, conversation_history FROM Ai_history WHERE id = $1',
+      'SELECT id, conversation_history, temperature FROM Ai_history WHERE id = $1',
       [chatId]
     );
-    return historyResult.rows[0]; // Expecting only one row for a given ID
+    return historyResult.rows[0];
   } catch (error) {
     console.error("Error fetching chat history by ID:", error);
     return null;
@@ -339,6 +344,8 @@ router.post('/api/bot-chat', async (req, res) => {
     return res.status(400).json({ message: "Chat message is required." });
   }
 
+
+  const temperature = Math.min(Math.max(parseFloat(req.body.temperature || 1.0), 0), 2);
   let conversationHistory = [];
   const chatId = req.body.chatId;
 
@@ -354,8 +361,6 @@ router.post('/api/bot-chat', async (req, res) => {
   let geminiApiKey;
   geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
 
-
-
   if (!geminiApiKey) {
     return res.status(500).json({ error: "Gemini API key not configured." });
   }
@@ -366,7 +371,12 @@ router.post('/api/bot-chat', async (req, res) => {
     const geminiResponse = await fetch(geminiApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: conversationHistory })
+      body: JSON.stringify({
+        contents: conversationHistory,
+        generationConfig: {
+          temperature: temperature // Add temperature to the request
+        }
+      })
     });
 
     if (!geminiResponse.ok) {
@@ -383,13 +393,19 @@ router.post('/api/bot-chat', async (req, res) => {
 
       if (chatId) {
         await pool1.query(
-          `UPDATE Ai_history SET conversation_history = $1, created_at = CURRENT_TIMESTAMP WHERE id = $2`,
-          [JSON.stringify(conversationHistory), chatId]
+          `UPDATE Ai_history 
+           SET conversation_history = $1, 
+               created_at = CURRENT_TIMESTAMP,
+               temperature = $3 
+           WHERE id = $2`,
+          [JSON.stringify(conversationHistory), chatId, temperature]
         );
       } else {
         const insertResult = await pool1.query(
-          `INSERT INTO Ai_history (conversation_history, username) VALUES ($1, $2) RETURNING id`,
-          [JSON.stringify(conversationHistory), req.session.user.username]
+          `INSERT INTO Ai_history (conversation_history, username, temperature) 
+           VALUES ($1, $2, $3) 
+           RETURNING id`,
+          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
         );
         req.newChatId = insertResult.rows[0].id;
       }
@@ -418,5 +434,86 @@ router.post('/api/chat/clear-history/:chatId', async (req, res) => {
     res.status(500).json({ message: "Failed to delete chat history.", error: error.message });
   }
 });
+
+async function fetchUserSettings(username) {
+  try {
+    const settingsResult = await pool1.query(
+      'SELECT theme, font_size, ai_model, temperature FROM user_settings WHERE username = $1',
+      [username]
+    );
+    if (settingsResult.rows.length > 0) {
+      return settingsResult.rows[0];
+    } else {
+      // Default settings if no settings found for the user
+      return {
+        theme: 'dark',
+        font_size: 16,
+        ai_model: 'default',
+        temperature: 1.0
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching user settings:", error);
+    return { // Return default settings even on error to prevent app crash
+      theme: 'dark',
+      font_size: 16,
+      ai_model: 'default',
+      temperature: 1.0
+    };
+  }
+}
+
+async function saveUserSettings(username, settings) {
+  const { theme, fontSize, model, temperature } = settings;
+  try {
+    await pool1.query(
+      `INSERT INTO user_settings (username, theme, font_size, ai_model, temperature)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (username)
+       DO UPDATE SET
+          theme = $2,
+          font_size = $3,
+          ai_model = $4,
+          temperature = $5,
+          updated_at = CURRENT_TIMESTAMP`,
+      [username, theme, fontSize, model, temperature]
+    );
+    return true;
+  } catch (error) {
+    console.error("Error saving user settings:", error);
+    return false;
+  }
+}
+
+
+// GET endpoint to fetch user settings (Username based)
+router.get('/api/user-settings', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const username = req.session.user.username; // Get username from session
+    const userSettings = await fetchUserSettings(username);
+    res.json(userSettings);
+  } catch (error) {
+    console.error("Error in /api/user-settings:", error);
+    res.status(500).json({ message: "Error fetching user settings", error: error.message });
+  }
+});
+
+// POST endpoint to save user settings (Username based)
+router.post('/api/save-settings', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const username = req.session.user.username; // Get username from session
+    const settings = req.body; // Settings data from the request body
+    const isSaved = await saveUserSettings(username, settings);
+    if (isSaved) {
+      res.json({ success: true, message: "Settings saved successfully." });
+    } else {
+      res.status(500).json({ success: false, message: "Failed to save settings." });
+    }
+  } catch (error) {
+    console.error("Error in /api/save-settings:", error);
+    res.status(500).json({ success: false, message: "Error saving settings", error: error.message });
+  }
+});
+
 
 export default router;
