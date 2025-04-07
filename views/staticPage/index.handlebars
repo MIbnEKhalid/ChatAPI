@@ -11,431 +11,473 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/Assets/Style/doc.css">
-<style>
-    /* Base Styles with Dark Theme */
-:root {
-    --base-font-size: 16px;
-    --bg-color: #121212;
-    --text-color: #e0e0e0;
-    --header-bg: #1e1e1e;
-    --border-color: #333333;
-    --primary-color: #ff5722;
-    --secondary-color: #ff9800;
-    --accent-color: #03dac6;
-    --section-padding: 3rem 4%;
-    
-    --primary-hover: #e64a19;
-    --secondary-hover: #f57c00;
-    --light-text: #ffffff;
-    --light-bg: #1e1e1e;
-    --dark-bg: #121212;
-    --border-radius: 8px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    --transition: all 0.3s ease;
-}
+    <style>
+        /* Base Styles with Dark Theme */
+        :root {
+            --base-font-size: 16px;
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --header-bg: #1e1e1e;
+            --border-color: #333333;
+            --primary-color: #ff5722;
+            --secondary-color: #ff9800;
+            --accent-color: #03dac6;
+            --section-padding: 3rem 4%;
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+            --primary-hover: #e64a19;
+            --secondary-hover: #f57c00;
+            --light-text: #ffffff;
+            --light-bg: #1e1e1e;
+            --dark-bg: #121212;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --transition: all 0.3s ease;
+        }
 
-body {
-    font-family: 'Roboto', sans-serif;
-    font-size: var(--base-font-size);
-    line-height: 1.6;
-    color: var(--text-color);
-    background-color: var(--bg-color);
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-.container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
+        body {
+            font-family: 'Roboto', sans-serif;
+            font-size: var(--base-font-size);
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-    margin-bottom: 1rem;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--light-text);
-}
+        nav.sticky {
+            background: rgba(0, 0, 0, .3);
+            backdrop-filter: blur(8px);
+        }
 
-h1 {
-    font-size: 2.5rem;
-}
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-h2 {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
-}
+        /* Typography */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin-bottom: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--light-text);
+        }
 
-h3 {
-    font-size: 1.5rem;
-    color: var(--accent-color);
-}
+        h1 {
+            font-size: 2.5rem;
+        }
 
-p {
-    margin-bottom: 1rem;
-}
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
 
-a {
-    text-decoration: none;
-    color: var(--accent-color);
-    transition: var(--transition);
-}
+        h3 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
 
-a:hover {
-    color: var(--primary-color);
-}
+        p {
+            margin-bottom: 1rem;
+        }
 
-/* Buttons */
-.btn {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius);
-    font-weight: 500;
-    text-align: center;
-    transition: var(--transition);
-    cursor: pointer;
-    border: none;
-}
+        a {
+            text-decoration: none;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
 
-.btn-primary {
-    background-color: var(--primary-color);
-    color: var(--light-text);
-}
+        a:hover {
+            color: var(--primary-color);
+        }
 
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-    color: var(--light-text);
-    transform: translateY(-2px);
-    box-shadow: var(--box-shadow);
-}
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+        }
 
-.btn-secondary {
-    background-color: var(--secondary-color);
-    color: var(--light-text);
-}
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+        }
 
-.btn-secondary:hover {
-    background-color: var(--secondary-hover);
-    color: var(--light-text);
-    transform: translateY(-2px);
-    box-shadow: var(--box-shadow);
-}
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            color: var(--light-text);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
 
-/* Header & Navigation */
-header {
-    background-color: var(--header-bg);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 1000;
-    border-bottom: 1px solid var(--border-color);
-}
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--light-text);
+        }
 
-nav {
-    padding: 1rem 0;
-}
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover);
+            color: var(--light-text);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
 
-nav .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+        /* Header & Navigation */
+        header {
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--accent-color);
-}
+        nav {
+            padding: 1rem 0;
+        }
 
-.menu-toggle {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: var(--text-color);
-    cursor: pointer;
-    display: none;
-}
+        nav .container {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            align-content: center;
+            flex-wrap: nowrap;
+            flex-direction: row;
+        }
 
-nav ul {
-    display: flex;
-    list-style: none;
-    align-items: center;
-    gap: 1.5rem;
-}
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-right: auto;
+            color: var(--accent-color);
+        }
 
-nav ul li a {
-    color: var(--text-color);
-    font-weight: 500;
-}
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            display: none;
+        }
 
-nav ul li a:hover {
-    color: var(--accent-color);
-}
+        nav ul {
+            display: flex;
+            list-style: none;
+            align-items: center;
+            gap: 1.5rem;
+            margin-left: auto;
+            /* Push the navigation buttons to the right */
+        }
 
-.login-icon {
-    margin-right: 0.5rem;
-}
+        nav ul li a {
+            color: var(--text-color);
+            font-weight: 500;
+        }
 
-/* Hero Section */
-.hero {
-    padding: 8rem 0 4rem;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-}
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
 
-.hero h1 {
-    font-size: 3rem;
-    margin-bottom: 1.5rem;
-    color: var(--light-text);
-}
+        .login-icon {
+            margin-right: 0.5rem;
+        }
 
-.hero p {
-    font-size: 1.25rem;
-    max-width: 800px;
-    margin: 0 auto 2rem;
-    color: var(--text-color);
-}
+        /* Hero Section */
+        .hero {
+            padding: 8rem 0 4rem;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.hero-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
-}
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--light-text);
+        }
 
-/* Features Section */
-.features {
-    padding: var(--section-padding);
-    background-color: var(--dark-bg);
-    border-bottom: 1px solid var(--border-color);
-}
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            color: var(--text-color);
+        }
 
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
-}
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
 
-.feature-card {
-    background-color: var(--header-bg);
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    text-align: center;
-    transition: var(--transition);
-    border: 1px solid var(--border-color);
-}
+        /* Features Section */
+        .features {
+            padding: var(--section-padding);
+            background-color: var(--dark-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-    border-color: var(--accent-color);
-}
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
 
-.feature-icon {
-    font-size: 2.5rem;
-    color: var(--accent-color);
-    margin-bottom: 1rem;
-}
+        .feature-card {
+            background-color: var(--header-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
 
-/* Product Details Section */
-.product-details {
-    padding: var(--section-padding);
-    background-color: var(--bg-color);
-    border-bottom: 1px solid var(--border-color);
-}
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-color);
+        }
 
-.product-details h3 {
-    margin: 2rem 0 1rem;
-}
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
 
-.product-details ul, .product-details ol {
-    margin: 1rem 0 2rem;
-    padding-left: 2rem;
-}
+        /* Product Details Section */
+        .product-details {
+            padding: var(--section-padding);
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.product-details li {
-    margin-bottom: 0.5rem;
-}
+        .product-details h3 {
+            margin: 2rem 0 1rem;
+        }
 
-.product-details strong {
-    color: var(--accent-color);
-}
+        .product-details ul,
+        .product-details ol {
+            margin: 1rem 0 2rem;
+            padding-left: 2rem;
+        }
 
-/* Try Demo Section */
-.try-demo {
-    padding: var(--section-padding);
-    background-color: var(--header-bg);
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-}
+        .product-details li {
+            margin-bottom: 0.5rem;
+        }
 
-/* Development Team Section */
-.development {
-    padding: var(--section-padding);
-    background-color: var(--bg-color);
-    border-bottom: 1px solid var(--border-color);
-}
+        .product-details strong {
+            color: var(--accent-color);
+        }
 
-.developer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
-    justify-items: center;
-}
+        /* Try Demo Section */
+        .try-demo {
+            padding: var(--section-padding);
+            background-color: var(--header-bg);
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.developer-card {
-    background-color: var(--header-bg);
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    text-align: center;
-    transition: var(--transition);
-    width: 100%;
-    max-width: 300px;
-    border: 1px solid var(--border-color);
-}
+        /* Development Team Section */
+        .development {
+            padding: var(--section-padding);
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+        }
 
-.developer-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-    border-color: var(--accent-color);
-}
+        .developer-grid {
+            display: flex;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            justify-items: center;
+        }
 
-.developer-name {
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: var(--light-text);
-}
+        .developer-card {
+            background-color: var(--header-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 350px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
 
-.developer-github {
-    display: inline-block;
-    margin-top: 1rem;
-    color: var(--accent-color);
-}
+        .developer-card:hover {
+            border-color: var(--accent-color);
+        }
 
-/* Learn More Section */
-.learn-more {
-    padding: var(--section-padding);
-    background-color: var(--header-bg);
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-}
+        .developer-card i {
+            font-size: 4rem;
+        }
 
-/* Footer */
-footer {
-    background-color: #0d0d0d;
-    color: var(--light-text);
-    padding: 2rem 0;
-    text-align: center;
-}
+        .developer-name {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--light-text);
+        }
 
-footer .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
+        .developer-github {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
 
-footer a {
-    color: var(--text-color);
-}
+        .developer-github:hover {
+            color: var(--primary-color);
+        }
 
-footer a:hover {
-    color: var(--accent-color);
-}
+        /* Learn More Section */
+        .learn-more {
+            padding: var(--section-padding);
+            background-color: var(--header-bg);
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
-    }
+        /* Footer */
+        footer {
+            background-color: #0d0d0d;
+            color: var(--light-text);
+            padding: 2rem 0;
+            text-align: center;
+        }
 
-    nav ul {
-        position: fixed;
-        top: 70px;
-        left: 0;
-        width: 100%;
-        background-color: var(--header-bg);
-        flex-direction: column;
-        align-items: center;
-        padding: 2rem 0;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-        transform: translateY(-150%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 999;
-        border-bottom: 1px solid var(--border-color);
-    }
+        footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
 
-    nav ul.active {
-        transform: translateY(0);
-    }
+        footer a {
+            color: var(--text-color);
+        }
 
-    .hero h1 {
-        font-size: 2.2rem;
-    }
+        footer a:hover {
+            color: var(--accent-color);
+        }
 
-    .hero p {
-        font-size: 1.1rem;
-    }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+                margin-left: auto;
+                /* Push the menu-toggle to the right */
 
-    .hero-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
+            }
 
-    .btn {
-        width: 100%;
-        max-width: 250px;
-    }
+            nav .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-direction: row-reverse;
+            }
 
-    footer .container {
-        flex-direction: column;
-    }
-}
+            nav ul {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background-color: var(--header-bg);
+                flex-direction: column;
+                align-items: center;
+                padding: 2rem 0;
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+                transform: translateY(-150%);
+                transition: transform 0.3s ease-in-out;
+                z-index: 999;
+                border-bottom: 1px solid var(--border-color);
+            }
 
-@media (max-width: 480px) {
-    :root {
-        --section-padding: 2rem 4%;
-    }
-    
-    h1 {
-        font-size: 2rem;
-    }
+            nav ul.active {
+                transform: translateY(0);
+            }
 
-    h2 {
-        font-size: 1.75rem;
-    }
+            .hero h1 {
+                font-size: 2.2rem;
+            }
 
-    .hero {
-        padding: 6rem 0 3rem;
-    }
-}
-</style>
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+
+            footer .container {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --section-padding: 2rem 4%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            .hero {
+                padding: 6rem 0 3rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <header>
-        <nav>
+        <nav class="sticky">
             <div class="container">
-                <a href="/" class="logo">
-                    AI Chat App
-                </a>
                 <button class="menu-toggle" aria-label="Toggle navigation">
                     <i class="fas fa-bars"></i>
                 </button>
+                <div class="logo">
+                    AI Chat App
+                    <span style="font-size: 10px;"> by <a href="https://mbktechstudio.com"
+                            target="_blank">mbktechstudio</a> </span>
+                </div>
                 <ul>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#details">Details</a></li>
@@ -451,7 +493,8 @@ footer a:hover {
     <section class="hero">
         <div class="container">
             <h1>Experience the Power of AI Chat</h1>
-            <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI models and enjoy a customizable, restriction-free chat experience.</p>
+            <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI models
+                and enjoy a customizable, restriction-free chat experience.</p>
             <div class="hero-buttons">
                 <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
                 <a href="#details" class="btn btn-secondary">Learn Features</a>
@@ -466,22 +509,26 @@ footer a:hover {
                 <div class="feature-card">
                     <i class="fas fa-rocket feature-icon"></i>
                     <h3>Seamless API Integration</h3>
-                    <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs effortlessly.</p>
+                    <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs
+                        effortlessly.</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-cog feature-icon"></i>
                     <h3>Highly Customizable</h3>
-                    <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding.</p>
+                    <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding.
+                    </p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-lock-open feature-icon"></i>
                     <h3>Bypass Restrictions</h3>
-                    <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI anywhere.</p>
+                    <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI
+                        anywhere.</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-code feature-icon"></i>
                     <h3>Open Source & Extensible</h3>
-                    <p>Built on an open-source platform, allowing for community contributions and deep customization.</p>
+                    <p>Built on an open-source platform, allowing for community contributions and deep customization.
+                    </p>
                 </div>
             </div>
         </div>
@@ -490,24 +537,34 @@ footer a:hover {
     <section class="product-details" id="details">
         <div class="container">
             <h2>Product Details</h2>
-            <p>Our AI Chat Application is designed to provide you with a flexible and powerful way to interact with AI models. Here's a deeper look:</p>
+            <p>Our AI Chat Application is designed to provide you with a flexible and powerful way to interact with AI
+                models. Here's a deeper look:</p>
 
             <h3>Key Capabilities</h3>
             <ul>
-                <li><strong>Multi-Model Support:</strong> Compatible with Gemini, DeepSeek, and easily extensible to other AI APIs.</li>
-                <li><strong>Customizable Settings:</strong> Adjust temperature, model selection, and appearance to personalize your experience.</li>
-                <li><strong>User-Friendly Interface:</strong> Clean and intuitive chat interface for seamless conversations.</li>
-                <li><strong>Deployment Flexibility:</strong> Deployable on Vercel, Netlify, and other platforms for unrestricted access.</li>
-                <li><strong>Open API Architecture:</strong> Allows developers to extend and integrate the chatbot into other systems.</li>
+                <li><strong>Multi-Model Support:</strong> Compatible with Gemini, DeepSeek, and easily extensible to
+                    other AI APIs.</li>
+                <li><strong>Customizable Settings:</strong> Adjust temperature, model selection, and appearance to
+                    personalize your experience.</li>
+                <li><strong>User-Friendly Interface:</strong> Clean and intuitive chat interface for seamless
+                    conversations.</li>
+                <li><strong>Deployment Flexibility:</strong> Deployable on Vercel, Netlify, and other platforms for
+                    unrestricted access.</li>
+                <li><strong>Open API Architecture:</strong> Allows developers to extend and integrate the chatbot into
+                    other systems.</li>
             </ul>
 
             <h3>Use Cases</h3>
             <p>Our AI Chat Application is perfect for:</p>
             <ol>
-                <li><strong>Workplace Productivity:</strong> Access AI assistants on restricted networks to boost efficiency.</li>
-                <li><strong>Educational Research:</strong> Enable students and educators to use AI for learning and research in schools and universities.</li>
-                <li><strong>Personal AI Assistance:</strong> Create a personal AI assistant for daily tasks, brainstorming, and information retrieval.</li>
-                <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various AI models and chatbot functionalities.</li>
+                <li><strong>Workplace Productivity:</strong> Access AI assistants on restricted networks to boost
+                    efficiency.</li>
+                <li><strong>Educational Research:</strong> Enable students and educators to use AI for learning and
+                    research in schools and universities.</li>
+                <li><strong>Personal AI Assistance:</strong> Create a personal AI assistant for daily tasks,
+                    brainstorming, and information retrieval.</li>
+                <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various
+                    AI models and chatbot functionalities.</li>
             </ol>
 
             <div style="text-align: center; margin-top: 3rem;">
@@ -529,16 +586,14 @@ footer a:hover {
             <h2>Development Team</h2>
             <p>Meet the team behind the AI Chat Application:</p>
             <div class="developer-grid">
-                <div class="developer-card">
+                <a target="_blank" href="http://portal.mbktechstudio.com/ibnekhalid" class="developer-card">
                     <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fas fa-user-circle"></i></div>
                     <p class="developer-name">Muhammad Bin Khalid</p>
-                    <a class="developer-github" href="https://github.com/MIbnEKhalid" target="_blank" rel="noopener noreferrer">GitHub Profile</a>
-                </div>
-                <div class="developer-card">
+                </a>
+                <a target="_blank" href="http://portal.mbktechstudio.com/maaz.waheed" class="developer-card">
                     <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fas fa-user-circle"></i></div>
                     <p class="developer-name">Maaz Waheed</p>
-                    <a class="developer-github" href="https://github.com/42Wor" target="_blank" rel="noopener noreferrer">GitHub Profile</a>
-                </div>
+                </a>
             </div>
         </div>
     </section>
@@ -546,8 +601,10 @@ footer a:hover {
     <section class="learn-more" id="learn-more">
         <div class="container">
             <h2>Want to Learn More?</h2>
-            <p>Explore our documentation, deployment guides, and FAQs to get a comprehensive understanding of the AI Chat Application.</p>
-            <a href="https://github.com/MIbnEKhalid/ChatBot" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+            <p>Explore our documentation, deployment guides, and FAQs to get a comprehensive understanding of the AI
+                Chat Application.</p>
+            <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-primary" target="_blank"
+                rel="noopener noreferrer">View on GitHub</a>
         </div>
     </section>
 
@@ -561,17 +618,18 @@ footer a:hover {
                 |
                 <a href="/FAQs" target="_blank" rel="noopener noreferrer">FAQs</a>
                 |
-                <a href="https://mbktechstudio.com/Support/" target="_blank" rel="noopener noreferrer">Support & Contact</a>
+                <a href="https://mbktechstudio.com/Support/" target="_blank" rel="noopener noreferrer">Support &
+                    Contact</a>
             </span>
         </div>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.querySelector('.menu-toggle');
             const navMenu = document.querySelector('nav ul');
 
-            menuToggle.addEventListener('click', function() {
+            menuToggle.addEventListener('click', function () {
                 navMenu.classList.toggle('active');
                 const icon = this.querySelector('i');
                 icon.classList.toggle('fa-bars');
@@ -580,12 +638,24 @@ footer a:hover {
 
             // Close menu when clicking on a link
             document.querySelectorAll('nav a').forEach(link => {
-                link.addEventListener('click', function() {
+                link.addEventListener('click', function (event) {
                     if (window.innerWidth <= 768) {
                         navMenu.classList.remove('active');
                         const icon = document.querySelector('.menu-toggle i');
                         icon.classList.add('fa-bars');
                         icon.classList.remove('fa-times');
+                    }
+
+                    // Adjust scroll position for sticky header
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        event.preventDefault();
+                        const offsetTop = targetElement.offsetTop - 70;
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
                     }
                 });
             });

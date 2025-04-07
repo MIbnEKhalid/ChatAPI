@@ -359,16 +359,7 @@ router.post('/api/bot-chat', async (req, res) => {
   conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
 
   let geminiApiKey;
-  if (req.session.user.username === "ibnekhalid") {
-    geminiApiKey = process.env.GEMINI_API_KEY_ibnekhalid;
-  }
-  else if (req.session.user.username === "maaz.waheed") {
-    geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-  }
-  else {
-    const aiResponseText = "User not authorized to access Gemini API.";
-    res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
-  }
+  geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
 
   if (!geminiApiKey) {
     return res.status(500).json({ error: "Gemini API key not configured." });

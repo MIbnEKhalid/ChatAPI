@@ -30,20 +30,7 @@
 	color: #9eb5f7;
 	transition: all 0.5s ease;
 }
-
-a {
-	transition: all 0.5s ease;
-}
-
-a:visited {
-	color: #007bff;
-	transition: all 0.5s ease;
-}
-
-a:hover {
-	color: #9eb5f7;
-	transition: all 0.5s ease;
-}
+ 
 
 ::-webkit-scrollbar {
 	width: 10px;
@@ -83,10 +70,6 @@ nav {
 	z-index: 998;
 	transition: all 0.3s ease;
 	font-family: "Ubuntu", sans-serif;
-}
-
-nav.sticky {
-	background: #377a77;
 }
 
 nav .navbar {
