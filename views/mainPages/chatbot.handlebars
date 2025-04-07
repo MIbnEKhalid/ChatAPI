@@ -253,7 +253,6 @@
             padding: 10px;
             background-color: var(--bg-dark);
         }
-
         .chat-input-container {
             padding: 10px;
             background-color: var(--bg-medium);
@@ -263,6 +262,7 @@
         .chat-input-form {
             display: flex;
             gap: 5px;
+            align-items: center; /* Added for vertical alignment */
         }
 
         .chat-input {
@@ -566,61 +566,136 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, .15);
             transition: all .3s ease;
         }
-    </style>
-    <style>
+
         :root {
             --base-font-size: 16px;
-            --bg-color: #2c2c2c;
-            --text-color: #d4d4d4;
-            --header-bg: #3a3a3a;
-            --border-color: #555;
-            --user-message-bg: #4caf50;
-            --ai-message-bg: transparent;
-            --ai-message-text: #000;
-            --primary-color: #4caf50;
-            --danger-color: #f44336;
+            --primary-color: #3a86ff;
+            /* Vibrant blue */
+            --danger-color: #ff3860;
+            /* Strong red */
+            --border-radius: 8px;
         }
 
+        /* Default/Dark Theme (now more refined) */
+        .root,
         .dark-theme {
-            --bg-color: #0d1117;
-            --text-color: #d4d4d4;
-            --header-bg: #151b23;
-            --border-color: #555;
-            --user-message-bg: #212d3e;
-            --ai-message-bg: transparent;
-            --ai-message-text: #d4d4d4;
+            --bg-color: #121212;
+            /* True dark background */
+            --text-color: #e0e0e0;
+            /* Soft white for readability */
+            --header-bg: #1e1e1e;
+            /* Slightly lighter than bg */
+            --border-color: #424242;
+            /* Subtle borders */
+
+            --user-message-bg: #0d47a1;
+            /* Deep blue */
+            --user-message-text: #ffffff;
+            --ai-message-bg: #2d2d2d;
+            /* Dark gray bubble */
+            --ai-message-text: #f5f5f5;
+
+            --link-color: #64b5f6;
+            /* Light blue for links */
+            --hover-color: #bb86fc;
+            /* Light purple for hover states */
         }
 
+        /* Light Theme (softer and more balanced) */
         .light-theme {
-            --bg-color: #f5f5f5;
-            --text-color: #333;
+            --bg-color: #fafafa;
+            /* Very light gray */
+            --text-color: #333333;
+            /* Dark gray for text */
             --header-bg: #ffffff;
+            /* Pure white header */
             --border-color: #e0e0e0;
-            --user-message-bg: #4caf50;
-            --ai-message-bg: #e0f7fa;
-            --ai-message-text: #000;
+            /* Very light gray border */
+
+            --user-message-bg: #1565c0;
+            /* Rich blue */
+            --user-message-text: #ffffff;
+            --ai-message-bg: #f5f5f5;
+            /* Light gray bubble */
+            --ai-message-text: #212121;
+
+            --link-color: #1976d2;
+            /* Standard blue */
+            --hover-color: #0d47a1;
+            /* Darker blue for hover */
         }
 
+        /* Sepia Theme (warmer and more authentic) */
         .sepia-theme {
-            --bg-color: #f8f4e8;
-            --text-color: #5e5245;
-            --header-bg: #e8e0d4;
-            --border-color: #d2c9bc;
-            --user-message-bg: #a3c2a1;
-            --ai-message-bg: #f2e8cf;
-            --ai-message-text: #5e5245;
+            --bg-color: #f4ecd8;
+            /* Authentic sepia */
+            --text-color: #5b4636;
+            /* Dark sepia text */
+            --header-bg: #e6d9c5;
+            /* Slightly darker sepia */
+            --border-color: #d4c4a8;
+            /* Warm border */
+
+            --user-message-bg: #8d6e63;
+            /* Earthy brown */
+            --user-message-text: #ffffff;
+            --ai-message-bg: #e9e0d2;
+            /* Light sepia bubble */
+            --ai-message-text: #5b4636;
+
+            --link-color: #6d4c41;
+            /* Dark brown */
+            --hover-color: #4e342e;
+            /* Darker brown */
         }
 
+        /* High Contrast Theme (for accessibility) */
         .contrast-theme {
             --bg-color: #000000;
+            /* Pure black */
             --text-color: #ffffff;
+            /* Pure white */
             --header-bg: #222222;
-            --border-color: #555555;
-            --user-message-bg: #00bb00;
-            --ai-message-bg: #eeeeee;
+            /* Near-black */
+            --border-color: #ffffff;
+            /* White borders */
+
+            --user-message-bg: #ff3d00;
+            /* Vivid orange */
+            --user-message-text: #ffffff;
+            --ai-message-bg: #ffffff;
+            /* Pure white */
             --ai-message-text: #000000;
+
+            --link-color: #00b0ff;
+            /* Bright cyan */
+            --hover-color: #ff9100;
+            /* Bright yellow-orange */
         }
 
+        /* Additional Modern Theme */
+        .modern-theme {
+            --bg-color: #0f172a;
+            /* Deep navy */
+            --text-color: #e2e8f0;
+            /* Light blue-gray */
+            --header-bg: #1e293b;
+            /* Dark navy */
+            --border-color: #334155;
+            /* Medium navy */
+
+            --user-message-bg: #7c3aed;
+            /* Vibrant purple */
+            --user-message-text: #ffffff;
+            --ai-message-bg: #1e293b;
+            /* Dark navy bubble */
+            --ai-message-text: #e2e8f0;
+
+            --link-color: #818cf8;
+            /* Light purple */
+            --hover-color: #a78bfa;
+            /* Lighter purple */
+        }
 
         html,
         body {
@@ -1427,6 +1502,7 @@
                                 <option value="light">Light</option>
                                 <option value="sepia">Sepia</option>
                                 <option value="contrast">Contrast</option>
+                                <option value="modern">Modern Theme</option>
                                 <option value="system">System Default</option>
                             </select>
                         </div>
@@ -2019,24 +2095,23 @@
             settingsOverlay.classList.remove('show'); // Hide overlay
         }
 
-
         function applySettings() {
             themeSelect.value = currentSettings.theme; // Ensure select element is updated too on apply
             themeSelect.dispatchEvent(new Event('change')); // Trigger change event if needed for listeners
 
             // Apply theme
-            document.body.classList.remove('light-theme', 'dark-theme', 'sepia-theme', 'contrast-theme');
+            document.body.classList.remove('light-theme', 'dark-theme', 'sepia-theme', 'contrast-theme', 'modern-theme');
             if (currentSettings.theme === 'light') {
-                document.body.classList.add('light-theme');
+            document.body.classList.add('light-theme');
             } else if (currentSettings.theme === 'sepia') {
-                document.body.classList.add('sepia-theme');
+            document.body.classList.add('sepia-theme');
             } else if (currentSettings.theme === 'contrast') {
-                document.body.classList.add('contrast-theme');
+            document.body.classList.add('contrast-theme');
+            } else if (currentSettings.theme === 'modern') {
+            document.body.classList.add('modern-theme');
+            } else {
+            document.body.classList.add('dark-theme'); // Default to dark if theme is not recognized or 'dark'
             }
-            else {
-                document.body.classList.add('dark-theme'); // Default to dark if theme is not recognized or 'dark'
-            }
-
 
             // Apply font size
             document.documentElement.style.setProperty('--base-font-size', `${currentSettings.fontSize}px`);
@@ -2045,7 +2120,6 @@
 
             // Apply model if needed in future logic - currentSettings.model is available
         }
-
 
         // Make deleteChat available globally for button clicks
         window.deleteChat = deleteChat;
