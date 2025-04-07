@@ -11,7 +11,81 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
     <script src="/Assets/Scripts/main.js"></script>
+    <script src="/Assets/Scripts/logout.js"></script>
     <style>
+        .btn {
+            outline: 0;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: .92em;
+            font-weight: 600;
+            color: #fff;
+            border: 2px solid transparent;
+            cursor: pointer;
+            background: 0 0;
+            text-align: center;
+            transition: all .3s ease
+        }
+
+        @media (max-width: 600px) {
+            .btn {
+                width: 100%;
+                padding: 10px
+            }
+        }
+
+        .btn:visited {
+            color: #fff
+        }
+
+        .btn-edit {
+            background: #007bff;
+            transition: all .3s ease
+        }
+
+        .btn-edit:hover {
+            color: #007bff;
+            border-color: #007bff;
+            background: 0 0;
+            transition: all .3s ease
+        }
+
+        .btn-save {
+            background: #28a745;
+            transition: all .3s ease
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            transition: all .3s ease
+        }
+
+        .btn-cancel:hover {
+            color: #6c757d;
+            border-color: #6c757d;
+            background: 0 0;
+            transition: all .3s ease
+        }
+
+        .btn-save:hover {
+            color: #28a745;
+            border-color: #28a745;
+            background: 0 0;
+            transition: all .3s ease
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            transition: all .3s ease
+        }
+
+        .btn-danger:hover {
+            color: #dc3545;
+            border-color: #dc3545;
+            background: 0 0;
+            transition: all .3s ease
+        }
+
         :root {
             --bg-dark: #0d1117;
             --bg-medium: #151b23;
@@ -45,17 +119,17 @@
         .chat-list-container {
             width: 250px;
             min-width: 250px;
-            background-color: var(--bg-medium);
+            max-width: 300px;
+            background-color: var(--header-bg);
             border-right: 1px solid var(--border-color);
             padding: 10px;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            height: 100vh;
-            transition: transform var(--transition-speed) ease-in-out,
-                opacity var(--transition-speed) ease-in-out;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
             position: relative;
             z-index: 10;
+            opacity: 1;
         }
 
         .chat-list-container.hidden {
@@ -136,7 +210,7 @@
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%;
             width: calc(100% - 250px);
             transition: margin-left var(--transition-speed) ease-in-out;
         }
@@ -303,7 +377,6 @@
                 position: fixed;
                 height: 100vh;
                 z-index: 1000;
-                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
             }
 
             .chat-list-container.hidden {
@@ -346,12 +419,14 @@
         }
 
         pre {
+            font-family: Consolas;
             position: relative;
             border: .1rem solid var(--main-border-color);
-            background: transparent;
+            background: #000;
             padding: 1em;
             border-radius: 5px;
             overflow-x: auto;
+            line-height: 1;
             margin: 10px 0;
         }
 
@@ -500,10 +575,20 @@
             --header-bg: #3a3a3a;
             --border-color: #555;
             --user-message-bg: #4caf50;
-            --ai-message-bg: #fffeba;
+            --ai-message-bg: transparent;
             --ai-message-text: #000;
             --primary-color: #4caf50;
             --danger-color: #f44336;
+        }
+
+        .dark-theme {
+            --bg-color: #0d1117;
+            --text-color: #d4d4d4;
+            --header-bg: #151b23;
+            --border-color: #555;
+            --user-message-bg: #212d3e;
+            --ai-message-bg: transparent;
+            --ai-message-text: #d4d4d4;
         }
 
         .light-theme {
@@ -549,20 +634,6 @@
             font-size: var(--base-font-size);
         }
 
-        .chat-list-container {
-            width: 250px;
-            min-width: 250px;
-            max-width: 300px;
-            background-color: var(--header-bg);
-            border-right: 1px solid var(--border-color);
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            opacity: 1;
-        }
 
         .chat-list-container.hidden-chat-list {
             display: none;
@@ -693,14 +764,10 @@
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%;
             width: 100%;
             margin-left: 0;
             transition: margin-left 0.3s ease-in-out;
-        }
-
-        .chat-container.chat-list-visible {
-            width: calc(100% - 250px);
         }
 
         .dialog-header {
@@ -833,7 +900,7 @@
 
         .message-bubble {
             padding: 10px 12px;
-            border-radius: 20px;
+            border-radius: 10px;
             background-color: #444;
             max-width: 70%;
             word-wrap: break-word;
@@ -1179,29 +1246,6 @@
         }
 
         @media (max-width: 768px) {
-            .chat-container.chat-list-visible {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .chat-list-container {
-                width: 80%;
-                max-width: none;
-            }
-
-            .chat-list-container.visible-chat-list {
-                position: fixed;
-                top: 0;
-                left: 0;
-                z-index: 1000;
-                height: 100vh;
-                box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.5);
-            }
-
-            .chat-list-container.hidden-chat-list.visible-chat-list {
-                display: none;
-            }
-
             .settings-tabs {
                 overflow-x: auto;
                 padding-bottom: 5px;
@@ -1319,28 +1363,10 @@
                         Studio</a></span></div>
             <div class="logout-btn">
                 <div class="profile-menu">
-                    <i class="fas fa-user-circle" onclick="toggleProfileMenu()"></i>
-                    <div class="dropdown-content" id="profileDropdown">
-                        <a class="a1" style="text-align:center;">
-                            <div id="headerProfileUserName"></div>
-                        </a>
-                        <a class="a" id="settings-button">Settings</a>
-                        <a class="a" onclick="logout()">Logout</a>
-                    </div>
+                    <i class="fas fa-user-circle" id="settings-button"></i>
                 </div>
             </div>
         </header>
-
-        <script>
-            const headerElement = document.getElementById('headerProfileUserName');
-            headerElement.textContent = getCookieValue('username') || 'Not Logged In';
-            function toggleProfileMenu() {
-                const dropdown = document.getElementById('profileDropdown');
-                dropdown.style.display = dropdown.style.display === 'block'
-                    ? 'none'
-                    : 'block';
-            } 
-        </script>
         <section class="chat-content">
             <div class="chat-messages" id="chat-messages">
                 <!-- Messages will be inserted here -->
@@ -1415,16 +1441,20 @@
                     <div class="settings-group">
                         <label>Account Information</label>
                         <div class="account-info">
-                            <p>Email: user@example.com</p>
-                            <button id="logout-button" class="danger-button">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
+                            <p>User:
+                                <sapn id="headerProfileUserName"></span>
+                            </p>
                         </div>
+
+                        <button id="logout-button" onclick="logout()" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
                     </div>
                 </div>
                 <div class="settings-footer">
-                    <button id="save-settings" class="primary-button">Save Settings</button>
-                    <button id="cancel-settings">Cancel</button>
+                    <a id="save-settings" class="btn btn-save"><i class="fas fa-save" aria-hidden="true"></i> Save
+                        Settings</a>
+                    <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
                 </div>
             </div>
             <div class="settings-popup-overlay" id="settings-popup-overlay"></div>
@@ -1432,6 +1462,10 @@
         </section>
     </main>
 
+    <script>
+        const headerElement = document.getElementById('headerProfileUserName');
+        headerElement.textContent = getCookieValue('username') || 'Not Logged In';
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
 
@@ -1464,7 +1498,6 @@
         const temperatureValue = document.getElementById('temperature-value');
         const fontSizeInput = document.getElementById('font-size');
         const fontSizeValue = document.getElementById('font-size-value');
-        const logoutButton = document.getElementById('logout-button');
         const settingsOverlay = document.getElementById('settings-popup-overlay'); // Get overlay
 
 
@@ -1515,10 +1548,8 @@
             if (window.innerWidth <= 768) {
                 hideChatList();
                 isChatListVisible = false;
-                chatContainer.classList.add('full');
             } else {
                 showChatList();
-                chatContainer.classList.remove('full');
                 isChatListVisible = true;
             }
 
@@ -1584,14 +1615,6 @@
             });
             fontSizeInput.addEventListener('input', () => {
                 fontSizeValue.textContent = `${fontSizeInput.value}px`;
-            });
-
-            // Logout button
-            logoutButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to logout?')) {
-                    console.log('User logged out');
-                    window.location.href = '/logout';
-                }
             });
 
             // Close settings when clicking outside
