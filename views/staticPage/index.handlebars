@@ -2,401 +2,668 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-`8">
+    <title>AI Chat Application - Product Page</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A private MBK Tech Studio for the MBK Tech Studio team, offering streamlined operations and powerful administration
-                tools.">
-    <meta name="keywords" content="MBK Tech Studio, Web-Portal, Web, Portal, Admin-Panel, Admin">
-    <meta property="og:title" content="Portal | MBK Tech STudio" />
-    <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png" />
-    <meta property="og:url" content="https://portal.mbktechstudio.com/">
-    <!--script type="application/ld+json">
-            { "@context": "https://schema.org", "@type": "Organization", "name": "MBK Tech Studio", "url":
-            "https://portal.mbktechstudio.com/", "logo": "https://www.mbktechstudio.com/Assets/Images/Icon/logo.png", "description":
-            "MBK Tech Studio: A private MBK Tech Studio for the MBK Tech Studio team, offering streamlined operations and powerful
-            administration tools." }
-        </script>-->
-    <title>AI ChatBot | MBK Tech Studio</title>
+    <meta name="description"
+        content="Discover our AI Chat Application: Seamless, customizable, and powerful. Connect with AI models like never before.">
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/Assets/Style/doc.css">
     <style>
+        /* Base Styles with Dark Theme */
+        :root {
+            --base-font-size: 16px;
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --header-bg: #1e1e1e;
+            --border-color: #333333;
+            --primary-color: #ff5722;
+            --secondary-color: #ff9800;
+            --accent-color: #03dac6;
+            --section-padding: 3rem 4%;
+
+            --primary-hover: #e64a19;
+            --secondary-hover: #f57c00;
+            --light-text: #ffffff;
+            --light-bg: #1e1e1e;
+            --dark-bg: #121212;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
         }
 
         body {
-            background: #0d1117;
-            color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+            font-size: var(--base-font-size);
             line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
         }
 
-        .hero {
-            display: block;
-            align-items: center;
-            padding: 0 5%;
+        nav.sticky {
+            background: rgba(0, 0, 0, .3);
+            backdrop-filter: blur(8px);
         }
 
-        .hero-content {
+        .container {
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .hero h1 {
-            font-size: 3.0rem;
+        /* Typography */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin-bottom: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--light-text);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
             margin-bottom: 1.5rem;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            color: #cccccc;
-            max-width: 600px;
-        }
-
-        .cta-buttons {
             text-align: center;
-            display: flex;
-            gap: 1rem;
         }
 
-        .btn {
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+        h3 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
             text-decoration: none;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
+
+        a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
             text-align: center;
-            font-weight: bold;
-            transition: transform 0.3s ease;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
         }
 
         .btn-primary {
-            background: linear-gradient(45deg, #4361ee, #3f37c9);
-            color: white;
+            background-color: var(--primary-color);
+            color: var(--light-text);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            color: var(--light-text);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
         }
 
         .btn-secondary {
-            border: 2px solid #4361ee;
-            color: #4361ee;
+            background-color: var(--secondary-color);
+            color: var(--light-text);
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover);
+            color: var(--light-text);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
         }
 
-        .btn-primary:visited {
-            color: #fff;
+        /* Header & Navigation */
+        header {
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .btn-secondary:visited {
-            color: #4361ee;
+        nav {
+            padding: 1rem 0;
         }
 
-        .features h1 {
+        nav .container {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            align-content: center;
+            flex-wrap: nowrap;
+            flex-direction: row;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-right: auto;
+            color: var(--accent-color);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            display: none;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            align-items: center;
+            gap: 1.5rem;
+            margin-left: auto;
+            /* Push the navigation buttons to the right */
+        }
+
+        nav ul li a {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        .login-icon {
+            margin-right: 0.5rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 8rem 0 4rem;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             text-align: center;
-            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .features.se {
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--light-text);
+        }
 
-            margin-left: 10px;
-            margin-right: 10px;
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            color: var(--text-color);
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: var(--section-padding);
+            background-color: var(--dark-bg);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            margin-top: 3rem;
         }
 
         .feature-card {
-            background-color: transparent;
-            padding: 1rem;
-            border-radius: 12px;
-            border: .1rem solid var(--main-border-color);
+            background-color: var(--header-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
             text-align: center;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
         }
 
-        .feature-card h3 {
-            color: #4361ee;
-        }
-
-        .aboutBox h1 {
-            color: #4361ee;
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-color);
         }
 
         .feature-icon {
             font-size: 2.5rem;
-            color: #4361ee;
+            color: var(--accent-color);
             margin-bottom: 1rem;
         }
 
-        footer {
-            background-color: #121212;
-            padding: 2rem 5%;
+        /* Product Details Section */
+        .product-details {
+            padding: var(--section-padding);
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .product-details h3 {
+            margin: 2rem 0 1rem;
+        }
+
+        .product-details ul,
+        .product-details ol {
+            margin: 1rem 0 2rem;
+            padding-left: 2rem;
+        }
+
+        .product-details li {
+            margin-bottom: 0.5rem;
+        }
+
+        .product-details strong {
+            color: var(--accent-color);
+        }
+
+        /* Try Demo Section */
+        .try-demo {
+            padding: var(--section-padding);
+            background-color: var(--header-bg);
             text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .dashboard-preview {
-            max-width: 1200px;
-            margin: 5rem auto;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        /* Development Team Section */
+        .development {
+            padding: var(--section-padding);
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .dashboard-image {
+        .developer-grid {
+            display: flex;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            justify-items: center;
+        }
+
+        .developer-card {
+            background-color: var(--header-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: all 0.3s ease;
             width: 100%;
-            height: 500px;
-            background-color: #2d2d2d;
-            /* Replace with actual dashboard screenshot */
+            max-width: 350px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
 
-        nav .menu-btn {
-            top: 20px;
+        .developer-card:hover {
+            border-color: var(--accent-color);
         }
 
-        nav {
-            z-index: 970 !important;
-            padding: 10px 0;
+        .developer-card i {
+            font-size: 4rem;
         }
 
-        nav .navbar {
-            width: 94%;
+        .developer-name {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--light-text);
+        }
+
+        .developer-github {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .developer-github:hover {
+            color: var(--primary-color);
+        }
+
+        /* Learn More Section */
+        .learn-more {
+            padding: var(--section-padding);
+            background-color: var(--header-bg);
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Footer */
+        footer {
+            background-color: #0d0d0d;
+            color: var(--light-text);
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        footer .container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: auto;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        nav .menu-btn a {
-            color: #4361ee !important;
-            font-weight: bold;
-            font-size: 23px;
+        footer a {
+            color: var(--text-color);
         }
 
-        nav.sticky .menu-btn a {
-            color: #ffff !important;
-            font-weight: bold;
+        footer a:hover {
+            color: var(--accent-color);
         }
 
-        nav .menu-btn a:hover {
-            color: #9eb5f7 !important;
-        }
-
-        nav .menu-btn {
-            display: block;
-        }
-
-        nav.sticky {
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(8px);
-        }
-
-        .aboutBox {
-            opacity: 1;
-            visibility: visible;
-            border: 3px solid #333;
-            background-color: #1a1a1a;
-            max-width: 400px;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 6px 6px rgb(0 0 0 / 25%);
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-            display: block;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .scroll-button {
-            display: none;
-        }
-
-        footer {
-            padding: 10px 2px;
-            text-align: center;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        footer span {
-            font-size: 17px;
-            font-weight: 400;
-            color: #fff;
-        }
-
-        footer span a {
-            font-weight: 500;
-            color: #b7b7b7;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .menu-btn i {
-            display: none;
-            transition: all 0.3s ease;
-        }
-
-        .menu-btn i:hover {
-            color: #fff;
-            transition: all 0.3s ease;
-        }
-
-        .menu-btn a {
-            display: block;
-        }
-
-        @media(max-width: 495px) {
-            .menu-btn i {
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .menu-toggle {
                 display: block;
+                margin-left: auto;
+                /* Push the menu-toggle to the right */
+
             }
 
-            .menu-btn a {
-                display: none;
+            nav .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-direction: row-reverse;
             }
 
-            nav .menu-btn {
-                top: 27px;
-                font-size: 25px;
+            nav ul {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background-color: var(--header-bg);
+                flex-direction: column;
+                align-items: center;
+                padding: 2rem 0;
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+                transform: translateY(-150%);
+                transition: transform 0.3s ease-in-out;
+                z-index: 999;
+                border-bottom: 1px solid var(--border-color);
             }
-        }
 
-        @media(max-width: 390px) {
-            nav .navbar .logo a {
-                font-size: 23.5px;
+            nav ul.active {
+                transform: translateY(0);
             }
 
-            .logo img {
-                width: 11%;
-                height: 80%;
-            }
-
-            nav .menu-btn {
-                top: 18px;
-            }
-        }
-
-        @media(max-width: 392px) {
             .hero h1 {
-                margin-top: 40px;
+                font-size: 2.2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+
+            footer .container {
+                flex-direction: column;
             }
         }
 
-        @media(max-width: 339px) {
-            .hero h1 {
-                margin-top: 150px;
+        @media (max-width: 480px) {
+            :root {
+                --section-padding: 2rem 4%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            .hero {
+                padding: 6rem 0 3rem;
             }
         }
     </style>
 </head>
-<header>
-    <nav>
-        <div class="navbar">
-            <div class="logo">
-                <div class="image">
-                    <img src="/Assets/Images/dg.svg" alt="" />
-                </div>
-                <div class="text">
-                    <a href="#">MBK Tech Studio</a>
-                </div>
-            </div>
-            <div class="menu-btn">
-                <a href="/login">Login</a>
-                <i onclick="loadpage('/login')" class="fa-solid fa-right-to-bracket"></i>
-            </div>
-        </div>
-    </nav>
-</header>
 
 <body>
+    <header>
+        <nav class="sticky">
+            <div class="container">
+                <button class="menu-toggle" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    AI Chat App
+                    <span style="font-size: 10px;"> by <a href="https://mbktechstudio.com"
+                            target="_blank">mbktechstudio</a> </span>
+                </div>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#details">Details</a></li>
+                    <li><a href="#try-demo">Demo</a></li>
+                    <li><a href="#developers">Developers</a></li>
+                    <li><a href="/login"><i class="fas fa-sign-in-alt login-icon"></i> Login</a></li>
+                    <li><a href="#try-demo" class="btn btn-primary">Try Demo</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
     <section class="hero">
-        <div class="hero-content">
-            <br> <br><br>
-            <h1>AI Chatbot Solution</h1>
-            <p>Have you ever faced restrictions on AI apps and websites at companies, colleges, or universities network,
-                making it difficult
-                to access them? Look no further! This solution is for you. This project by MBK Tech Studio enables you
-                to use AI APIs as
-                your chatbot and create your own custom AI chatbot using various free AI APIs. You can easily deploy
-                this open-source
-                project on platforms like Vercel or Netlify to bypass AI restrictions.</p>
-            <div class="cta-buttons">
-                <a href="/login?username=demo&password=demo" class="btn btn-primary">Try Live Demo</a>
-                <a href="https://github.com/MIbnEKhalid/ChatBot" class="btn btn-secondary">Deploy</a>
+        <div class="container">
+            <h1>Experience the Power of AI Chat</h1>
+            <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI models
+                and enjoy a customizable, restriction-free chat experience.</p>
+            <div class="hero-buttons">
+                <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
+                <a href="#details" class="btn btn-secondary">Learn Features</a>
             </div>
         </div>
     </section>
-    <section class="product-features" style="padding: 3rem 5%; background: #161b22; color: #f8f9fa;">
-        <div class="features-content" style="max-width: 1200px; margin: 0 auto; text-align: center;">
-            <h2 style="margin-bottom: 1.5rem;">Why Choose Our AI Chatbot?</h2>
-            <p style="margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Our AI Chatbot solution is designed to overcome network restrictions and empower you with seamless and
-                powerful conversation capabilities.
-                Enjoy fast integration, customizable features, and reliable performance that keeps you ahead.
-            </p>
-            <div class="features-grid"
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
-                <div class="feature-card"
-                    style="background-color: #1f242a; padding: 1.5rem; border-radius: 8px; border: 1px solid #2e343b;">
-                    <h3>Seamless Integration</h3>
-                    <p>Easily blend our solution with your existing systems.</p>
+
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-rocket feature-icon"></i>
+                    <h3>Seamless API Integration</h3>
+                    <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs
+                        effortlessly.</p>
                 </div>
-                <div class="feature-card"
-                    style="background-color: #1f242a; padding: 1.5rem; border-radius: 8px; border: 1px solid #2e343b;">
-                    <h3>Customizable Experience</h3>
-                    <p>Tailor features to meet your business needs and branding.</p>
+                <div class="feature-card">
+                    <i class="fas fa-cog feature-icon"></i>
+                    <h3>Highly Customizable</h3>
+                    <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding.
+                    </p>
                 </div>
-                <div class="feature-card"
-                    style="background-color: #1f242a; padding: 1.5rem; border-radius: 8px; border: 1px solid #2e343b;">
-                    <h3>Reliable Performance</h3>
-                    <p>Experience robust, high-speed performance even during peak usage.</p>
+                <div class="feature-card">
+                    <i class="fas fa-lock-open feature-icon"></i>
+                    <h3>Bypass Restrictions</h3>
+                    <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI
+                        anywhere.</p>
                 </div>
-                <div class="feature-card"
-                    style="background-color: #1f242a; padding: 1.5rem; border-radius: 8px; border: 1px solid #2e343b;">
-                    <h3>24/7 Support</h3>
-                    <p>Get expert assistance anytime you need it.</p>
+                <div class="feature-card">
+                    <i class="fas fa-code feature-icon"></i>
+                    <h3>Open Source & Extensible</h3>
+                    <p>Built on an open-source platform, allowing for community contributions and deep customization.
+                    </p>
                 </div>
             </div>
-            <a href="/product-details" class="btn btn-primary" style="display: inline-block; margin-top: 2rem;">Learn
-                More</a>
         </div>
     </section>
-    <div class="scroll-button">
-        <a href="#">
-            <i class="fas fa-arrow-up" aria-hidden="true"></i>
-        </a>
-    </div>
+
+    <section class="product-details" id="details">
+        <div class="container">
+            <h2>Product Details</h2>
+            <p>Our AI Chat Application is designed to provide you with a flexible and powerful way to interact with AI
+                models. Here's a deeper look:</p>
+
+            <h3>Key Capabilities</h3>
+            <ul>
+                <li><strong>Multi-Model Support:</strong> Compatible with Gemini, DeepSeek, and easily extensible to
+                    other AI APIs.</li>
+                <li><strong>Customizable Settings:</strong> Adjust temperature, model selection, and appearance to
+                    personalize your experience.</li>
+                <li><strong>User-Friendly Interface:</strong> Clean and intuitive chat interface for seamless
+                    conversations.</li>
+                <li><strong>Deployment Flexibility:</strong> Deployable on Vercel, Netlify, and other platforms for
+                    unrestricted access.</li>
+                <li><strong>Open API Architecture:</strong> Allows developers to extend and integrate the chatbot into
+                    other systems.</li>
+            </ul>
+
+            <h3>Use Cases</h3>
+            <p>Our AI Chat Application is perfect for:</p>
+            <ol>
+                <li><strong>Workplace Productivity:</strong> Access AI assistants on restricted networks to boost
+                    efficiency.</li>
+                <li><strong>Educational Research:</strong> Enable students and educators to use AI for learning and
+                    research in schools and universities.</li>
+                <li><strong>Personal AI Assistance:</strong> Create a personal AI assistant for daily tasks,
+                    brainstorming, and information retrieval.</li>
+                <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various
+                    AI models and chatbot functionalities.</li>
+            </ol>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="try-demo" id="try-demo">
+        <div class="container">
+            <h2>Try the Live Demo</h2>
+            <p>Experience the AI Chat Application firsthand. Click the button below to access the live demo.</p>
+            <a href="/demo" class="btn btn-primary">Launch Demo</a>
+        </div>
+    </section>
+
+    <section class="development" id="developers">
+        <div class="container">
+            <h2>Development Team</h2>
+            <p>Meet the team behind the AI Chat Application:</p>
+            <div class="developer-grid">
+                <a target="_blank" href="http://portal.mbktechstudio.com/ibnekhalid" class="developer-card">
+                    <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fas fa-user-circle"></i></div>
+                    <p class="developer-name">Muhammad Bin Khalid</p>
+                </a>
+                <a target="_blank" href="http://portal.mbktechstudio.com/maaz.waheed" class="developer-card">
+                    <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fas fa-user-circle"></i></div>
+                    <p class="developer-name">Maaz Waheed</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="learn-more" id="learn-more">
+        <div class="container">
+            <h2>Want to Learn More?</h2>
+            <p>Explore our documentation, deployment guides, and FAQs to get a comprehensive understanding of the AI
+                Chat Application.</p>
+            <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-primary" target="_blank"
+                rel="noopener noreferrer">View on GitHub</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <span>
+                © <span id="year"></span> MBK Tech Studio
+            </span>
+            <span>
+                <a href="/info/Terms&Conditions" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
+                |
+                <a href="/FAQs" target="_blank" rel="noopener noreferrer">FAQs</a>
+                |
+                <a href="https://mbktechstudio.com/Support/" target="_blank" rel="noopener noreferrer">Support &
+                    Contact</a>
+            </span>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navMenu = document.querySelector('nav ul');
+
+            menuToggle.addEventListener('click', function () {
+                navMenu.classList.toggle('active');
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            // Close menu when clicking on a link
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', function (event) {
+                    if (window.innerWidth <= 768) {
+                        navMenu.classList.remove('active');
+                        const icon = document.querySelector('.menu-toggle i');
+                        icon.classList.add('fa-bars');
+                        icon.classList.remove('fa-times');
+                    }
+
+                    // Adjust scroll position for sticky header
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        event.preventDefault();
+                        const offsetTop = targetElement.offsetTop - 70;
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Update year in footer
+            document.getElementById('year').textContent = new Date().getFullYear();
+        });
+    </script>
 </body>
-<footer>
-    <div class="footer-links">
-        <span>
-            ©
-            <span id="year"></span>
-            <a class="links" href="https://github.com/MIbnEKhalid" target="_blank">Muhammad Bin Khalid</a>. All Rights
-            Reserved |
-            <a class="links" href="/info/Terms&Conditions" target="_blank">Terms &amp; Conditions</a>
-            |
-            <a class="links" href="/FAQs" target="_blank">FAQs</a>
-            |
-            <a class="links" href="https://mbktechstudio.com/Support/" target="_blank">Support &amp; Contact</a>
-        </span>
-    </div>
-</footer>
-<script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-</script>
-<script>
-    function loadpage(page) {
-        window.location.href = page;
-    }
-</script>
-<script src="/Assets/Scripts/header.js"></script>
 
 </html>
