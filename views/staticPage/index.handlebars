@@ -302,6 +302,36 @@
             color: var(--accent-color);
         }
 
+        /* Model Selection Section */
+        .model-selection {
+            background-color: var(--header-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .model-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .model-table th, .model-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .model-table th {
+            background-color: rgba(3, 218, 198, 0.1);
+            color: var(--accent-color);
+        }
+
+        .model-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
         /* Try Demo Section */
         .try-demo {
             padding: var(--section-padding);
@@ -456,6 +486,11 @@
             footer .container {
                 flex-direction: column;
             }
+
+            .model-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
 
         @media (max-width: 480px) {
@@ -578,6 +613,48 @@
                 <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various
                     AI models and chatbot functionalities.</li>
             </ol>
+
+            <div class="model-selection">
+                <h3>Gemini Model Selection Guide</h3>
+                <p>Choose the right Gemini model for your needs based on these key features:</p>
+                
+                <table class="model-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Type</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Gemini 2.0 Flash</strong></td>
+                            <td>Text</td>
+                            <td>Next generation features, speed, thinking, realtime responses</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemini 2.0 Flash-Lite</strong></td>
+                            <td>Text</td>
+                            <td>Cost efficiency and low latency requirements</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemini 1.5 Flash</strong></td>
+                            <td>Text</td>
+                            <td>Fast and versatile performance across a diverse variety of tasks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemini 1.5 Flash-8B</strong></td>
+                            <td>Text</td>
+                            <td>High volume and lower intelligence tasks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemini 1.5 Pro</strong></td>
+                            <td>Text</td>
+                            <td>Complex reasoning tasks requiring more intelligence</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 

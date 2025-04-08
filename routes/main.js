@@ -337,35 +337,34 @@ router.get('/api/chat/histories/:chatId', async (req, res) => {
     res.status(404).json({ message: "Chat history not found." });
   }
 });
+async function getUserSettings(username) {
+  try {
+    const result = await pool1.query(
+      `SELECT ai_model, temperature
+       FROM user_settings
+       WHERE username = $1`,
+      [username]
+    );
 
-router.post('/api/bot-chat', async (req, res) => {
-  const userMessage = req.body.message;
-  if (!userMessage) {
-    return res.status(400).json({ message: "Chat message is required." });
-  }
-
-
-  const temperature = Math.min(Math.max(parseFloat(req.body.temperature || 1.0), 0), 2);
-  let conversationHistory = [];
-  const chatId = req.body.chatId;
-
-  if (chatId) {
-    const fetchedHistory = await fetchChatHistoryById(chatId);
-    if (fetchedHistory && fetchedHistory.conversation_history) {
-      conversationHistory = fetchedHistory.conversation_history;
+    if (result.rows.length > 0) {
+      // User settings found
+      const settings = result.rows[0];
+      return {
+        modelName: settings.ai_model, // Assuming column name is ai_model
+        temperature: settings.temperature // Assuming column name is temperature
+      };
+    } else {
+      // No settings found for this user
+      return null; // Or you could return a default settings object instead of null
     }
+
+  } catch (error) {
+    console.error("Error retrieving user settings:", error);
+    return null; // Or throw the error if you want to handle it differently up the call stack
   }
-
-  conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
-
-  let geminiApiKey;
-  geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-
-  if (!geminiApiKey) {
-    return res.status(500).json({ error: "Gemini API key not configured." });
-  }
-
-  const geminiApiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+}
+async function gemini(geminiApiKey, models_name, conversationHistory, temperature) {
+  const geminiApiUrl = `https://generativelanguage.googleapis.com/v1/models/${models_name}:generateContent?key=${geminiApiKey}`;
 
   try {
     const geminiResponse = await fetch(geminiApiUrl, {
@@ -374,7 +373,7 @@ router.post('/api/bot-chat', async (req, res) => {
       body: JSON.stringify({
         contents: conversationHistory,
         generationConfig: {
-          temperature: temperature // Add temperature to the request
+          temperature: temperature
         }
       })
     });
@@ -382,44 +381,101 @@ router.post('/api/bot-chat', async (req, res) => {
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.json();
       console.error("Gemini API error:", errorData);
-      return res.status(500).json({ message: "Gemini API request failed.", details: errorData });
+      // Improved error message to include details from Gemini API response
+      throw new Error(`Gemini API request failed with status ${geminiResponse.status}: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const geminiData = await geminiResponse.json();
     const aiResponseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    return aiResponseText;
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    // Re-throw the error to be handled by the route handler
+    throw error;
+  }
+}
+
+router.post('/api/bot-chat', async (req, res) => {
+    const userMessage = req.body.message;
+    if (!userMessage) {
+      return res.status(400).json({ message: "Chat message is required." });
+    }
+    const username = req.session.user.username; // Assuming you have user session
+
+    const userSettings = await getUserSettings(username);
+    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature|| 1.0), 0), 2);
+    let conversationHistory = [];
+    const chatId = req.body.chatId;
+
+    try { // Wrap the chat history fetching in try-catch
+        if (chatId) {
+            const fetchedHistory = await fetchChatHistoryById(chatId);
+            if (fetchedHistory && fetchedHistory.conversation_history) {
+                conversationHistory = fetchedHistory.conversation_history;
+            } else if (chatId && !fetchedHistory) {
+                // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
+                return res.status(404).json({ message: "Chat history not found for the given chatId." });
+            }
+        }
+    } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
+        console.error("Error fetching chat history:", dbError);
+        return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
+    }
+
+
+    conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+    let geminiApiKey;
+    geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
+
+    if (!geminiApiKey) {
+      return res.status(500).json({ error: "Gemini API key not configured." });
+    }
+    const models_name =userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash"
+    console.log(models_name);
+
+    let aiResponseText;
+    try {
+      aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
+    } catch (geminiError) { // Catch errors from gemini function
+      return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
+    }
 
     if (aiResponseText) {
       conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
-      if (chatId) {
-        await pool1.query(
-          `UPDATE Ai_history 
-           SET conversation_history = $1, 
-               created_at = CURRENT_TIMESTAMP,
-               temperature = $3 
-           WHERE id = $2`,
-          [JSON.stringify(conversationHistory), chatId, temperature]
-        );
-      } else {
-        const insertResult = await pool1.query(
-          `INSERT INTO Ai_history (conversation_history, username, temperature) 
-           VALUES ($1, $2, $3) 
-           RETURNING id`,
-          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
-        );
-        req.newChatId = insertResult.rows[0].id;
+      try { // Wrap database updates/inserts in try-catch
+          if (chatId) {
+              await pool1.query(
+                  `UPDATE Ai_history
+                   SET conversation_history = $1,
+                       created_at = CURRENT_TIMESTAMP,
+                       temperature = $3
+                   WHERE id = $2`,
+                  [JSON.stringify(conversationHistory), chatId, temperature]
+              );
+          } else {
+              const insertResult = await pool1.query(
+                  `INSERT INTO Ai_history (conversation_history, username, temperature)
+                   VALUES ($1, $2, $3)
+                   RETURNING id`,
+                  [JSON.stringify(conversationHistory), req.session.user.username, temperature]
+              );
+              req.newChatId = insertResult.rows[0].id;
+          }
+      } catch (dbError) { // Catch errors from database operations (pool1.query)
+          console.error("Error updating/inserting chat history:", dbError);
+          return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
       }
+
 
       res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
     } else {
       res.status(500).json({ message: "Gemini API returned empty response." });
     }
 
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    res.status(500).json({ message: "Error processing Gemini API.", error: error.message, details: error });
   }
-});
+);
 
 router.post('/api/chat/clear-history/:chatId', async (req, res) => {
   const chatId = req.params.chatId;
