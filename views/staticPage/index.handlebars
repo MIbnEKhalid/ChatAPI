@@ -14,6 +14,7 @@
     <style>
         /* Base Styles with Dark Theme */
         :root {
+            --main-border-color: #3d444d;
             --base-font-size: 16px;
             --bg-color: #121212;
             --text-color: #e0e0e0;
@@ -55,7 +56,7 @@
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -138,6 +139,20 @@
             box-shadow: var(--box-shadow);
         }
 
+        .btn-github {
+            background-color: #212830;
+            padding: 10px 10px !important;
+            border: 2px solid var(--main-border-color) !important;
+            color: var(--light-text);
+            transition: all 0.3s ease;
+        }
+
+        .btn-github:hover {
+            background-color: transparent;
+            border: 2px solid var(--main-border-color) !important;
+            color: var(--light-text);
+        }
+
         /* Header & Navigation */
         header {
             background-color: var(--header-bg);
@@ -156,8 +171,6 @@
         nav .container {
             display: flex;
             justify-content: space-evenly;
-            align-items: center;
-            align-content: center;
             flex-wrap: nowrap;
             flex-direction: row;
         }
@@ -399,7 +412,6 @@
             nav .container {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
                 flex-direction: row-reverse;
             }
 
@@ -484,7 +496,6 @@
                     <li><a href="#try-demo">Demo</a></li>
                     <li><a href="#developers">Developers</a></li>
                     <li><a href="/login"><i class="fas fa-sign-in-alt login-icon"></i> Login</a></li>
-                    <li><a href="#try-demo" class="btn btn-primary">Try Demo</a></li>
                 </ul>
             </div>
         </nav>
@@ -498,6 +509,7 @@
             <div class="hero-buttons">
                 <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
                 <a href="#details" class="btn btn-secondary">Learn Features</a>
+                <a href="https://github.com/MIbnEKhalid/ChatAPI" target="_blank" class="btn btn-github"><i class="fab fa-github" aria-hidden="true"></i>  Open In GitHub</a>
             </div>
         </div>
     </section>
@@ -566,10 +578,6 @@
                 <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various
                     AI models and chatbot functionalities.</li>
             </ol>
-
-            <div style="text-align: center; margin-top: 3rem;">
-                <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
-            </div>
         </div>
     </section>
 
