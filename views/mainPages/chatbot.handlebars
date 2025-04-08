@@ -1404,52 +1404,53 @@
                                 <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                             </select>
                         </div>
-                        <div class="settings-group">
-                            <label for="temperature">Response Creativity</label>
-                            <input type="range" id="temperature" min="0" max="200" value="100">
-                            <span id="temperature-value">1.0</span>
-                        </div>
                     </div>
-                    <div class="settings-content" data-tab-content="appearance">
-                        <div class="settings-group">
-                            <label for="theme-select">Theme</label>
-                            <div class="settings-dropdown">
-                                <select id="theme-select">
-                                    <option value="dark">Dark</option>
-                                    <option value="light">Light</option>
-                                    <option value="sepia">Sepia</option>
-                                    <option value="contrast">Contrast</option>
-                                    <option value="system">System Default</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <label for="font-size">Font Size</label>
-                            <input type="range" id="font-size" min="12" max="24" value="16">
-                            <span id="font-size-value">16px</span>
-                        </div>
-                    </div>
-                    <div class="settings-content" data-tab-content="account">
-                        <div class="settings-group">
-                            <label>Account Information</label>
-                            <div class="account-info">
-                                <p>User:
-                                    <sapn id="headerProfileUserName"></span>
-                                </p>
-                            </div>
-
-                            <button id="logout-button" onclick="logout()" class="btn btn-danger">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
-                        </div>
-                    </div>
-                    <div class="settings-footer">
-                        <a id="save-settings" class="btn btn-save"><i class="fas fa-save" aria-hidden="true"></i> Save
-                            Settings</a>
-                        <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
+                    <div class="settings-group">
+                        <label for="temperature">Response Creativity</label>
+                        <input type="range" id="temperature" min="0" max="200" value="100">
+                        <span id="temperature-value">1.0</span>
                     </div>
                 </div>
-                <div class="settings-popup-overlay" id="settings-popup-overlay"></div>
+                <div class="settings-content" data-tab-content="appearance">
+                    <div class="settings-group">
+                        <label for="theme-select">Theme</label>
+                        <div class="settings-dropdown">
+                            <select id="theme-select">
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                                <option value="sepia">Sepia</option>
+                                <option value="contrast">Contrast</option>
+                                <option value="system">System Default</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label for="font-size">Font Size</label>
+                        <input type="range" id="font-size" min="12" max="24" value="16">
+                        <span id="font-size-value">16px</span>
+                    </div>
+                </div>
+                <div class="settings-content" data-tab-content="account">
+                    <div class="settings-group">
+                        <label>Account Information</label>
+                        <div class="account-info">
+                            <p>User:
+                                <sapn id="headerProfileUserName"></span>
+                            </p>
+                        </div>
+
+                        <button id="logout-button" onclick="logout()" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-footer">
+                    <a id="save-settings" class="btn btn-save"><i class="fas fa-save" aria-hidden="true"></i> Save
+                        Settings</a>
+                    <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+            <div class="settings-popup-overlay" id="settings-popup-overlay"></div>
 
         </section>
     </main>
