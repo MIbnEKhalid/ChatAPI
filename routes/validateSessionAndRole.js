@@ -1,4 +1,4 @@
-import { pool1 } from "./pool.js";
+import { pool } from "./pool.js";
  
 
 const UserCredentialTable = process.env.UserCredentialTable;
@@ -13,7 +13,7 @@ async function validateSession(req, res, next) {
   try {
     const { id, sessionId } = req.session.user;
     const query = `SELECT "SessionId", "Active" FROM "${UserCredentialTable}" WHERE "id" = $1`;
-    const result = await pool1.query(query, [id]);
+    const result = await pool.query(query, [id]);
 
     // Check if user exists and session ID matches
     if (result.rows.length === 0 || result.rows[0].SessionId !== sessionId) {
@@ -65,7 +65,7 @@ const checkRolePermission = (requiredRole) => {
       const userId = req.session.user.id;
 
       const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "id" = $1`;
-      const result = await pool1.query(query, [userId]);
+      const result = await pool.query(query, [userId]);
 
       if (result.rows.length === 0) {
         return res
@@ -129,7 +129,7 @@ async function getUserData(UserName, parameters) {
     if (userParameters.length > 0) {
       const userQuery = `SELECT ${userParameters.map(field => `"${field}"`).join(", ")} 
                          FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-      const userQueryResult = await pool1.query(userQuery, [UserName]);
+      const userQueryResult = await pool.query(userQuery, [UserName]);
       if (userQueryResult.rows.length === 0) return { error: "User not found" };
       userResult = userQueryResult.rows[0];
     }
@@ -138,7 +138,7 @@ async function getUserData(UserName, parameters) {
     if (profileParameters.length > 0) {
       const profileQuery = `SELECT ${profileParameters.map(field => `"${field}"`).join(", ")} 
                             FROM profiledata WHERE "UserName" = $1`;
-      const profileQueryResult = await pool1.query(profileQuery, [UserName]);
+      const profileQueryResult = await pool.query(profileQuery, [UserName]);
       if (profileQueryResult.rows.length === 0) return { error: "Profile data not found" };
       profileResult = profileQueryResult.rows[0];
     }
