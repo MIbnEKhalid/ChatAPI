@@ -17,10 +17,11 @@ import Handlebars from "handlebars";
 
 import { marked, use } from 'marked';
 
-import { pool1 } from "./pool.js";
+import { pool } from "./pool.js";
 import { authenticate } from "./auth.js";
 import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./validateSessionAndRole.js";
 import fetch from 'node-fetch';
+import cookieParser from "cookie-parser"; // Import cookie-parser
 
 dotenv.config();
 const router = express.Router();
@@ -38,7 +39,7 @@ router.use(express.urlencoded({ extended: true }));
 router.use(
   session({
     store: new PgSession({
-      pool: pool1, // Connection pool
+      pool: pool, // Connection pool
       tableName: "session", // Use another table-name than the default "session" one
     }),
     secret: process.env.session_seceret_key, // Replace with your secret key
@@ -46,9 +47,14 @@ router.use(
     saveUninitialized: false,
     cookie: {
       maxAge: cookieExpireTime,
+      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use root domain for subdomain sharing
+      httpOnly: true,
+      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
     },
   })
 );
+
+router.use(cookieParser()); // Use cookie-parser middleware
 
 router.use((req, res, next) => {
   if (req.session && req.session.user) {
@@ -77,7 +83,7 @@ router.use(async (req, res, next) => {
       maxAge: cookieExpireTime,
     });
     const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const result = await pool1.query(query, [req.session.user.username]);
+    const result = await pool.query(query, [req.session.user.username]);
     if (result.rows.length > 0) {
       req.session.user.role = result.rows[0].Role;
       res.cookie("userRole", req.session.user.role, {
@@ -85,6 +91,29 @@ router.use(async (req, res, next) => {
       });
     } else {
       req.session.user.role = null;
+    }
+  }
+  next();
+});
+
+router.use(async (req, res, next) => {
+  // Check for sessionId cookie if session is not initialized
+  if (!req.session.user && req.cookies && req.cookies.sessionId) {
+    console.log("Restoring session from sessionId cookie"); // Log session restoration
+    const sessionId = req.cookies.sessionId;
+    const query = `SELECT * FROM "${UserCredentialTable}" WHERE "SessionId" = $1`;
+    const result = await pool.query(query, [sessionId]);
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      req.session.user = {
+        id: user.id,
+        username: user.UserName,
+        sessionId,
+      };
+      console.log(`Session restored for user: ${user.UserName}`); // Log successful session restoration
+    } else {
+      console.warn("No matching session found for sessionId"); // Log if no session is found
     }
   }
   next();
@@ -101,10 +130,10 @@ router.get(["/login", "/signin"], (req, res) => {
 // Terminate all sessions route
 router.post("/terminateAllSessions", authenticate(process.env.Main_SECRET_TOKEN), async (req, res) => {
   try {
-    await pool1.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
+    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
 
     // Clear the session table
-    await pool1.query('DELETE FROM "session"');
+    await pool.query('DELETE FROM "session"');
 
     // Destroy all sessions on the server
     req.session.destroy((err) => {
@@ -156,7 +185,7 @@ router.post("/login", async (req, res) => {
   try {
     // Query to check if the username exists
     const userQuery = `SELECT * FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const userResult = await pool1.query(userQuery, [username]);
+    const userResult = await pool.query(userQuery, [username]);
 
     if (userResult.rows.length === 0) {
       console.log(`Login attempt with non-existent username: \"${username}\"`);
@@ -183,10 +212,10 @@ router.post("/login", async (req, res) => {
       return res
         .status(403)
         .json({ success: false, message: "Account is inactive" });
-    } 
+    }
     // Generate session ID
     const sessionId = crypto.randomBytes(256).toString("hex"); // Generate a secure random session ID
-    await pool1.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
+    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
       sessionId,
       user.id,
     ]);
@@ -215,7 +244,7 @@ router.post("/logout", async (req, res) => {
     try {
       const { id, username } = req.session.user;
       const query = `SELECT "Active" FROM "${UserCredentialTable}" WHERE "id" = $1`;
-      const result = await pool1.query(query, [id]);
+      const result = await pool.query(query, [id]);
 
       if (result.rows.length > 0 && !result.rows[0].Active) {
         console.log("Account is inactive during logout");
@@ -265,7 +294,7 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("SuperAdmin"), async (req
 
 async function fetchChatHistories(username) {
   try {
-    const historyResult = await pool1.query(
+    const historyResult = await pool.query(
       'SELECT id, created_at, temperature FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
       [username]
     );
@@ -302,7 +331,7 @@ async function fetchChatHistories(username) {
 
 async function fetchChatHistoryById(chatId) {
   try {
-    const historyResult = await pool1.query(
+    const historyResult = await pool.query(
       'SELECT id, conversation_history, temperature FROM Ai_history WHERE id = $1',
       [chatId]
     );
@@ -339,7 +368,7 @@ router.get('/api/chat/histories/:chatId', async (req, res) => {
 });
 async function getUserSettings(username) {
   try {
-    const result = await pool1.query(
+    const result = await pool.query(
       `SELECT ai_model, temperature
        FROM user_settings
        WHERE username = $1`,
@@ -396,85 +425,85 @@ async function gemini(geminiApiKey, models_name, conversationHistory, temperatur
 }
 
 router.post('/api/bot-chat', async (req, res) => {
-    const userMessage = req.body.message;
-    if (!userMessage) {
-      return res.status(400).json({ message: "Chat message is required." });
+  const userMessage = req.body.message;
+  if (!userMessage) {
+    return res.status(400).json({ message: "Chat message is required." });
+  }
+  const username = req.session.user.username; // Assuming you have user session
+
+  const userSettings = await getUserSettings(username);
+  const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || 1.0), 0), 2);
+  let conversationHistory = [];
+  const chatId = req.body.chatId;
+
+  try { // Wrap the chat history fetching in try-catch
+    if (chatId) {
+      const fetchedHistory = await fetchChatHistoryById(chatId);
+      if (fetchedHistory && fetchedHistory.conversation_history) {
+        conversationHistory = fetchedHistory.conversation_history;
+      } else if (chatId && !fetchedHistory) {
+        // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
+        return res.status(404).json({ message: "Chat history not found for the given chatId." });
+      }
     }
-    const username = req.session.user.username; // Assuming you have user session
-
-    const userSettings = await getUserSettings(username);
-    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature|| 1.0), 0), 2);
-    let conversationHistory = [];
-    const chatId = req.body.chatId;
-
-    try { // Wrap the chat history fetching in try-catch
-        if (chatId) {
-            const fetchedHistory = await fetchChatHistoryById(chatId);
-            if (fetchedHistory && fetchedHistory.conversation_history) {
-                conversationHistory = fetchedHistory.conversation_history;
-            } else if (chatId && !fetchedHistory) {
-                // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
-                return res.status(404).json({ message: "Chat history not found for the given chatId." });
-            }
-        }
-    } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
-        console.error("Error fetching chat history:", dbError);
-        return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
-    }
+  } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
+    console.error("Error fetching chat history:", dbError);
+    return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
+  }
 
 
-    conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
+  conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
 
-    let geminiApiKey;
-    geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
+  let geminiApiKey;
+  geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
 
-    if (!geminiApiKey) {
-      return res.status(500).json({ error: "Gemini API key not configured." });
-    }
-    const models_name =userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash"
-    console.log(models_name);
+  if (!geminiApiKey) {
+    return res.status(500).json({ error: "Gemini API key not configured." });
+  }
+  const models_name = userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash"
+  console.log(models_name);
 
-    let aiResponseText;
-    try {
-      aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
-    } catch (geminiError) { // Catch errors from gemini function
-      return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
-    }
+  let aiResponseText;
+  try {
+    aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
+  } catch (geminiError) { // Catch errors from gemini function
+    return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
+  }
 
-    if (aiResponseText) {
-      conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+  if (aiResponseText) {
+    conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
-      try { // Wrap database updates/inserts in try-catch
-          if (chatId) {
-              await pool1.query(
-                  `UPDATE Ai_history
+    try { // Wrap database updates/inserts in try-catch
+      if (chatId) {
+        await pool.query(
+          `UPDATE Ai_history
                    SET conversation_history = $1,
                        created_at = CURRENT_TIMESTAMP,
                        temperature = $3
                    WHERE id = $2`,
-                  [JSON.stringify(conversationHistory), chatId, temperature]
-              );
-          } else {
-              const insertResult = await pool1.query(
-                  `INSERT INTO Ai_history (conversation_history, username, temperature)
+          [JSON.stringify(conversationHistory), chatId, temperature]
+        );
+      } else {
+        const insertResult = await pool.query(
+          `INSERT INTO Ai_history (conversation_history, username, temperature)
                    VALUES ($1, $2, $3)
                    RETURNING id`,
-                  [JSON.stringify(conversationHistory), req.session.user.username, temperature]
-              );
-              req.newChatId = insertResult.rows[0].id;
-          }
-      } catch (dbError) { // Catch errors from database operations (pool1.query)
-          console.error("Error updating/inserting chat history:", dbError);
-          return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
+          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
+        );
+        req.newChatId = insertResult.rows[0].id;
       }
-
-
-      res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
-    } else {
-      res.status(500).json({ message: "Gemini API returned empty response." });
+    } catch (dbError) { // Catch errors from database operations (pool.query)
+      console.error("Error updating/inserting chat history:", dbError);
+      return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
     }
 
+
+    res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
+  } else {
+    res.status(500).json({ message: "Gemini API returned empty response." });
   }
+
+}
 );
 
 router.post('/api/chat/clear-history/:chatId', async (req, res) => {
@@ -483,7 +512,7 @@ router.post('/api/chat/clear-history/:chatId', async (req, res) => {
     return res.status(400).json({ message: "Chat ID is required to delete history." });
   }
   try {
-    await pool1.query('DELETE FROM Ai_history WHERE id = $1', [chatId]);
+    await pool.query('DELETE FROM Ai_history WHERE id = $1', [chatId]);
     res.json({ status: 200, message: "Chat history deleted successfully.", chatId: chatId });
   } catch (error) {
     console.error(`Error deleting chat history with ID: ${chatId}`, error);
@@ -493,7 +522,7 @@ router.post('/api/chat/clear-history/:chatId', async (req, res) => {
 
 async function fetchUserSettings(username) {
   try {
-    const settingsResult = await pool1.query(
+    const settingsResult = await pool.query(
       'SELECT theme, font_size, ai_model, temperature FROM user_settings WHERE username = $1',
       [username]
     );
@@ -522,7 +551,7 @@ async function fetchUserSettings(username) {
 async function saveUserSettings(username, settings) {
   const { theme, fontSize, model, temperature } = settings;
   try {
-    await pool1.query(
+    await pool.query(
       `INSERT INTO user_settings (username, theme, font_size, ai_model, temperature)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (username)
