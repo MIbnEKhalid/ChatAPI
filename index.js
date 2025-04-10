@@ -4,11 +4,11 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mainRoutes from "./routes/main.js";
 import { engine } from "express-handlebars";
-import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./routes/validateSessionAndRole.js";
 import Handlebars from "handlebars";
 import minifyHTML from "express-minify-html";
 import minify from "express-minify";
 import compression from "compression";
+import mbkAuthRouter from "mbkauth";
 
 dotenv.config();
 const app = express();
@@ -19,6 +19,8 @@ const __dirname = path.dirname(__filename);
 
 
 const router = app;
+router.use(mbkAuthRouter);
+
 router.use(express.json());
 router.use(compression());
 router.use(minify());
