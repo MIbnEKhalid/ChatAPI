@@ -79,18 +79,29 @@ router.use((req, res, next) => {
 // So it is safe to use.
 router.use(async (req, res, next) => {
   if (req.session && req.session.user) {
-    res.cookie("username", req.session.user.username, {
-      maxAge: cookieExpireTime,
-    });
-    const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const result = await pool.query(query, [req.session.user.username]);
-    if (result.rows.length > 0) {
-      req.session.user.role = result.rows[0].Role;
-      res.cookie("userRole", req.session.user.role, {
+    try {
+      if (!UserCredentialTable) {
+        throw new Error("UserCredentialTable is not defined in environment variables.");
+      }
+
+      res.cookie("username", req.session.user.username, {
         maxAge: cookieExpireTime,
       });
-    } else {
-      req.session.user.role = null;
+
+      const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
+      const result = await pool.query(query, [req.session.user.username]);
+
+      if (result.rows.length > 0) {
+        req.session.user.role = result.rows[0].Role;
+        res.cookie("userRole", req.session.user.role, {
+          maxAge: cookieExpireTime,
+        });
+      } else {
+        req.session.user.role = null;
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error.message);
+      req.session.user.role = null; // Fallback to null role
     }
   }
   next();
@@ -166,13 +177,13 @@ router.post("/login", async (req, res) => {
 
   //bypass recaptcha for specific users
   if (username !== "ibnekhalid" && username !== "maaz.waheed" && username !== "support") {
-    const response = await fetch(verificationUrl, { method: 'POST' });
-    const body = await response.json();
+      const response = await fetch(verificationUrl, { method: 'POST' });
+      const body = await response.json();
 
-    if (!body.success) {
-      return res.status(400).json({ success: false, message: `Failed reCAPTCHA verification` });
+      if (!body.success) {
+        return res.status(400).json({ success: false, message: `Failed reCAPTCHA verification` });
+      }
     }
-  }
 
   if (!username || !password) {
     console.log("Login attempt with missing username or password");
@@ -226,6 +237,14 @@ router.post("/login", async (req, res) => {
       username: user.UserName,
       sessionId,
     };
+
+    // Set a cookie accessible across subdomains
+    res.cookie("sessionId", sessionId, {
+      maxAge: cookieExpireTime,
+      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use domain only in production
+      httpOnly: true,
+      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
+    });
 
     console.log(`User \"${username}\" logged in successfully`);
     res.status(200).json({
