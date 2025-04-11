@@ -1,17 +1,134 @@
 import express from "express";
 import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
+import session from "express-session";
+import pgSession from "connect-pg-simple";
+import fs from "fs";
+import { promisify } from "util";
+const PgSession = pgSession(session);
+import multer from "multer";
+import { timeStamp } from "console";
+import { exec } from "child_process";
+import speakeasy from "speakeasy";
 import dotenv from "dotenv";
+import { engine } from "express-handlebars"; // Import Handlebars
+import Handlebars from "handlebars";
+
+import { marked, use } from 'marked';
 
 import { pool } from "./pool.js";
-import { authenticate, validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauth";
+import { authenticate } from "./auth.js";
+import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./validateSessionAndRole.js";
 import fetch from 'node-fetch';
+import cookieParser from "cookie-parser"; // Import cookie-parser
 
 dotenv.config();
 const router = express.Router();
 const UserCredentialTable = process.env.UserCredentialTable;
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+const cookieExpireTime = 2 * 24 * 60 * 60 * 1000; // 12 hours
+// cookieExpireTime: 2 * 24 * 60 * 60 * 1000, 2 day
+// cookieExpireTime:  1* 60 * 1000, 1 min 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
+
+router.use(
+  session({
+    store: new PgSession({
+      pool: pool, // Connection pool
+      tableName: "session", // Use another table-name than the default "session" one
+    }),
+    secret: process.env.session_seceret_key, // Replace with your secret key
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: cookieExpireTime,
+      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use root domain for subdomain sharing
+      httpOnly: true,
+      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
+    },
+  })
+);
+
+router.use(cookieParser()); // Use cookie-parser middleware
+
+router.use((req, res, next) => {
+  if (req.session && req.session.user) {
+    const userAgent = req.headers["user-agent"];
+    const userIp =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const formattedIp = userIp === "::1" ? "127.0.0.1" : userIp;
+
+    req.session.otherInfo = {
+      ip: formattedIp,
+      browser: userAgent,
+    };
+
+    next();
+  } else {
+    next();
+  }
+});
+
+// Save the username in a cookie, the cookie user name is use
+// for displaying user name in profile menu. This cookie is not use anyelse where.
+// So it is safe to use.
+router.use(async (req, res, next) => {
+  if (req.session && req.session.user) {
+    try {
+      if (!UserCredentialTable) {
+        throw new Error("UserCredentialTable is not defined in environment variables.");
+      }
+
+      res.cookie("username", req.session.user.username, {
+        maxAge: cookieExpireTime,
+      });
+
+      const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
+      const result = await pool.query(query, [req.session.user.username]);
+
+      if (result.rows.length > 0) {
+        req.session.user.role = result.rows[0].Role;
+        res.cookie("userRole", req.session.user.role, {
+          maxAge: cookieExpireTime,
+        });
+      } else {
+        req.session.user.role = null;
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error.message);
+      req.session.user.role = null; // Fallback to null role
+    }
+  }
+  next();
+});
+
+router.use(async (req, res, next) => {
+  // Check for sessionId cookie if session is not initialized
+  if (!req.session.user && req.cookies && req.cookies.sessionId) {
+    console.log("Restoring session from sessionId cookie"); // Log session restoration
+    const sessionId = req.cookies.sessionId;
+    const query = `SELECT * FROM "${UserCredentialTable}" WHERE "SessionId" = $1`;
+    const result = await pool.query(query, [sessionId]);
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      req.session.user = {
+        id: user.id,
+        username: user.UserName,
+        sessionId,
+      };
+      console.log(`Session restored for user: ${user.UserName}`); // Log successful session restoration
+    } else {
+      console.warn("No matching session found for sessionId"); // Log if no session is found
+    }
+  }
+  next();
+});
 
 router.get(["/login", "/signin"], (req, res) => {
   if (req.session && req.session.user) {
@@ -51,6 +168,134 @@ router.post("/terminateAllSessions", authenticate(process.env.Main_SECRET_TOKEN)
   }
 }
 );
+
+router.post("/login", async (req, res) => {
+
+  const { username, password, token, recaptcha } = req.body;
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptcha}`;
+
+  //bypass recaptcha for specific users
+  if (username !== "ibnekhalid" && username !== "maaz.waheed" && username !== "support") {
+      const response = await fetch(verificationUrl, { method: 'POST' });
+      const body = await response.json();
+
+      if (!body.success) {
+        return res.status(400).json({ success: false, message: `Failed reCAPTCHA verification` });
+      }
+    }
+
+  if (!username || !password) {
+    console.log("Login attempt with missing username or password");
+    return res.status(400).json({
+      success: false,
+      message: "Username and password are required",
+    });
+  }
+
+  try {
+    // Query to check if the username exists
+    const userQuery = `SELECT * FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
+    const userResult = await pool.query(userQuery, [username]);
+
+    if (userResult.rows.length === 0) {
+      console.log(`Login attempt with non-existent username: \"${username}\"`);
+      return res
+        .status(404)
+        .json({ success: false, message: "Username does not exist" });
+    }
+
+    const user = userResult.rows[0];
+
+    // Check if the password matches
+    if (user.Password !== password) {
+      console.log(`Incorrect password attempt for username: \"${username}\"`);
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect password" });
+    }
+
+    // Check if the account is inactive
+    if (!user.Active) {
+      console.log(
+        `Inactive account login attempt for username: \"${username}\"`
+      );
+      return res
+        .status(403)
+        .json({ success: false, message: "Account is inactive" });
+    }
+    // Generate session ID
+    const sessionId = crypto.randomBytes(256).toString("hex"); // Generate a secure random session ID
+    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
+      sessionId,
+      user.id,
+    ]);
+
+    // Store session ID in session
+    req.session.user = {
+      id: user.id,
+      username: user.UserName,
+      sessionId,
+    };
+
+    // Set a cookie accessible across subdomains
+    res.cookie("sessionId", sessionId, {
+      maxAge: cookieExpireTime,
+      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use domain only in production
+      httpOnly: true,
+      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
+    });
+
+    console.log(`User \"${username}\" logged in successfully`);
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      sessionId,
+    });
+  } catch (err) {
+    console.error("Database query error:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+router.post("/logout", async (req, res) => {
+  if (req.session.user) {
+    try {
+      const { id, username } = req.session.user;
+      const query = `SELECT "Active" FROM "${UserCredentialTable}" WHERE "id" = $1`;
+      const result = await pool.query(query, [id]);
+
+      if (result.rows.length > 0 && !result.rows[0].Active) {
+        console.log("Account is inactive during logout");
+      }
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return res
+            .status(500)
+            .json({ success: false, message: "Logout failed" });
+
+        }
+        res.clearCookie("connect.sid");
+        console.log(`User \"${username}\" logged out successfully`);
+        res.status(200).json({ success: true, message: "Logout successful" });
+      });
+    } catch (err) {
+      console.error("Database query error during logout:", err);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal Server Error" });
+      return res.render('templates/Error/500', { error: err }); // Assuming you have an error template
+    }
+  } else {
+    res.status(400).json({ success: false, message: "Not logged in" });
+  }
+});
+
+
+
+
 
 router.get("/chatbot/:chatId?", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
@@ -199,6 +444,57 @@ async function gemini(geminiApiKey, models_name, conversationHistory, temperatur
   }
 }
 
+async function Deepseek(deepseekApiKey, models_name, conversationHistory, temperature) {
+  const deepseekApiUrl = "https://api.deepseek.com/chat/completions";
+
+  try {
+    const deepseekResponse = await fetch(deepseekApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: models_name,   //"deepseek-chat",
+        messages: conversationHistory,
+        stream: false,
+        temperature: temperature
+      })
+    });
+
+    if (!deepseekResponse.ok) {
+      const errorData = await deepseekResponse.json();
+      console.error("Deepseek API error:", errorData);
+      throw new Error(`Deepseek API request failed with status ${deepseekResponse.status}: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const deepseekData = await deepseekResponse.json();
+    const aiResponseText = deepseekData.choices?.[0]?.message?.content;
+    return aiResponseText;
+  } catch (error) {
+    console.error("Error calling Deepseek API:", error);
+    throw error;
+  }
+}
+const transformGeminiToDeepseekHistory = (geminiHistory) => {
+  return geminiHistory.map(message => {
+      let content = ""; // Default content if something is missing
+
+      if (message.parts && Array.isArray(message.parts) && message.parts.length > 0 && message.parts[0].text) {
+          content = message.parts[0].text;
+      } else {
+          console.warn("Warning: Gemini message part structure unexpected or missing text. Using default content.", message);
+          // You could potentially add more sophisticated default content logic here
+          // or even decide to skip the message entirely if that's more appropriate for your use case.
+          content = "No content provided in Gemini history message."; // More informative default
+      }
+
+      return {
+          role: message.role,
+          content: content
+      };
+  });
+};
 router.post('/api/bot-chat', async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) {
@@ -207,75 +503,99 @@ router.post('/api/bot-chat', async (req, res) => {
   const username = req.session.user.username; // Assuming you have user session
 
   const userSettings = await getUserSettings(username);
-  const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || 1.0), 0), 2);
+  const temperature = Math.min(Math.max(parseFloat(userSettings.temperature|| 1.0), 0), 2);
   let conversationHistory = [];
   const chatId = req.body.chatId;
 
   try { // Wrap the chat history fetching in try-catch
-    if (chatId) {
-      const fetchedHistory = await fetchChatHistoryById(chatId);
-      if (fetchedHistory && fetchedHistory.conversation_history) {
-        conversationHistory = fetchedHistory.conversation_history;
-      } else if (chatId && !fetchedHistory) {
-        // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
-        return res.status(404).json({ message: "Chat history not found for the given chatId." });
+      if (chatId) {
+          const fetchedHistory = await fetchChatHistoryById(chatId);
+          if (fetchedHistory && fetchedHistory.conversation_history) {
+              conversationHistory = fetchedHistory.conversation_history;
+          } else if (chatId && !fetchedHistory) {
+              // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
+              return res.status(404).json({ message: "Chat history not found for the given chatId." });
+          }
       }
-    }
   } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
-    console.error("Error fetching chat history:", dbError);
-    return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
+      console.error("Error fetching chat history:", dbError);
+      return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
   }
 
 
   conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
 
-  let geminiApiKey;
-  geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-
-  if (!geminiApiKey) {
-    return res.status(500).json({ error: "Gemini API key not configured." });
-  }
-  const models_name = userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash"
-  console.log(models_name);
-
   let aiResponseText;
-  try {
-    aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
-  } catch (geminiError) { // Catch errors from gemini function
-    return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
+  const models_name =userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash" "deepseek-chat"
+  console.log("Model Name:", models_name);
+
+  // Function to transform Gemini history to Deepseek history format
+  const transformGeminiToDeepseekHistory = (geminiHistory) => {
+      return geminiHistory.map(message => ({
+          role: message.role,
+          content: message.parts[0].text // Assuming parts[0].text always exists
+      }));
+  };
+
+  if (models_name === "deepseek-chat") {
+      let deepseekApiKey;
+      deepseekApiKey = process.env.Deepseek_maaz_waheed; // Assuming you have DEEPSEEK_API_KEY in your env
+      if (!deepseekApiKey) {
+        return res.status(500).json({ error: "Deepseek API key not configured." });
+      }
+      try {
+        // Transform conversation history to Deepseek format before calling Deepseek API
+        const deepseekFormattedHistory = transformGeminiToDeepseekHistory(conversationHistory);
+        aiResponseText = await Deepseek(deepseekApiKey, models_name, deepseekFormattedHistory, temperature);
+      } catch (deepseekError) { // Catch errors from Deepseek function
+        return res.status(500).json({ message: "Error processing Deepseek API.", error: deepseekError.message });
+      }
+  } else { // Default to Gemini if models_name is not "deepseek-chat" or any other model you want to add later
+      let geminiApiKey;
+      geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
+
+      if (!geminiApiKey) {
+        return res.status(500).json({ error: "Gemini API key not configured." });
+      }
+      try {
+        aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
+      } catch (geminiError) { // Catch errors from gemini function
+        return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
+      }
   }
+
 
   if (aiResponseText) {
     conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
     try { // Wrap database updates/inserts in try-catch
-      if (chatId) {
-        await pool.query(
-          `UPDATE Ai_history
-                   SET conversation_history = $1,
-                       created_at = CURRENT_TIMESTAMP,
-                       temperature = $3
-                   WHERE id = $2`,
-          [JSON.stringify(conversationHistory), chatId, temperature]
-        );
-      } else {
-        const insertResult = await pool.query(
-          `INSERT INTO Ai_history (conversation_history, username, temperature)
-                   VALUES ($1, $2, $3)
-                   RETURNING id`,
-          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
-        );
-        req.newChatId = insertResult.rows[0].id;
-      }
+        if (chatId) {
+            await pool.query(
+                `UPDATE Ai_history
+                 SET conversation_history = $1,
+                     created_at = CURRENT_TIMESTAMP,
+                     temperature = $3
+                 WHERE id = $2`,
+                [JSON.stringify(conversationHistory), chatId, temperature]
+            );
+        } else {
+            const insertResult = await pool.query(
+                `INSERT INTO Ai_history (conversation_history, username, temperature)
+                 VALUES ($1, $2, $3)
+                 RETURNING id`,
+                [JSON.stringify(conversationHistory), req.session.user.username, temperature]
+            );
+            req.newChatId = insertResult.rows[0].id;
+        }
     } catch (dbError) { // Catch errors from database operations (pool.query)
-      console.error("Error updating/inserting chat history:", dbError);
-      return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
+        console.error("Error updating/inserting chat history:", dbError);
+        return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
     }
 
 
     res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
   } else {
-    res.status(500).json({ message: "Gemini API returned empty response." });
+    res.status(500).json({ message: "AI API returned empty response." });
   }
 
 }

@@ -183,7 +183,7 @@
         const loginButton = document.querySelector('button[type="submit"]');
         loginButton.disabled = true;
         loginButton.innerText = "Logging in.....";
-        fetch('/api/mbkauth/login', {
+        fetch('/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
