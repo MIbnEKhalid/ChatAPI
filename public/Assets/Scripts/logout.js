@@ -4,7 +4,7 @@ async function logout() {
     return;
   }
   try {
-    const response = await fetch("/logout", {
+    const response = await fetch("/mbkauthe/api/logout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
