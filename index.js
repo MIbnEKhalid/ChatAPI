@@ -12,15 +12,14 @@ import mbkAuthRouter from "mbkauthe";
 
 dotenv.config();
 const app = express();
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 const router = app;
 
-router.use(express.json());
+router.use(express.json());  // <--- Move express.json() to be first
+router.use(mbkAuthRouter);   // <--- Keep mbkAuthRouter after express.json()
+
 router.use(compression());
 router.use(minify());
 router.use(
