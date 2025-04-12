@@ -36,3 +36,15 @@ CREATE TRIGGER update_user_settings_updated_at
 BEFORE UPDATE ON user_settings
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+
+
+
+ALTER TABLE user_settings ADD COLUMN daily_message_limit INTEGER DEFAULT 100;
+CREATE TABLE user_message_logs (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    message_count INTEGER DEFAULT 0,
+    date DATE DEFAULT CURRENT_DATE,
+    CONSTRAINT unique_user_date UNIQUE (username, date)
+);

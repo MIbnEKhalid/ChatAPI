@@ -165,17 +165,9 @@
         const password = document.getElementById('loginPassword').value.trim();
         const token = document.getElementById('token').value.trim(); // 2FA token
         let recaptchaResponse;
- 
-         //bypass recaptcha for specific users (SuperAdmins)
-         if (username !== "ibnekhalid" && username !== "maaz.waheed" && username !== "support") {
-             console.log("username is not ibnekhalid or maaz.waheed" + username);
-             // Get the reCAPTCHA token value
-             recaptchaResponse = grecaptcha.getResponse();
-             if (!recaptchaResponse) {
-                 showMessage("Please complete the reCAPTCHA", "Error");
-                 return;
-             }
-         }
+
+        recaptchaResponse = grecaptcha.getResponse();
+
         if (!username || !password) {
             showMessage("Username and password cannot be empty", "Error");
             return;
