@@ -1075,6 +1075,7 @@
             padding: 15px;
             border-radius: 5px;
             color: var(--text-color);
+            margin-bottom: 5px;
         }
 
         .light-theme .account-info,
@@ -1316,6 +1317,10 @@
             font-style: italic;
             text-align: center;
         }
+
+        .settings-content a {
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -1436,14 +1441,30 @@
                         <label>Account Information</label>
                         <div class="account-info">
                             <p>User:
-                                <sapn id="headerProfileUserName"></span>
+                                <span id="headerProfileUserName"></span>
                             </p>
                         </div>
-
-                        <button id="logout-button" onclick="logout()" class="btn btn-danger">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
                     </div>
+                    <div class="settings-group">
+                        <label>Subscription Details</label>
+                        <div class="account-info">
+                            {{#if (eq role "SuperAdmin")}}
+                            <p>Plan: <span id="userSubscriptionPlan">MBK Tech Studio Team</span></p>
+                            <p>Messages Per Day: Unlimited</span></p>
+                            {{else}}
+                            <p>Plan: <span id="userSubscriptionPlan">Free</span></p>
+                            <p>Messages Per Day: <span id="messagesUsed">0</span>/<span id="messagesPerDay">100</span>
+                            </p>
+                            {{/if}}
+                        </div>
+                    </div>
+                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" id="btn-btn-upgrade"
+                        class="btn btn-save"><i class="fas fa-arrow-up"></i> Upgrade Plan</a>
+                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" id="btn-btn-cancel"
+                        class="btn btn-cancel"><i class="fas fa-gear"></i> Account Settings</a>
+                    <button id="logout-button" onclick="logout()" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
                 <div class="settings-footer">
                     <a id="save-settings" class="btn btn-save"><i class="fas fa-save" aria-hidden="true"></i> Save
@@ -1493,6 +1514,8 @@
         const fontSizeInput = document.getElementById('font-size');
         const fontSizeValue = document.getElementById('font-size-value');
         const settingsOverlay = document.getElementById('settings-popup-overlay'); // Get overlay
+        const messagesPerDay = document.getElementById('messagesPerDay'); // Get overlay
+        const messagesUsed = document.getElementById('messagesUsed'); // Get overlay
 
 
         const scrollDownBtn = document.getElementById('scroll-down-btn');
@@ -1765,7 +1788,11 @@
                 body: JSON.stringify(payload)
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('API request failed');
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || "Unknown error");
+                        });
+                    }
                     return response.json();
                 })
                 .then(data => {
@@ -1779,14 +1806,17 @@
                 })
                 .catch(error => {
                     console.error("Error calling API:", error);
-                    addMessage("Error getting AI response. Please try again.", 'ai');
+                    if (error.message === "Daily message limit reached.") {
+                        addMessage("You have reached your daily message limit. Please try again latter. Open Settings>Account To Check your daily limit or Upgrade Plan.", 'ai');
+                    } else {
+                        addMessage(`Error getting AI response: ${error.message}`, 'ai');
+                    }
                 })
                 .finally(() => {
                     isWaitingForResponse = false;
                     hideTypingIndicator();
                 });
         }
-
         // Add a message to the chat
         // Add a message to the chat
         function addMessage(text, sender) {
@@ -1924,8 +1954,7 @@
                 const response = await fetch('/api/user-settings');
                 if (!response.ok) {
                     console.error('Failed to fetch user settings:', response.status, response.statusText);
-                    // Fallback to default settings in currentSettings if fetch fails
-                    currentSettings = { theme: 'dark', fontSize: 16, model: 'default', temperature: 1.0 };
+                    currentSettings = { theme: 'dark', fontSize: 16, model: 'default', temperature: 1.0, messageCount: 0, dailyLimit: 100 };
                     applySettings();
                     return;
                 }
@@ -1934,19 +1963,28 @@
                     theme: settings.theme,
                     fontSize: settings.font_size,
                     model: settings.ai_model,
-                    temperature: settings.temperature
+                    temperature: settings.temperature,
+                    messageCount: settings.messageCount, // Add messageCount
+                    dailyLimit: settings.dailyLimit // Add dailyLimit
                 };
                 applySettings();
                 loadSettingsValuesToPopup(); // Populate settings popup with fetched values
+                updateMessageUsage(); // Update message usage display
             } catch (error) {
                 console.error('Error fetching user settings:', error);
-                // Fallback to default settings in currentSettings if fetch fails
-                currentSettings = { theme: 'dark', fontSize: 16, model: 'default', temperature: 1.0 };
+                currentSettings = { theme: 'dark', fontSize: 16, model: 'default', temperature: 1.0, messageCount: 0, dailyLimit: 100 };
                 applySettings();
             }
         }
+        function updateMessageUsage() {
+            const messagesUsedElement = document.getElementById('messagesUsed');
+            const messagesPerDayElement = document.getElementById('messagesPerDay');
 
-
+            if (messagesUsedElement && messagesPerDayElement) {
+                messagesUsedElement.textContent = currentSettings.messageCount;
+                messagesPerDayElement.textContent = currentSettings.dailyLimit === null ? 'Unlimited' : currentSettings.dailyLimit;
+            }
+        }
         function loadSettingsValuesToPopup() {
             themeSelect.value = currentSettings.theme;
             fontSizeInput.value = currentSettings.fontSize;

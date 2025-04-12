@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import fetch from 'node-fetch';
 import { pool } from "./pool.js";
 import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauthe";
+import { checkMessageLimit } from "./checkMessageLimit.js";
 
 dotenv.config();
 const router = express.Router();
@@ -24,14 +25,17 @@ router.get(["/login", "/signin"], (req, res) => {
 
 
 
-router.get("/chatbot/:chatId?", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) => {
   try {
     const chatId = req.params.chatId;
     const username = req.session.user.username; // Get username from session
     const userSettings = await fetchUserSettings(username); // Fetch user settings
     res.render('mainPages/chatbot.handlebars', {
       chatId: chatId,
-      settings: userSettings // Pass settings to the template
+      settings: userSettings,
+      UserName: req.session.user.username,
+      role: req.session.user.role,
+      userLoggedIn: true,
     });
   } catch (err) {
     console.error("Error rendering chatbot page:", err);
@@ -89,7 +93,7 @@ async function fetchChatHistoryById(chatId) {
   }
 }
 
-router.get('/api/chat/histories', validateSessionAndRole("SuperAdmin"), async (req, res) => { // Add session validation if needed, adjust role as necessary
+router.get('/api/chat/histories', validateSessionAndRole("Any"), async (req, res) => { // Add session validation if needed, adjust role as necessary
   try {
     const username = req.session.user.username; // Get username from session
     const chatHistories = await fetchChatHistories(username); // Pass username to fetchChatHistories
@@ -222,7 +226,7 @@ const transformGeminiToDeepseekHistory = (geminiHistory) => {
     };
   });
 };
-router.post('/api/bot-chat', async (req, res) => {
+router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) {
     return res.status(400).json({ message: "Chat message is required." });
@@ -249,7 +253,6 @@ router.post('/api/bot-chat', async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
   }
 
-
   conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
 
   let aiResponseText;
@@ -271,13 +274,12 @@ router.post('/api/bot-chat', async (req, res) => {
       return res.status(500).json({ error: "Deepseek API key not configured." });
     }
     try {
-      // Transform conversation history to Deepseek format before calling Deepseek API
       const deepseekFormattedHistory = transformGeminiToDeepseekHistory(conversationHistory);
       aiResponseText = await Deepseek(deepseekApiKey, models_name, deepseekFormattedHistory, temperature);
-    } catch (deepseekError) { // Catch errors from Deepseek function
+    } catch (deepseekError) {
       return res.status(500).json({ message: "Error processing Deepseek API.", error: deepseekError.message });
     }
-  } else { // Default to Gemini if models_name is not "deepseek-chat" or any other model you want to add later
+  } else {
     let geminiApiKey;
     geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
 
@@ -286,16 +288,15 @@ router.post('/api/bot-chat', async (req, res) => {
     }
     try {
       aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
-    } catch (geminiError) { // Catch errors from gemini function
+    } catch (geminiError) {
       return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
     }
   }
 
-
   if (aiResponseText) {
     conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
-    try { // Wrap database updates/inserts in try-catch
+    try {
       if (chatId) {
         await pool.query(
           `UPDATE Ai_history
@@ -314,19 +315,16 @@ router.post('/api/bot-chat', async (req, res) => {
         );
         req.newChatId = insertResult.rows[0].id;
       }
-    } catch (dbError) { // Catch errors from database operations (pool.query)
+    } catch (dbError) {
       console.error("Error updating/inserting chat history:", dbError);
       return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
     }
-
 
     res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
   } else {
     res.status(500).json({ message: "AI API returned empty response." });
   }
-
-}
-);
+});
 
 router.post('/api/chat/clear-history/:chatId', async (req, res) => {
   const chatId = req.params.chatId;
@@ -345,27 +343,49 @@ router.post('/api/chat/clear-history/:chatId', async (req, res) => {
 async function fetchUserSettings(username) {
   try {
     const settingsResult = await pool.query(
-      'SELECT theme, font_size, ai_model, temperature FROM user_settings WHERE username = $1',
+      'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings WHERE username = $1',
       [username]
     );
+
+    // Fetch today's message count for the user
+    const today = new Date().toISOString().split("T")[0]; // Get current date in YYYY-MM-DD format
+    const messageLog = await pool.query(
+      'SELECT message_count FROM user_message_logs WHERE username = $1 AND date = $2',
+      [username, today]
+    );
+
+    const messageCount = messageLog.rows[0]?.message_count || 0; // Default to 0 if no record exists
+
     if (settingsResult.rows.length > 0) {
-      return settingsResult.rows[0];
+      const settings = settingsResult.rows[0];
+      return {
+        theme: settings.theme || 'dark',
+        font_size: settings.font_size || 16,
+        ai_model: settings.ai_model || 'default',
+        temperature: settings.temperature || 1.0,
+        dailyLimit: settings.daily_message_limit || 100, // Default daily limit
+        messageCount: messageCount // Messages used today
+      };
     } else {
       // Default settings if no settings found for the user
       return {
         theme: 'dark',
         font_size: 16,
         ai_model: 'default',
-        temperature: 1.0
+        temperature: 1.0,
+        dailyLimit: 100, // Default daily limit
+        messageCount: messageCount // Messages used today
       };
     }
   } catch (error) {
     console.error("Error fetching user settings:", error);
-    return { // Return default settings even on error to prevent app crash
+    return {
       theme: 'dark',
       font_size: 16,
       ai_model: 'default',
-      temperature: 1.0
+      temperature: 1.0,
+      dailyLimit: 100, // Default daily limit
+      messageCount: 0 // Default to 0 if error occurs
     };
   }
 }
@@ -394,7 +414,7 @@ async function saveUserSettings(username, settings) {
 
 
 // GET endpoint to fetch user settings (Username based)
-router.get('/api/user-settings', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.get('/api/user-settings', validateSessionAndRole("Any"), async (req, res) => {
   try {
     const username = req.session.user.username; // Get username from session
     const userSettings = await fetchUserSettings(username);
@@ -406,7 +426,7 @@ router.get('/api/user-settings', validateSessionAndRole("SuperAdmin"), async (re
 });
 
 // POST endpoint to save user settings (Username based)
-router.post('/api/save-settings', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res) => {
   try {
     const username = req.session.user.username; // Get username from session
     const settings = req.body; // Settings data from the request body
