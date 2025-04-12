@@ -19,9 +19,11 @@
     "express-minify": "^1.0.0",
     "express-minify-html": "^0.12.0",
     "handlebars": "^4.7.8",
-    "mbkauth": "latest",
+    "marked": "^15.0.7",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "mbkauthe": "latest"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
