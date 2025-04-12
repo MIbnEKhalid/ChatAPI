@@ -4,11 +4,11 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mainRoutes from "./routes/main.js";
 import { engine } from "express-handlebars";
-import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./routes/validateSessionAndRole.js";
 import Handlebars from "handlebars";
 import minifyHTML from "express-minify-html";
 import minify from "express-minify";
 import compression from "compression";
+import mbkAuthRouter from "mbkauthe";
 
 dotenv.config();
 const app = express();
@@ -19,6 +19,7 @@ const __dirname = path.dirname(__filename);
 
 
 const router = app;
+
 router.use(express.json());
 router.use(compression());
 router.use(minify());
@@ -98,6 +99,8 @@ router.get("/info/Credits", async (req, res) => {
   res.render("staticPage/Credits");
 });
 
+router.use(mbkAuthRouter);
+
 router.use("/", mainRoutes);
 
 router.get('/simulate-error', (req, res, next) => {
@@ -124,7 +127,7 @@ router.use((err, req, res, next) => {
   res.render('templates/Error/500', { error: err });
 });
 
-const port = 3030;
+const port = 3130;
 
 // Start the router
 router.listen(port, () => {

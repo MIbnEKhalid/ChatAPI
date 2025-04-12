@@ -14,7 +14,7 @@ const poolConfig = {
 };
 
 export const pool = new Pool(poolConfig);
-
+export const dblogin = pool; // Export the pool instance for use in other modules
 // Test connection for pool
 (async () => {
   try {
