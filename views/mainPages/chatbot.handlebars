@@ -11,8 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
     <script src="/Assets/Scripts/main.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="/Assets/Scripts/logout.js"></script>
     <style>
         :root {
@@ -416,6 +414,22 @@
             font-style: italic;
         }
 
+        pre {
+            font-family: Consolas;
+            position: relative;
+            border: .1rem solid var(--main-border-color);
+            background: #000;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        pre code {
+            font-family: 'Courier New', monospace;
+            color: var(--text-light);
+        }
 
         .code-copy-button {
             position: absolute;
@@ -515,25 +529,16 @@
         }
 
         .message-bubble code {
-            padding: .2em .4em;
-            margin: 0;
-            font-size: 85%;
-            white-space: break-spaces;
-            background-color: #656c7633;
-            border-radius: 6px;
+            background-color: #383838;
+            border-radius: 2px;
+            padding: 1px;
         }
 
         .message-bubble pre code {
             background-color: transparent;
             border-radius: 0;
             padding: 0;
-            font-size: 100%;
         }
-
-        .message-bubble pre {
-            color: white;
-        }
-
 
         .chat-header-title span,
         .chat-header-title span a,
@@ -551,7 +556,6 @@
             background: linear-gradient(145deg, #3d444d, #0d1117);
             border-radius: 50%;
             display: none;
-            color: white;
             align-items: center;
             justify-content: center;
             cursor: pointer;
@@ -710,9 +714,18 @@
         }
 
         .light-theme .chat-list-item:hover,
-        .sepia-theme .chat-list-item:hover,
+        .sepia-theme .chat-list-item:hover {
+            background-color: #f0f0f0;
+        }
+
         .contrast-theme .chat-list-item:hover {
-            border-color: #007bff;
+            background-color: #333;
+        }
+
+
+        .chat-list-item:hover {
+            background-color: #555;
+            transform: scale(1.02);
         }
 
         .chat-list-item button {
@@ -733,9 +746,125 @@
             color: #f44336;
         }
 
+
         .chat-list-item button:hover {
             opacity: 1;
             transform: scale(1.1);
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            margin-left: 0;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .dialog-header {
+            background-color: var(--header-bg);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+            cursor: default;
+            display: block;
+            text-align: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .light-theme .dialog-header,
+        .sepia-theme .dialog-header,
+        .contrast-theme .dialog-header {
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+
+        .dialog-content {
+            padding: 10px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: var(--text-color);
+            height: 100%;
+        }
+
+        .light-theme .dialog-content,
+        .sepia-theme .dialog-content,
+        .contrast-theme .dialog-content {
+            color: var(--text-color);
+        }
+
+
+        .chat-messages-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 0 10px 0;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+            height: 100%;
+            width: auto;
+        }
+
+        .light-theme .chat-messages-area,
+        .sepia-theme .chat-messages-area,
+        .contrast-theme .chat-messages-area {
+            background-color: var(--bg-color);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding-top: 15px;
+            align-items: center;
+        }
+
+        .chat-input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--header-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .light-theme .chat-input-area input[type="text"],
+        .sepia-theme .chat-input-area input[type="text"],
+        .contrast-theme .chat-input-area input[type="text"] {
+            background-color: var(--header-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        .chat-input-area input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px var(--primary-color);
+            outline: none;
+        }
+
+        .chat-input-area button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .chat-input-area button:hover {
+            background-color: #0056b3;
+        }
+
+        .chat-input-area button:active {
+            transform: scale(0.95);
         }
 
         .message {
@@ -1177,15 +1306,15 @@
             opacity: 1;
         }
 
-        pre {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            background-color: #2d2d2d;
-            color: #f8f8f2;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
+        .generating-message {
+            justify-content: flex-start;
+        }
+
+        .generating-message .message-bubble {
+            background-color: var(--ai-message-bg);
+            color: var(--ai-message-text);
+            font-style: italic;
+            text-align: center;
         }
     </style>
 </head>
@@ -1365,13 +1494,6 @@
         const fontSizeValue = document.getElementById('font-size-value');
         const settingsOverlay = document.getElementById('settings-popup-overlay'); // Get overlay
 
-        // Initialize Highlight.js for dynamically added code blocks
-        function applySyntaxHighlighting() {
-            const codeBlocks = document.querySelectorAll('pre code');
-            codeBlocks.forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        }
 
         const scrollDownBtn = document.getElementById('scroll-down-btn');
 
@@ -1663,56 +1785,10 @@
                     isWaitingForResponse = false;
                     hideTypingIndicator();
                 });
-        }// Add copy buttons to code blocks in AI messages
-        function addCopyButtonsToCodeBlocks(messageDiv) {
-            const codeBlocks = messageDiv.querySelectorAll('pre code');
-            codeBlocks.forEach((codeBlock) => {
-                const preElement = codeBlock.closest('pre');
-                if (preElement && !preElement.querySelector('.code-copy-button')) {
-                    const copyButton = document.createElement('button');
-                    copyButton.className = 'code-copy-button';
-                    copyButton.title = 'Copy code';
-                    copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-
-                    copyButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-
-                        // Extract only the original code, ignoring any appended output
-                        const code = codeBlock.getAttribute('data-original-code') || codeBlock.textContent.trim();
-                        copyToClipboard(code);
-
-                        // Visual feedback
-                        copyButton.innerHTML = '<i class="fas fa-check"></i>';
-                        copyButton.style.color = '#4CAF50';
-                        setTimeout(() => {
-                            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-                            copyButton.style.color = '';
-                        }, 2000);
-                    });
-
-                    preElement.appendChild(copyButton);
-                }
-            });
         }
 
-        // Helper function to copy text to clipboard
-        function copyToClipboard(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed'; // Prevent scrolling to the bottom of the page
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('Failed to copy text:', err);
-            } finally {
-                document.body.removeChild(textarea);
-            }
-        }
-
-        // Example usage in the `addMessage` function
+        // Add a message to the chat
+        // Add a message to the chat
         function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message`;
@@ -1720,17 +1796,35 @@
             const content = sender === 'ai' ? marked.parse(text) : text;
             messageDiv.innerHTML = `<div class="message-bubble">${content}</div>`;
 
+            // Add copy buttons to code blocks in AI messages
             if (sender === 'ai') {
                 setTimeout(() => {
-                    applySyntaxHighlighting(); // Apply Highlight.js
-
-                    // Store the original code in a data attribute before Highlight.js modifies it
                     const codeBlocks = messageDiv.querySelectorAll('pre code');
                     codeBlocks.forEach((codeBlock) => {
-                        codeBlock.setAttribute('data-original-code', codeBlock.textContent.trim());
-                    });
+                        const preElement = codeBlock.closest('pre');
+                        if (preElement && !preElement.querySelector('.code-copy-button')) {
+                            const copyButton = document.createElement('button');
+                            copyButton.className = 'code-copy-button';
+                            copyButton.title = 'Copy code';
+                            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
 
-                    addCopyButtonsToCodeBlocks(messageDiv); // Add copy buttons
+                            copyButton.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const code = codeBlock.textContent;
+                                copyToClipboard(code);
+
+                                // Visual feedback
+                                copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                                copyButton.style.color = '#4CAF50';
+                                setTimeout(() => {
+                                    copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+                                    copyButton.style.color = '';
+                                }, 2000);
+                            });
+
+                            preElement.appendChild(copyButton);
+                        }
+                    });
                 }, 0);
             }
 
@@ -1738,6 +1832,31 @@
             setTimeout(() => messageDiv.classList.add('show'), 10);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+
+        // Helper function to copy text to clipboard (same as before)
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).catch(err => {
+                        console.error('Clipboard API failed, using fallback', err);
+                        document.execCommand('copy');
+                    });
+                } else {
+                    document.execCommand('copy');
+                }
+            } catch (err) {
+                console.error('Copy failed:', err);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
         // Show typing indicator
         function showTypingIndicator() {
             const indicator = document.createElement('div');

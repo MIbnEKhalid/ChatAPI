@@ -1,14 +1,16 @@
 import express from "express";
-import crypto from "crypto";
 import dotenv from "dotenv";
-
-import { pool } from "./pool.js";
-import { authenticate, validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauth";
 import fetch from 'node-fetch';
+import { pool } from "./pool.js";
+import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauthe";
 
 dotenv.config();
 const router = express.Router();
 const UserCredentialTable = process.env.UserCredentialTable;
+
+let COOKIE_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7 days in milliseconds
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
@@ -20,37 +22,7 @@ router.get(["/login", "/signin"], (req, res) => {
   return res.render("staticPage/login.handlebars");
 });
 
-//Invoke-RestMethod -Uri http://localhost:3030/terminateAllSessions -Method POST
-// Terminate all sessions route
-router.post("/terminateAllSessions", authenticate(process.env.Main_SECRET_TOKEN), async (req, res) => {
-  try {
-    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
 
-    // Clear the session table
-    await pool.query('DELETE FROM "session"');
-
-    // Destroy all sessions on the server
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Error destroying session:", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Failed to terminate sessions" });
-      }
-      console.log("All sessions terminated successfully");
-      res.status(200).json({
-        success: true,
-        message: "All sessions terminated successfully",
-      });
-    });
-  } catch (err) {
-    console.error("Database query error during session termination:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
-  }
-}
-);
 
 router.get("/chatbot/:chatId?", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
@@ -198,149 +170,164 @@ async function gemini(geminiApiKey, models_name, conversationHistory, temperatur
     throw error;
   }
 }
+
 async function Deepseek(deepseekApiKey, models_name, conversationHistory, temperature) {
-    const deepseekApiUrl = "https://api.deepseek.com/chat/completions";
-    
-    try {
+  const deepseekApiUrl = "https://api.deepseek.com/chat/completions";
+
+  try {
     const deepseekResponse = await fetch(deepseekApiUrl, {
-    method: 'POST',
-    headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${deepseekApiKey}`
-    },
-    body: JSON.stringify({
-    model: models_name,   //"deepseek-chat",
-    messages: conversationHistory,
-    stream: false,
-    temperature: temperature
-    })
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: models_name,   //"deepseek-chat",
+        messages: conversationHistory,
+        stream: false,
+        temperature: temperature
+      })
     });
-    
-          
+
     if (!deepseekResponse.ok) {
       const errorData = await deepseekResponse.json();
       console.error("Deepseek API error:", errorData);
       throw new Error(`Deepseek API request failed with status ${deepseekResponse.status}: ${errorData.error?.message || 'Unknown error'}`);
     }
-    
+
     const deepseekData = await deepseekResponse.json();
     const aiResponseText = deepseekData.choices?.[0]?.message?.content;
     return aiResponseText;
-    
-        
-    
-    // No replacement needed; removed unnecessary comments.
-    
-    } catch (error) {
+  } catch (error) {
     console.error("Error calling Deepseek API:", error);
     throw error;
-    }
-    }
-router.post('/api/bot-chat', async (req, res) => {
-    const userMessage = req.body.message;
-    if (!userMessage) {
-      return res.status(400).json({ message: "Chat message is required." });
-    }
-    const username = req.session.user.username; // Assuming you have user session
-
-    const userSettings = await getUserSettings(username);
-    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature|| 1.0), 0), 2);
-    let conversationHistory = [];
-    const chatId = req.body.chatId;
-
-    try { // Wrap the chat history fetching in try-catch
-        if (chatId) {
-            const fetchedHistory = await fetchChatHistoryById(chatId);
-            if (fetchedHistory && fetchedHistory.conversation_history) {
-                conversationHistory = fetchedHistory.conversation_history;
-            } else if (chatId && !fetchedHistory) {
-                // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
-                return res.status(404).json({ message: "Chat history not found for the given chatId." });
-            }
-        }
-    } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
-        console.error("Error fetching chat history:", dbError);
-        return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
-    }
-
-
-    conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
-
-    let aiResponseText;
-    const models_name =userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash" "deepseek-chat"
-    console.log("Model Name:", models_name);
-
-    // Function to transform Gemini history to Deepseek history format
-    const transformGeminiToDeepseekHistory = (geminiHistory) => {
-        return geminiHistory.map(message => ({
-            role: message.role,
-            content: message.parts[0].text // Assuming parts[0].text always exists
-        }));
-    };
-
-    if (models_name === "deepseek-chat") {
-        let deepseekApiKey;
-        deepseekApiKey = process.env.Deepseek_maaz_waheed; // Assuming you have DEEPSEEK_API_KEY in your env
-        if (!deepseekApiKey) {
-          return res.status(500).json({ error: "Deepseek API key not configured." });
-        }
-        try {
-          // Transform conversation history to Deepseek format before calling Deepseek API
-          const deepseekFormattedHistory = transformGeminiToDeepseekHistory(conversationHistory);
-          aiResponseText = await Deepseek(deepseekApiKey, models_name, deepseekFormattedHistory, temperature);
-        } catch (deepseekError) { // Catch errors from Deepseek function
-          return res.status(500).json({ message: "Error processing Deepseek API.", error: deepseekError.message });
-        }
-    } else { // Default to Gemini if models_name is not "deepseek-chat" or any other model you want to add later
-        let geminiApiKey;
-        geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-
-        if (!geminiApiKey) {
-          return res.status(500).json({ error: "Gemini API key not configured." });
-        }
-        try {
-          aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
-        } catch (geminiError) { // Catch errors from gemini function
-          return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
-        }
-    }
-
-
-    if (aiResponseText) {
-      conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
-
-      try { // Wrap database updates/inserts in try-catch
-          if (chatId) {
-              await pool.query(
-                  `UPDATE Ai_history
-                   SET conversation_history = $1,
-                       created_at = CURRENT_TIMESTAMP,
-                       temperature = $3
-                   WHERE id = $2`,
-                  [JSON.stringify(conversationHistory), chatId, temperature]
-              );
-          } else {
-              const insertResult = await pool.query(
-                  `INSERT INTO Ai_history (conversation_history, username, temperature)
-                   VALUES ($1, $2, $3)
-                   RETURNING id`,
-                  [JSON.stringify(conversationHistory), req.session.user.username, temperature]
-              );
-              req.newChatId = insertResult.rows[0].id;
-          }
-      } catch (dbError) { // Catch errors from database operations (pool.query)
-          console.error("Error updating/inserting chat history:", dbError);
-          return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
-      }
-
-
-      res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
-    } else {
-      res.status(500).json({ message: "AI API returned empty response." });
-    }
-
   }
+}
+const transformGeminiToDeepseekHistory = (geminiHistory) => {
+  return geminiHistory.map(message => {
+    let content = ""; // Default content if something is missing
+
+    if (message.parts && Array.isArray(message.parts) && message.parts.length > 0 && message.parts[0].text) {
+      content = message.parts[0].text;
+    } else {
+      console.warn("Warning: Gemini message part structure unexpected or missing text. Using default content.", message);
+      // You could potentially add more sophisticated default content logic here
+      // or even decide to skip the message entirely if that's more appropriate for your use case.
+      content = "No content provided in Gemini history message."; // More informative default
+    }
+
+    return {
+      role: message.role,
+      content: content
+    };
+  });
+};
+router.post('/api/bot-chat', async (req, res) => {
+  const userMessage = req.body.message;
+  if (!userMessage) {
+    return res.status(400).json({ message: "Chat message is required." });
+  }
+  const username = req.session.user.username; // Assuming you have user session
+
+  const userSettings = await getUserSettings(username);
+  const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || 1.0), 0), 2);
+  let conversationHistory = [];
+  const chatId = req.body.chatId;
+
+  try { // Wrap the chat history fetching in try-catch
+    if (chatId) {
+      const fetchedHistory = await fetchChatHistoryById(chatId);
+      if (fetchedHistory && fetchedHistory.conversation_history) {
+        conversationHistory = fetchedHistory.conversation_history;
+      } else if (chatId && !fetchedHistory) {
+        // Handle case where chatId is provided but no history found (optional, depends on desired behavior)
+        return res.status(404).json({ message: "Chat history not found for the given chatId." });
+      }
+    }
+  } catch (dbError) { // Catch errors from fetchChatHistoryById (database errors)
+    console.error("Error fetching chat history:", dbError);
+    return res.status(500).json({ message: "Failed to fetch chat history.", error: dbError.message });
+  }
+
+
+  conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+  let aiResponseText;
+  const models_name = userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash" "deepseek-chat"
+  console.log("Model Name:", models_name);
+
+  // Function to transform Gemini history to Deepseek history format
+  const transformGeminiToDeepseekHistory = (geminiHistory) => {
+    return geminiHistory.map(message => ({
+      role: message.role,
+      content: message.parts[0].text // Assuming parts[0].text always exists
+    }));
+  };
+
+  if (models_name === "deepseek-chat") {
+    let deepseekApiKey;
+    deepseekApiKey = process.env.Deepseek_maaz_waheed; // Assuming you have DEEPSEEK_API_KEY in your env
+    if (!deepseekApiKey) {
+      return res.status(500).json({ error: "Deepseek API key not configured." });
+    }
+    try {
+      // Transform conversation history to Deepseek format before calling Deepseek API
+      const deepseekFormattedHistory = transformGeminiToDeepseekHistory(conversationHistory);
+      aiResponseText = await Deepseek(deepseekApiKey, models_name, deepseekFormattedHistory, temperature);
+    } catch (deepseekError) { // Catch errors from Deepseek function
+      return res.status(500).json({ message: "Error processing Deepseek API.", error: deepseekError.message });
+    }
+  } else { // Default to Gemini if models_name is not "deepseek-chat" or any other model you want to add later
+    let geminiApiKey;
+    geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
+
+    if (!geminiApiKey) {
+      return res.status(500).json({ error: "Gemini API key not configured." });
+    }
+    try {
+      aiResponseText = await gemini(geminiApiKey, models_name, conversationHistory, temperature);
+    } catch (geminiError) { // Catch errors from gemini function
+      return res.status(500).json({ message: "Error processing Gemini API.", error: geminiError.message });
+    }
+  }
+
+
+  if (aiResponseText) {
+    conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+
+    try { // Wrap database updates/inserts in try-catch
+      if (chatId) {
+        await pool.query(
+          `UPDATE Ai_history
+                 SET conversation_history = $1,
+                     created_at = CURRENT_TIMESTAMP,
+                     temperature = $3
+                 WHERE id = $2`,
+          [JSON.stringify(conversationHistory), chatId, temperature]
+        );
+      } else {
+        const insertResult = await pool.query(
+          `INSERT INTO Ai_history (conversation_history, username, temperature)
+                 VALUES ($1, $2, $3)
+                 RETURNING id`,
+          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
+        );
+        req.newChatId = insertResult.rows[0].id;
+      }
+    } catch (dbError) { // Catch errors from database operations (pool.query)
+      console.error("Error updating/inserting chat history:", dbError);
+      return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
+    }
+
+
+    res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
+  } else {
+    res.status(500).json({ message: "AI API returned empty response." });
+  }
+
+}
 );
+
 router.post('/api/chat/clear-history/:chatId', async (req, res) => {
   const chatId = req.params.chatId;
   if (!chatId) {
