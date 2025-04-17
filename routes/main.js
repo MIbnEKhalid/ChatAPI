@@ -324,7 +324,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   }
 
   if (aiResponseText) {
-    if (models_name !== "mallow") { // Only save history if not mallow
+    if (models_name !== "mallow-t1") { // Only save history if not mallow
       conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
       try {
