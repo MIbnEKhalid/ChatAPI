@@ -226,6 +226,34 @@ const transformGeminiToDeepseekHistory = (geminiHistory) => {
     };
   });
 };
+async function mallow(prompt) {
+  const mallowApiUrl = "https://literate-slightly-seahorse.ngrok-free.app/generate"; // As per your curl command
+
+  try {
+    const mallowResponse = await fetch(mallowApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt }) // Send prompt in the body
+    });
+
+    if (!mallowResponse.ok) {
+      const errorData = await mallowResponse.json();
+      console.error("Mallow API error:", errorData);
+      throw new Error(`Mallow API request failed with status ${mallowResponse.status}: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const mallowData = await mallowResponse.json();
+    // Assuming the API returns the response text in a field like 'response' or similar.
+    // You might need to adjust this based on the actual API response structure.
+    const aiResponseText = mallowData.response; // Adjust 'response' to the actual field name
+    return aiResponseText;
+
+  } catch (error) {
+    const aiResponseText = "API service is not available. Please contact [Maaz Waheed](https://github.com/42Wor) to start the API service.";
+    return aiResponseText;
+  }
+}
+
 router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) {
@@ -256,18 +284,12 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
 
   let aiResponseText;
-  const models_name = userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash" "deepseek-chat"
+  const models_name = userSettings.modelName; //"gemini-1.5-flash" "gemini-2.0-flash" "deepseek-chat" or "mallow"
   console.log("Model Name:", models_name);
 
-  // Function to transform Gemini history to Deepseek history format
-  const transformGeminiToDeepseekHistory = (geminiHistory) => {
-    return geminiHistory.map(message => ({
-      role: message.role,
-      content: message.parts[0].text // Assuming parts[0].text always exists
-    }));
-  };
 
   if (models_name === "deepseek-chat") {
+    // ... Deepseek API code (as you provided) ...
     let deepseekApiKey;
     deepseekApiKey = process.env.Deepseek_maaz_waheed; // Assuming you have DEEPSEEK_API_KEY in your env
     if (!deepseekApiKey) {
@@ -279,7 +301,15 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
     } catch (deepseekError) {
       return res.status(500).json({ message: "Error processing Deepseek API.", error: deepseekError.message });
     }
-  } else {
+
+  } else if (models_name === "mallow-t1") { // Add condition for mallow
+    try {
+      aiResponseText = await mallow(userMessage); // Call mallow function with user message
+    } catch (mallowError) {
+      return res.status(500).json({ message: "Error processing Mallow API.", error: mallowError.message });
+    }
+
+  } else { // Default to Gemini if modelName is not deepseek-chat or mallow (or any other model you might add)
     let geminiApiKey;
     geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
 
@@ -294,33 +324,35 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   }
 
   if (aiResponseText) {
-    conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+    if (models_name !== "mallow") { // Only save history if not mallow
+      conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
-    try {
-      if (chatId) {
-        await pool.query(
-          `UPDATE Ai_history
-                 SET conversation_history = $1,
-                     created_at = CURRENT_TIMESTAMP,
-                     temperature = $3
-                 WHERE id = $2`,
-          [JSON.stringify(conversationHistory), chatId, temperature]
-        );
-      } else {
-        const insertResult = await pool.query(
-          `INSERT INTO Ai_history (conversation_history, username, temperature)
-                 VALUES ($1, $2, $3)
-                 RETURNING id`,
-          [JSON.stringify(conversationHistory), req.session.user.username, temperature]
-        );
-        req.newChatId = insertResult.rows[0].id;
+      try {
+        if (chatId) {
+          await pool.query(
+            `UPDATE Ai_history
+                   SET conversation_history = $1,
+                       created_at = CURRENT_TIMESTAMP,
+                       temperature = $3
+                   WHERE id = $2`,
+            [JSON.stringify(conversationHistory), chatId, temperature]
+          );
+        } else {
+          const insertResult = await pool.query(
+            `INSERT INTO Ai_history (conversation_history, username, temperature)
+                   VALUES ($1, $2, $3)
+                   RETURNING id`,
+            [JSON.stringify(conversationHistory), req.session.user.username, temperature]
+          );
+          req.newChatId = insertResult.rows[0].id;
+        }
+      } catch (dbError) {
+        console.error("Error updating/inserting chat history:", dbError);
+        return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
       }
-    } catch (dbError) {
-      console.error("Error updating/inserting chat history:", dbError);
-      return res.status(500).json({ message: "Failed to save chat history.", error: dbError.message });
-    }
+    } // End of history saving condition
 
-    res.json({ aiResponse: aiResponseText, newChatId: req.newChatId });
+    res.json({ aiResponse: aiResponseText, newChatId: req.newChatId }); // newChatId might be undefined for mallow, which is fine if you don't need it
   } else {
     res.status(500).json({ message: "AI API returned empty response." });
   }
