@@ -259,7 +259,7 @@ async function mallow(prompt) {
 async function NVIDIA(apiKey, modelName, conversationHistory, temperature) {
     // modelName should be the *full* name (e.g., "nvidia/llama-3.1...")
     const nvidiaApiUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-    const defaultMaxTokens = 1024;
+    const defaultMaxTokens = 4096;
     const defaultTopP = 1.0; // Some models prefer 1.0 for top_p with temperature control
 
     // Transform history to NVIDIA format {role: 'user'/'assistant', content: '...'}
@@ -412,7 +412,6 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
                 // The NVIDIA function handles history transformation internally
                 aiResponseText = await NVIDIA(nvidiaApiKey, nvidiaModelName, conversationHistory, temperature);
                 break;
-
             case 'gemini':
             default: // Default to Gemini if provider is 'gemini' or unknown/unhandled
                 if (provider !== 'gemini') {
@@ -439,7 +438,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
 
         // Only save history if the provider wasn't Mallow (as per original logic)
         // Or add specific conditions for other models if needed
-        if (provider !== 'mallow') {
+        if (provider !== 'mallow' && provider !== 'deepseek') {
             // Add AI response to history (Gemini format)
             conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
 
@@ -486,6 +485,8 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         res.status(500).json({ message: `AI API (${provider}) returned an empty response.` });
     }
 });
+
+
 router.post('/api/chat/clear-history/:chatId', async (req, res) => {
   const chatId = req.params.chatId;
   if (!chatId) {
