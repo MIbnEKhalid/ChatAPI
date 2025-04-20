@@ -126,7 +126,7 @@ router.use((err, req, res, next) => {
   res.render('templates/Error/500', { error: err });
 });
 
-const port = 3130;
+const port = 3030;
 
 // Start the router
 router.listen(port, () => {
