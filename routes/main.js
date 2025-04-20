@@ -7,14 +7,6 @@ import { checkMessageLimit } from "./checkMessageLimit.js";
 
 dotenv.config();
 const router = express.Router();
-const UserCredentialTable = process.env.UserCredentialTable;
-
-let COOKIE_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7 days in milliseconds
-router.use(express.json());
-router.use(express.urlencoded({ extended: true }));
-
-router.use(express.json());
-router.use(express.urlencoded({ extended: true }));
 
 router.get(["/login", "/signin"], (req, res) => {
   if (req.session && req.session.user) {
@@ -22,8 +14,6 @@ router.get(["/login", "/signin"], (req, res) => {
   }
   return res.render("staticPage/login.handlebars");
 });
-
-
 
 router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) => {
   try {
