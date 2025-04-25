@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>Chat Application</title>
     <meta charset="UTF-8">
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/Assets/Scripts/logout.js"></script>
     <style>
         /* Root variables for consistent theming */
         :root {
@@ -33,6 +35,7 @@
             --ai-message-bg: #1e252f;
             --ai-message-text: #d4d4d4;
             --user-profile-color: #ffffff;
+            --secondary-color: #1f537e;
         }
 
         .light-theme {
@@ -78,7 +81,8 @@
             padding: 0;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             font-family: 'Roboto', sans-serif;
             background-color: var(--bg-color);
@@ -88,7 +92,6 @@
             font-size: var(--base-font-size);
             line-height: 1.5;
         }
-
         /* Button styles */
         .btn {
             padding: 0.5rem 1rem;
@@ -105,9 +108,11 @@
             align-items: center;
             gap: 0.5rem;
             box-shadow: var(--shadow);
+            text-decoration: none;
         }
 
-        .btn:hover, .btn:focus {
+        .btn:hover,
+        .btn:focus {
             filter: brightness(1.1);
             box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
         }
@@ -147,6 +152,7 @@
         .chat-list-container.hidden {
             transform: translateX(-100%);
             opacity: 0;
+            display: none;
             pointer-events: none;
         }
 
@@ -196,7 +202,7 @@
         .chat-list-item {
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
-            padding: 0.75rem;
+            padding: 0.5rem;
             margin-bottom: 0.5rem;
             border-radius: 0.75rem;
             cursor: pointer;
@@ -210,8 +216,6 @@
 
         .chat-list-item:hover {
             border-color: var(--secondary-color);
-            background: linear-gradient(145deg, var(--input-bg), var(--border-color));
-            transform: translateY(-2px);
         }
 
         .chat-list-item button {
@@ -234,9 +238,15 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            flex: 1; /* Changed from width: calc(100% - 250px) */
+            flex: 1;
+            /* Changed from width: calc(100% - 250px) */
             transition: margin var(--transition-duration) ease-in-out;
             background: var(--bg-color);
+        }
+
+        ..chat-container.full {
+            width: 100%;
+            max-width: 100%;
         }
 
         .chat-list-container {
@@ -257,7 +267,7 @@
         /* Chat header */
         .chat-header {
             background-color: var(--header-bg);
-            padding: 1rem;
+            padding: 0.65rem;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -269,6 +279,7 @@
         }
 
         .chat-header-title {
+            padding: 0.1rem;
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--text-color);
@@ -280,6 +291,10 @@
         .chat-header-title a {
             color: var(--secondary-color);
             text-decoration: none;
+        }
+
+        .chat-header-title span {
+            font-size: 0.8rem;
         }
 
         .chat-header-title a:hover {
@@ -349,7 +364,6 @@
             color: var(--text-color);
             font-size: 1rem;
             transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .chat-input:focus {
@@ -409,7 +423,7 @@
         }
 
         .message-bubble {
-            padding: 1rem 1.5rem;
+            padding: 0.6rem 1rem;
             border-radius: 1.5rem;
             max-width: 70%;
             word-wrap: break-word;
@@ -422,13 +436,13 @@
         }
 
         .user-message .message-bubble {
-            background: linear-gradient(135deg, var(--user-message-bg), var(--primary-color));
+            background: #323232d9;
             color: #ffffff;
         }
 
         .ai-message .message-bubble {
-            background: linear-gradient(135deg, var(--ai-message-bg), var(--secondary-color));
-            color: var(--ai-message-text);
+            background: #323232d9;
+            color: #fff;
         }
 
         /* Typing indicator */
@@ -441,9 +455,12 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 0.6;
             }
+
             50% {
                 opacity: 1;
             }
@@ -521,7 +538,7 @@
         }
 
         .settings-header {
-            padding: 1rem;
+            padding: 0.8rem;
             border-bottom: 1px solid var(--border-color);
             color: var(--text-color);
             font-weight: bold;
@@ -532,12 +549,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-direction: column;
         }
 
         .settings-tabs {
             display: flex;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.1rem;
             border-bottom: 1px solid var(--border-color);
             background: var(--header-bg);
             position: sticky;
@@ -569,7 +587,7 @@
         }
 
         .settings-content {
-            padding: 1.5rem;
+            padding: 0.8rem;
             display: none;
         }
 
@@ -578,7 +596,7 @@
         }
 
         .settings-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .settings-group label {
@@ -659,7 +677,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 0.5rem;
-            padding: 1rem;
+            padding: 0.5rem;
             border-top: 1px solid var(--border-color);
             background: var(--header-bg);
         }
@@ -724,6 +742,7 @@
             0% {
                 transform: rotate(0deg);
             }
+
             100% {
                 transform: rotate(360deg);
             }
@@ -739,300 +758,338 @@
             pointer-events: auto;
             opacity: 1;
         }
+
+        .settings-button {
+            font-size: xx-large;
+        }
+        /* Custom scrollbar for chat list */
+        .chat-list-container::-webkit-scrollbar {
+            width: 8px;
+            /* Width of the scrollbar */
+        }
+
+        .chat-list-container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            /* Scrollbar thumb color */
+            border-radius: 4px;
+            /* Rounded corners for the scrollbar thumb */
+        }
+
+        .chat-list-container::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+            /* Hover color for the scrollbar thumb */
+        }
+
+        .chat-list-container::-webkit-scrollbar-track {
+            background: var(--header-bg);
+            /* Background color of the scrollbar track */
+            border-radius: 4px;
+            /* Rounded corners for the scrollbar track */
+        }
     </style>
 </head>
-<body class="{{settings.theme}}-theme">
-<!-- Chat History Sidebar -->
-<aside class="chat-list-container hidden" id="chat-list-container">
-    <div class="chat-list-header">
-        <span>Chat History</span>
-        <button id="new-chat-button" title="Start new chat">
-            <i class="fas fa-plus"></i>
-        </button>
-        <button id="close-chat-list-button" aria-label="Close Chat List">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <ul class="chat-list" id="chat-list"></ul>
-</aside>
-<div class="chat-list-overlay" id="chat-list-overlay"></div>
 
-<!-- Main Chat Area -->
-<main class="chat-container full" id="chat-container">
-    <header class="chat-header">
-        <button id="open-chat-list-button" aria-label="Open Chat List">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="chat-header-title">AI Chat Bot<span> by <a
-                href="https://mbktechstudio.com">MBK Tech Studio</a></span></div>
-        <button id="settings-button" aria-label="Settings">
-            <i class="fas fa-user-circle"></i>
-        </button>
-    </header>
-    <section class="chat-content">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div id="scroll-down-btn" class="scroll-down-btn">
-            <i class="fas fa-arrow-down"></i>
+<body class="{{settings.theme}}-theme">
+    <!-- Chat History Sidebar -->
+    <aside class="chat-list-container hidden" id="chat-list-container">
+        <div class="chat-list-header">
+            <span>Chat History</span>
+            <button id="new-chat-button" title="Start new chat">
+                <i class="fa fa-plus"></i>
+            </button>
+            <button id="close-chat-list-button" aria-label="Close Chat List">
+                <i class="fa fa-x"></i>
+            </button>
         </div>
-        <div class="chat-input-container">
-            <form class="chat-input-form" id="chat-form">
-                <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..."
-                       autocomplete="off" aria-label="Chat input">
-                <button type="submit" class="send-button" id="send-button"><i class="fas fa-paper-plane"></i></button>
-            </form>
-        </div>
-        <div class="settings-popup" id="settings-popup">
-            <div class="settings-header">
-                <h3>Settings</h3>
-                <button id="close-settings-button" aria-label="Close settings">
-                    <i class="fas fa-times"></i>
-                </button>
+        <ul class="chat-list" id="chat-list"></ul>
+    </aside>
+    <div class="chat-list-overlay" id="chat-list-overlay"></div>
+
+    <!-- Main Chat Area -->
+    <main class="chat-container full" id="chat-container">
+        <header class="chat-header">
+            <button id="open-chat-list-button" aria-label="Open Chat List">
+                <i class="fa fa-bars"></i>
+            </button>
+            <div class="chat-header-title">AI Chat Bot<span> by <a href="https://mbktechstudio.com">MBK Tech
+                        Studio</a></span></div>
+            <div class="settings-button" id="settings-button" aria-label="Settings">
+                <i class="fa fa-user-circle"></i>
             </div>
-            <div class="settings-tabs" role="tablist">
-                <button class="settings-tab active" data-tab="bot-settings" role="tab" aria-selected="true">
-                    <i class="fas fa-robot"></i> Bot Settings
-                </button>
-                <button class="settings-tab" data-tab="appearance" role="tab" aria-selected="false">
-                    <i class="fas fa-palette"></i> Appearance
-                </button>
-                <button class="settings-tab" data-tab="account" role="tab" aria-selected="false">
-                    <i class="fas fa-user"></i> Account
-                </button>
+        </header>
+        <section class="chat-content">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div id="scroll-down-btn" class="scroll-down-btn">
+                <i class="fa fa-arrow-down"></i>
             </div>
-            <div class="settings-content active" data-tab-content="bot-settings" role="tabpanel">
-                <div class="settings-group">
-                    <label for="model-select">AI Model</label>
-                    <div class="settings-dropdown">
-                        <select id="model-select">
-                            <option value="gemini/gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini/gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
-                            <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash</option>
-                            <option value="gemini/gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
-                            <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro</option>
-                            <option value="mallow/mallow-t1">Mallow-T1</option>
-                            <option value="nvidia/llama-3.1-nemotron-nano-8b-v1">Llama-3.1-Nemotron-Nano-8B-v1</option>
-                            <option value="nvidia/llama-3.3-nemotron-super-49b-v1">Llama-3.3-Nemotron-Super-49B-v1
-                            </option>
-                        </select>
+            <div class="chat-input-container">
+                <form class="chat-input-form" id="chat-form">
+                    <textarea class="chat-input" id="chat-input" placeholder="Type your message..." autocomplete="off"
+                        aria-label="Chat input" rows="1"></textarea>
+                    <button type="submit" class="send-button" id="send-button"><i
+                            class="fa fa-paper-plane"></i></button>
+                </form>
+            </div>
+            <div class="settings-popup" id="settings-popup">
+                <div class="settings-header">
+                    <h3>Settings</h3>
+                </div>
+                <div class="settings-tabs" role="tablist">
+                    <button class="settings-tab active" data-tab="bot-settings" role="tab" aria-selected="true">
+                        <i class="fa fa-robot"></i> Bot Settings
+                    </button>
+                    <button class="settings-tab" data-tab="appearance" role="tab" aria-selected="false">
+                        <i class="fa fa-palette"></i> Appearance
+                    </button>
+                    <button class="settings-tab" data-tab="account" role="tab" aria-selected="false">
+                        <i class="fa fa-user"></i> Account
+                    </button>
+                </div>
+                <div class="settings-content active" data-tab-content="bot-settings" role="tabpanel">
+                    <div class="settings-group">
+                        <label for="model-select">AI Model</label>
+                        <div class="settings-dropdown">
+                            <select id="model-select">
+                                <option value="gemini/gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                <option value="gemini/gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                                <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                <option value="gemini/gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
+                                <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                <option value="mallow/mallow-t1">Mallow-T1</option>
+                                <option value="nvidia/llama-3.1-nemotron-nano-8b-v1">Llama-3.1-Nemotron-Nano-8B-v1
+                                </option>
+                                <option value="nvidia/llama-3.3-nemotron-super-49b-v1">Llama-3.3-Nemotron-Super-49B-v1
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label for="temperature">Response Creativity</label>
+                        <input type="range" id="temperature" min="0" max="200" value="{{settings.temperature}}">
+                        <span id="temperature-value">{{settings.temperature_value}}</span>
                     </div>
                 </div>
-                <div class="settings-group">
-                    <label for="temperature">Response Creativity</label>
-                    <input type="range" id="temperature" min="0" max="200" value="{{settings.temperature}}">
-                    <span id="temperature-value">{{settings.temperature_value}}</span>
-                </div>
-            </div>
-            <div class="settings-content" data-tab-content="appearance" role="tabpanel">
-                <div class="settings-group">
-                    <label for="theme-select">Theme</label>
-                    <div class="settings-dropdown">
-                        <select id="theme-select">
-                            <option value="dark" {{#if (eq settings.theme "dark")}}selected{{/if}}>Dark</option>
-                            <option value="light" {{#if (eq settings.theme "light")}}selected{{/if}}>Light</option>
-                            <option value="sepia" {{#if (eq settings.theme "sepia")}}selected{{/if}}>Sepia</option>
-                            <option value="contrast" {{#if (eq settings.theme "contrast")}}selected{{/if}}>Contrast
-                            </option>
-                            <option value="system" {{#if (eq settings.theme "system")}}selected{{/if}}>System Default
-                            </option>
-                        </select>
+                <div class="settings-content" data-tab-content="appearance" role="tabpanel">
+                    <div class="settings-group">
+                        <label for="theme-select">Theme</label>
+                        <div class="settings-dropdown">
+                            <select id="theme-select">
+                                <option value="dark" {{#if (eq settings.theme "dark" )}}selected{{/if}}>Dark</option>
+                                <option value="light" {{#if (eq settings.theme "light" )}}selected{{/if}}>Light</option>
+                                <option value="sepia" {{#if (eq settings.theme "sepia" )}}selected{{/if}}>Sepia</option>
+                                <option value="contrast" {{#if (eq settings.theme "contrast" )}}selected{{/if}}>Contrast
+                                </option>
+                                <option value="system" {{#if (eq settings.theme "system" )}}selected{{/if}}>System
+                                    Default
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label for="font-size">Font Size</label>
+                        <input type="range" id="font-size" min="12" max="24" value="{{settings.font_size}}">
+                        <span id="font-size-value">{{settings.font_size}}px</span>
                     </div>
                 </div>
-                <div class="settings-group">
-                    <label for="font-size">Font Size</label>
-                    <input type="range" id="font-size" min="12" max="24" value="{{settings.font_size}}">
-                    <span id="font-size-value">{{settings.font_size}}px</span>
-                </div>
-            </div>
-            <div class="settings-content" data-tab-content="account" role="tabpanel">
-                <div class="settings-group">
-                    <label>Account Information</label>
-                    <div class="account-info">
-                        <p>User: <span id="headerProfileUserName">{{UserName}}</span></p>
+                <div class="settings-content" data-tab-content="account" role="tabpanel">
+                    <div class="settings-group">
+                        <label>Account Information</label>
+                        <div class="account-info">
+                            <p>User: <span id="headerProfileUserName">{{UserName}}</span></p>
+                        </div>
                     </div>
-                </div>
-                <div class="settings-group">
-                    <label>Subscription Details</label>
-                    <div class="account-info">
-                        {{#if (eq role "SuperAdmin")}}
+                    <div class="settings-group">
+                        <label>Subscription Details</label>
+                        <div class="account-info">
+                            {{#if (eq role "SuperAdmin")}}
                             <p>Plan: <span id="userSubscriptionPlan">MBK Tech Studio Team</span></p>
                             <p>Messages Per Day: Unlimited</p>
-                        {{else}}
+                            {{else}}
                             <p>Plan: <span id="userSubscriptionPlan">Free</span></p>
                             <p>Messages Per Day: <span id="messagesUsed">{{settings.messageCount}}</span>/<span
                                     id="messagesPerDay">{{#if settings.dailyLimit}}{{settings.dailyLimit}}{{else}}
-                                Unlimited{{/if}}</span></p>
-                        {{/if}}
+                                    Unlimited{{/if}}</span></p>
+                            {{/if}}
+                        </div>
                     </div>
+                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-save"><i
+                            class="fa fa-arrow-up"></i> Upgrade Plan</a>
+                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-cancel"><i
+                            class="fa fa-gear"></i> Account Settings</a>
+                    <button id="logout-button" onclick="logout()" class="btn btn-danger"><i
+                            class="fa fa-sign-out-alt"></i> Logout</button>
                 </div>
-                <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-save"><i
-                        class="fas fa-arrow-up"></i> Upgrade Plan</a>
-                <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-cancel"><i
-                        class="fas fa-gear"></i> Account Settings</a>
-                <button id="logout-button" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <div class="settings-footer">
+                    <a id="save-settings" class="btn btn-save"><i class="fa fa-save" aria-hidden="true"></i> Save
+                        Settings</a>
+                    <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
+                </div>
             </div>
-            <div class="settings-footer">
-                <a id="save-settings" class="btn btn-save"><i class="fas fa-save" aria-hidden="true"></i> Save Settings</a>
-                <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
-            </div>
-        </div>
-        <div class="settings-popup-overlay" id="settings-popup-overlay"></div>
-    </section>
-</main>
+            <div class="settings-popup-overlay" id="settings-popup-overlay"></div>
+        </section>
+    </main>
 
-<script>
-    // DOM Elements
-    const chatMessages = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-button');
-    const newChatButton = document.getElementById('new-chat-button');
-    const chatList = document.getElementById('chat-list');
-    const chatListContainer = document.getElementById('chat-list-container');
-    const openChatListButton = document.getElementById('open-chat-list-button');
-    const closeChatListButton = document.getElementById('close-chat-list-button');
-    const chatContainer = document.getElementById('chat-container');
-    const settingsButton = document.getElementById('settings-button');
-    const settingsPopup = document.getElementById('settings-popup');
-    const closeSettingsButton = document.getElementById('close-settings-button');
-    const cancelSettingsButton = document.getElementById('cancel-settings');
-    const saveSettingsButton = document.getElementById('save-settings');
-    const settingsTabs = document.querySelectorAll('.settings-tab');
-    const settingsContents = document.querySelectorAll('.settings-content');
-    const modelSelect = document.getElementById('model-select');
-    const themeSelect = document.getElementById('theme-select');
-    const temperatureInput = document.getElementById('temperature');
-    const temperatureValue = document.getElementById('temperature-value');
-    const fontSizeInput = document.getElementById('font-size');
-    const fontSizeValue = document.getElementById('font-size-value');
-    const settingsOverlay = document.getElementById('settings-popup-overlay');
-    const chatListOverlay = document.getElementById('chat-list-overlay');
-    const scrollDownBtn = document.getElementById('scroll-down-btn');
+    <script>
+        // DOM Elements
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const newChatButton = document.getElementById('new-chat-button');
+        const chatList = document.getElementById('chat-list');
+        const chatListContainer = document.getElementById('chat-list-container');
+        const openChatListButton = document.getElementById('open-chat-list-button');
+        const closeChatListButton = document.getElementById('close-chat-list-button');
+        const chatContainer = document.getElementById('chat-container');
+        const settingsButton = document.getElementById('settings-button');
+        const settingsPopup = document.getElementById('settings-popup');
+        const cancelSettingsButton = document.getElementById('cancel-settings');
+        const saveSettingsButton = document.getElementById('save-settings');
+        const settingsTabs = document.querySelectorAll('.settings-tab');
+        const settingsContents = document.querySelectorAll('.settings-content');
+        const modelSelect = document.getElementById('model-select');
+        const themeSelect = document.getElementById('theme-select');
+        const temperatureInput = document.getElementById('temperature');
+        const temperatureValue = document.getElementById('temperature-value');
+        const fontSizeInput = document.getElementById('font-size');
+        const fontSizeValue = document.getElementById('font-size-value');
+        const settingsOverlay = document.getElementById('settings-popup-overlay');
+        const chatListOverlay = document.getElementById('chat-list-overlay');
+        const scrollDownBtn = document.getElementById('scroll-down-btn');
 
-    // State variables
-    let currentChatId = '{{chatId}}' || null;
-    let isChatListVisible = window.innerWidth > 768;
-    let isWaitingForResponse = false;
-    let currentSettings = {
-        model: '{{settings.ai_model}}',
-        theme: '{{settings.theme}}',
-        temperature: {{settings.temperature}},
-        fontSize: {{settings.font_size}},
-        messageCount: {{settings.messageCount}},
-        dailyLimit: {{settings.dailyLimit}}
-    };
+        // State variables
+        let currentChatId = '{{chatId}}' || null;
+        let isChatListVisible = window.innerWidth > 768;
+        let isWaitingForResponse = false;
+        let currentSettings = {
+            model: '{{settings.ai_model}}',
+            theme: '{{settings.theme}}',
+            temperature: {{ settings.temperature }},
+            fontSize: {{ settings.font_size }},
+            messageCount: {{ settings.messageCount }},
+            dailyLimit: {{ settings.dailyLimit }}
+        };
 
-    // Scroll button visibility
-    function updateScrollDownBtnVisibility() {
-        const threshold = 20;
-        if (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight > threshold) {
-            scrollDownBtn.style.display = 'flex';
-        } else {
-            scrollDownBtn.style.display = 'none';
-        }
-    }
-
-    // Setup event listeners
-    function setupEventListeners() {
-        chatForm.addEventListener('submit', handleFormSubmit);
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleFormSubmit(e);
+        // Scroll button visibility
+        function updateScrollDownBtnVisibility() {
+            const threshold = 20;
+            if (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight > threshold) {
+                scrollDownBtn.style.display = 'flex';
+            } else {
+                scrollDownBtn.style.display = 'none';
             }
-        });
-        chatInput.addEventListener('input', updateSendButtonState);
-        openChatListButton.addEventListener('click', showChatList);
-        closeChatListButton.addEventListener('click', hideChatList);
-        chatListOverlay.addEventListener('click', hideChatList);
-        settingsButton.addEventListener('click', () => {
-            settingsPopup.classList.add('show');
-            settingsOverlay.classList.add('show');
-            loadSettingsValuesToPopup();
-        });
-        closeSettingsButton.addEventListener('click', closeSettings);
-        cancelSettingsButton.addEventListener('click', closeSettings);
-        saveSettingsButton.addEventListener('click', saveSettings);
-        settingsTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                settingsTabs.forEach(t => {
-                    t.classList.remove('active');
-                    t.setAttribute('aria-selected', 'false');
-                });
-                settingsContents.forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                tab.setAttribute('aria-selected', 'true');
-                document.querySelector(`.settings-content[data-tab-content="${tab.dataset.tab}"]`).classList.add('active');
-            });
-        });
-        temperatureInput.addEventListener('input', () => {
-            const tempValue = (temperatureInput.value / 100).toFixed(1);
-            temperatureValue.textContent = tempValue;
-        });
-        fontSizeInput.addEventListener('input', () => {
-            fontSizeValue.textContent = `${fontSizeInput.value}px`;
-        });
-        settingsOverlay.addEventListener('click', (e) => {
-            if (e.target === settingsOverlay) closeSettings();
-        });
-        newChatButton.addEventListener('click', startNewChat);
-        window.addEventListener('resize', setupResponsiveBehavior);
-        document.getElementById('logout-button').addEventListener('click', () => {
-            fetch('/api/logout', {method: 'POST'})
-                    .then(() => window.location.href = '/login')
-                    .catch(err => console.error('Logout failed:', err));
-        });
-        chatMessages.addEventListener('scroll', updateScrollDownBtnVisibility);
-        scrollDownBtn.addEventListener('click', () => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            updateScrollDownBtnVisibility();
-        });
-    }
+        }
 
-    // Fetch chat history
-    function fetchChatHistoryList() {
-        fetch('/api/chat/histories')
+        // Setup event listeners
+        function setupEventListeners() {
+            chatForm.addEventListener('submit', handleFormSubmit);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFormSubmit(e);
+                }
+            });
+            chatInput.addEventListener('input', updateSendButtonState);
+            openChatListButton.addEventListener('click', showChatList);
+            closeChatListButton.addEventListener('click', hideChatList);
+            chatListOverlay.addEventListener('click', hideChatList);
+            settingsButton.addEventListener('click', () => {
+                settingsPopup.classList.add('show');
+                settingsOverlay.classList.add('show');
+                loadSettingsValuesToPopup();
+            });
+            chatInput.addEventListener('input', () => {
+                chatInput.style.height = 'auto'; // Reset height to calculate scrollHeight
+                const maxRows = 5;
+                const lineHeight = parseInt(window.getComputedStyle(chatInput).lineHeight, 10) || 16; // Default to 16px if parsing fails
+                const maxHeight = lineHeight * maxRows;
+
+                if (chatInput.scrollHeight > maxHeight) {
+                    chatInput.style.height = `${maxHeight}px`;
+                    chatInput.style.overflowY = 'auto'; // Enable scrolling if max rows are reached
+                } else {
+                    chatInput.style.height = `${chatInput.scrollHeight}px`;
+                    chatInput.style.overflowY = 'hidden'; // Hide scrolling if within limit
+                }
+            });
+            cancelSettingsButton.addEventListener('click', closeSettings);
+            saveSettingsButton.addEventListener('click', saveSettings);
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    settingsTabs.forEach(t => {
+                        t.classList.remove('active');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    settingsContents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    tab.setAttribute('aria-selected', 'true');
+                    document.querySelector(`.settings-content[data-tab-content="${tab.dataset.tab}"]`).classList.add('active');
+                });
+            });
+            temperatureInput.addEventListener('input', () => {
+                const tempValue = (temperatureInput.value / 100).toFixed(1);
+                temperatureValue.textContent = tempValue;
+            });
+            fontSizeInput.addEventListener('input', () => {
+                fontSizeValue.textContent = `${fontSizeInput.value}px`;
+            });
+            settingsOverlay.addEventListener('click', (e) => {
+                if (e.target === settingsOverlay) closeSettings();
+            });
+            newChatButton.addEventListener('click', startNewChat);
+            window.addEventListener('resize', setupResponsiveBehavior);
+            chatMessages.addEventListener('scroll', updateScrollDownBtnVisibility);
+            scrollDownBtn.addEventListener('click', () => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                updateScrollDownBtnVisibility();
+            });
+        }
+
+        // Fetch chat history
+        function fetchChatHistoryList() {
+            fetch('/api/chat/histories')
                 .then(response => response.ok ? response.json() : Promise.reject('Failed to fetch chat histories'))
                 .then(histories => renderChatList(histories))
                 .catch(error => {
                     console.error("Error fetching chat histories:", error);
                     showErrorToast("Failed to load chat history");
                 });
-    }
-
-    // Render chat list
-    function renderChatList(histories) {
-        chatList.innerHTML = '';
-        if (histories.length === 0) {
-            const emptyItem = document.createElement('li');
-            emptyItem.textContent = 'No chat history yet';
-            emptyItem.style.padding = '10px';
-            emptyItem.style.color = 'var(--text-color)';
-            emptyItem.style.textAlign = 'center';
-            chatList.appendChild(emptyItem);
-            return;
         }
-        histories.forEach(history => {
-            const listItem = document.createElement('li');
-            listItem.className = 'chat-list-item';
-            listItem.dataset.chatId = history.id;
-            listItem.innerHTML = `
+
+        // Render chat list
+        function renderChatList(histories) {
+            chatList.innerHTML = '';
+            if (histories.length === 0) {
+                const emptyItem = document.createElement('li');
+                emptyItem.textContent = 'No chat history yet';
+                emptyItem.style.padding = '10px';
+                emptyItem.style.color = 'var(--text-color)';
+                emptyItem.style.textAlign = 'center';
+                chatList.appendChild(emptyItem);
+                return;
+            }
+            histories.forEach(history => {
+                const listItem = document.createElement('li');
+                listItem.className = 'chat-list-item';
+                listItem.dataset.chatId = history.id;
+                listItem.innerHTML = `
                     <span>Chat created ${history.created_at}</span>
                     <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
-                        <i class="fas fa-trash"></i>
+                        <i class="fa fa-trash"></i>
                     </button>
                 `;
-            listItem.addEventListener('click', () => {
-                window.location.href = `/chatbot/${history.id}`;
+                listItem.addEventListener('click', () => {
+                    window.location.href = `/chatbot/${history.id}`;
+                });
+                chatList.appendChild(listItem);
             });
-            chatList.appendChild(listItem);
-        });
-    }
+        }
 
-    // Load specific chat
-    function loadChat(chatId) {
-        currentChatId = chatId;
-        chatMessages.innerHTML = '';
-        fetch(`/api/chat/histories/${chatId}`)
+        // Load specific chat
+        function loadChat(chatId) {
+            currentChatId = chatId;
+            chatMessages.innerHTML = '';
+            fetch(`/api/chat/histories/${chatId}`)
                 .then(response => response.ok ? response.json() : Promise.reject('Failed to load chat'))
                 .then(chatHistory => {
                     if (chatHistory?.conversation_history) {
@@ -1045,21 +1102,21 @@
                     console.error("Error loading chat:", error);
                     showErrorToast("Failed to load chat");
                 });
-    }
+        }
 
-    // Start new chat
-    function startNewChat() {
-        currentChatId = null;
-        chatMessages.innerHTML = '';
-        chatInput.value = '';
-        window.history.pushState({}, '', '/chatbot');
-        updateSendButtonState();
-    }
+        // Start new chat
+        function startNewChat() {
+            currentChatId = null;
+            chatMessages.innerHTML = '';
+            chatInput.value = '';
+            window.history.pushState({}, '', '/chatbot');
+            updateSendButtonState();
+        }
 
-    // Delete chat
-    function deleteChat(chatId) {
-        if (!confirm('Are you sure you want to delete this chat?')) return;
-        fetch(`/api/chat/clear-history/${chatId}`, {method: 'POST'})
+        // Delete chat
+        function deleteChat(chatId) {
+            if (!confirm('Are you sure you want to delete this chat?')) return;
+            fetch(`/api/chat/clear-history/${chatId}`, { method: 'POST' })
                 .then(response => response.ok ? response.json() : Promise.reject('Failed to delete chat'))
                 .then(() => {
                     fetchChatHistoryList();
@@ -1069,25 +1126,25 @@
                     console.error("Error deleting chat:", error);
                     showErrorToast("Failed to delete chat");
                 });
-    }
+        }
 
-    // Handle form submission
-    function handleFormSubmit(e) {
-        e.preventDefault();
-        const messageText = chatInput.value.trim();
-        if (!messageText || isWaitingForResponse) return;
-        addMessage(messageText, 'user');
-        chatInput.value = '';
-        isWaitingForResponse = true;
-        showTypingIndicator();
-        updateSendButtonState();
-        const payload = {message: messageText};
-        if (currentChatId) payload.chatId = currentChatId;
-        fetch('/api/bot-chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        })
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const messageText = chatInput.value.trim();
+            if (!messageText || isWaitingForResponse) return;
+            addMessage(messageText, 'user');
+            chatInput.value = '';
+            isWaitingForResponse = true;
+            showTypingIndicator();
+            updateSendButtonState();
+            const payload = { message: messageText };
+            if (currentChatId) payload.chatId = currentChatId;
+            fetch('/api/bot-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
                 .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err.message || "Unknown error")))
                 .then(data => {
                     if (data.aiResponse) addMessage(data.aiResponse, 'ai');
@@ -1109,158 +1166,156 @@
                     hideTypingIndicator();
                     updateSendButtonState();
                 });
-    }
-
-    // Add message to chat
-    function addMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-        const content = sender === 'ai' ? marked.parse(text) : text;
-        messageDiv.innerHTML = `<div class="message-bubble">${content}</div>`;
-        if (sender === 'ai') {
-            setTimeout(() => {
-                const codeBlocks = messageDiv.querySelectorAll('pre code');
-                codeBlocks.forEach((codeBlock) => {
-                    const preElement = codeBlock.closest('pre');
-                    if (preElement && !preElement.querySelector('.code-copy-button')) {
-                        const copyButton = document.createElement('button');
-                        copyButton.className = 'code-copy-button';
-                        copyButton.setAttribute('aria-label', 'Copy code');
-                        copyButton.title = 'Copy code';
-                        copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-                        copyButton.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const code = codeBlock.textContent;
-                            copyToClipboard(code);
-                            copyButton.innerHTML = '<i class="fas fa-check"></i>';
-                            copyButton.style.background = 'linear-gradient(135deg, #45a049, #1976d2)';
-                            setTimeout(() => {
-                                copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-                                copyButton.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
-                            }, 2000);
-                        });
-                        preElement.appendChild(copyButton);
-                    }
-                });
-            }, 0);
         }
-        chatMessages.appendChild(messageDiv);
-        setTimeout(() => messageDiv.classList.add('show'), 10);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        updateScrollDownBtnVisibility();
-    }
 
-    // Copy to clipboard
-    async function copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-        } catch (err) {
-            console.error('Copy failed:', err);
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            document.body.appendChild(textarea);
-            textarea.select();
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            const content = sender === 'ai' ? marked.parse(text) : text;
+            messageDiv.innerHTML = `<div class="message-bubble">${content}</div>`;
+            if (sender === 'ai') {
+                setTimeout(() => {
+                    const codeBlocks = messageDiv.querySelectorAll('pre code');
+                    codeBlocks.forEach((codeBlock) => {
+                        const preElement = codeBlock.closest('pre');
+                        if (preElement && !preElement.querySelector('.code-copy-button')) {
+                            const copyButton = document.createElement('button');
+                            copyButton.className = 'code-copy-button';
+                            copyButton.setAttribute('aria-label', 'Copy code');
+                            copyButton.title = 'Copy code';
+                            copyButton.innerHTML = '<i class="fa fa-copy"></i>';
+                            copyButton.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const code = codeBlock.textContent;
+                                copyToClipboard(code);
+                                copyButton.innerHTML = '<i class="fa fa-check"></i>';
+                                copyButton.style.background = 'linear-gradient(135deg, #45a049, #1976d2)';
+                                setTimeout(() => {
+                                    copyButton.innerHTML = '<i class="fa fa-copy"></i>';
+                                    copyButton.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+                                }, 2000);
+                            });
+                            preElement.appendChild(copyButton);
+                        }
+                    });
+                }, 0);
+            }
+            chatMessages.appendChild(messageDiv);
+            setTimeout(() => messageDiv.classList.add('show'), 10);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            updateScrollDownBtnVisibility();
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard(text) {
             try {
-                document.execCommand('copy');
-            } catch (e) {
-                console.error('Fallback copy failed:', e);
-            } finally {
-                document.body.removeChild(textarea);
+                await navigator.clipboard.writeText(text);
+            } catch (err) {
+                console.error('Copy failed:', err);
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (e) {
+                    console.error('Fallback copy failed:', e);
+                } finally {
+                    document.body.removeChild(textarea);
+                }
             }
         }
-    }
 
-    // Typing indicator
-    function showTypingIndicator() {
-        const indicator = document.createElement('div');
-        indicator.className = 'typing-indicator';
-        indicator.id = 'typing-indicator';
-        indicator.innerHTML = 'AI is typing <span class="loading"></span><span class="loading"></span><span class="loading"></span>';
-        chatMessages.appendChild(indicator);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function hideTypingIndicator() {
-        const indicator = document.getElementById('typing-indicator');
-        if (indicator) indicator.remove();
-    }
-
-    // Chat list visibility
-    function showChatList() {
-        chatListContainer.classList.remove('hidden');
-        if (window.innerWidth <= 768) chatListOverlay.classList.add('show');
-        isChatListVisible = true;
-        openChatListButton.style.display = 'none';
-        // Remove the line that modifies chatContainer class
-    }
-
-    function hideChatList() {
-        chatListContainer.classList.add('hidden');
-        chatListOverlay.classList.remove('show');
-        isChatListVisible = false;
-        openChatListButton.style.display = 'block';
-        // Remove the line that modifies chatContainer class
-    }
-
-    // Responsive behavior
-    function setupResponsiveBehavior() {
-        if (window.innerWidth <= 768) {
-            hideChatList();
-        } else {
-            showChatList();
+        // Typing indicator
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.id = 'typing-indicator';
+            indicator.innerHTML = 'AI is typing <span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-    }
 
-    // Error toast
-    function showErrorToast(message) {
-        const toast = document.createElement('div');
-        toast.textContent = message;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.backgroundColor = '#ff4444';
-        toast.style.color = 'white';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '5px';
-        toast.style.zIndex = '1000';
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s';
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    }
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
 
-    // Settings management
-    function loadSettingsValuesToPopup() {
-        themeSelect.value = currentSettings.theme;
-        fontSizeInput.value = currentSettings.fontSize;
-        fontSizeValue.textContent = `${currentSettings.fontSize}px`;
-        modelSelect.value = currentSettings.model;
-        temperatureInput.value = currentSettings.temperature * 100;
-        temperatureValue.textContent = currentSettings.temperature.toFixed(1);
-    }
+        // Chat list visibility
+        function showChatList() {
+            chatListContainer.classList.remove('hidden');
+            if (window.innerWidth <= 768)
+                isChatListVisible = true;
+            openChatListButton.style.display = 'none';
+            // Remove the line that modifies chatContainer class
+        }
 
-    function saveSettings() {
-        const settings = {
-            theme: themeSelect.value,
-            fontSize: parseInt(fontSizeInput.value),
-            model: modelSelect.value,
-            temperature: parseFloat((temperatureInput.value / 100).toFixed(1))
-        };
-        closeSettingsButton.disabled = true;
-        cancelSettingsButton.disabled = true;
-        saveSettingsButton.classList.add('saving');
-        settingsPopup.classList.add('saving');
-        fetch('/api/save-settings', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(settings)
-        })
+        function hideChatList() {
+            chatListContainer.classList.add('hidden');
+            chatListOverlay.classList.remove('show');
+            isChatListVisible = false;
+            openChatListButton.style.display = 'block';
+            // Remove the line that modifies chatContainer class
+        }
+
+        // Responsive behavior
+        function setupResponsiveBehavior() {
+            if (window.innerWidth <= 768) {
+                hideChatList();
+            } else {
+                showChatList();
+            }
+        }
+
+        // Error toast
+        function showErrorToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.backgroundColor = '#ff4444';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '5px';
+            toast.style.zIndex = '1000';
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // Settings management
+        function loadSettingsValuesToPopup() {
+            themeSelect.value = currentSettings.theme;
+            fontSizeInput.value = currentSettings.fontSize;
+            fontSizeValue.textContent = `${currentSettings.fontSize}px`;
+            modelSelect.value = currentSettings.model;
+            temperatureInput.value = currentSettings.temperature * 100;
+            temperatureValue.textContent = currentSettings.temperature.toFixed(1);
+        }
+
+        function saveSettings() {
+            const settings = {
+                theme: themeSelect.value,
+                fontSize: parseInt(fontSizeInput.value),
+                model: modelSelect.value,
+                temperature: parseFloat((temperatureInput.value / 100).toFixed(1))
+            };
+            cancelSettingsButton.disabled = true;
+            saveSettingsButton.classList.add('saving');
+            settingsPopup.classList.add('saving');
+            fetch('/api/save-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            })
                 .then(response => response.ok ? response.json() : Promise.reject('Failed to save settings'))
                 .then(data => {
-                    closeSettingsButton.disabled = false;
                     cancelSettingsButton.disabled = false;
                     saveSettingsButton.classList.remove('saving');
                     settingsPopup.classList.remove('saving');
@@ -1273,47 +1328,47 @@
                     }
                 })
                 .catch(error => {
-                    closeSettingsButton.disabled = false;
                     cancelSettingsButton.disabled = false;
                     saveSettingsButton.classList.remove('saving');
                     settingsPopup.classList.remove('saving');
                     console.error('Error saving settings:', error);
                     showErrorToast('Error saving settings. Please try again.');
                 });
-    }
-
-    function closeSettings() {
-        settingsPopup.classList.remove('show');
-        settingsOverlay.classList.remove('show');
-    }
-
-    function applySettings() {
-        document.body.classList.remove('light-theme', 'dark-theme', 'sepia-theme', 'contrast-theme');
-        document.body.classList.add(`${currentSettings.theme}-theme`);
-        document.documentElement.style.setProperty('--base-font-size', `${currentSettings.fontSize}px`);
-    }
-
-    function updateSendButtonState() {
-        const isDisabled = chatInput.value.trim() === '' || isWaitingForResponse;
-        sendButton.classList.toggle('disabled', isDisabled);
-        sendButton.disabled = isDisabled;
-    }
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-        setupEventListeners();
-        fetchChatHistoryList();
-        setupResponsiveBehavior();
-        if (currentChatId && currentChatId !== 'null') {
-            loadChat(currentChatId);
-        } else {
-            startNewChat();
         }
-        applySettings();
-        updateSendButtonState();
-    });
 
-    window.deleteChat = deleteChat;
-</script>
+        function closeSettings() {
+            settingsPopup.classList.remove('show');
+            settingsOverlay.classList.remove('show');
+        }
+
+        function applySettings() {
+            document.body.classList.remove('light-theme', 'dark-theme', 'sepia-theme', 'contrast-theme');
+            document.body.classList.add(`${currentSettings.theme}-theme`);
+            document.documentElement.style.setProperty('--base-font-size', `${currentSettings.fontSize}px`);
+        }
+
+        function updateSendButtonState() {
+            const isDisabled = chatInput.value.trim() === '' || isWaitingForResponse;
+            sendButton.classList.toggle('disabled', isDisabled);
+            sendButton.disabled = isDisabled;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            fetchChatHistoryList();
+            setupResponsiveBehavior();
+            if (currentChatId && currentChatId !== 'null') {
+                loadChat(currentChatId);
+            } else {
+                startNewChat();
+            }
+            applySettings();
+            updateSendButtonState();
+        });
+
+        window.deleteChat = deleteChat;
+    </script>
 </body>
+
 </html>
