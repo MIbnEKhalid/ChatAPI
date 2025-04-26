@@ -98,14 +98,14 @@
                             oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9.]/g, '')" />
                         <label>User Name</label>
                         <span class="info-icon" onclick="usernameinfo()">
-                            <i class="fas fa-info-circle"></i>
+                            <i class="fa fa-info-circle"></i>
                         </span>
                     </div>
                     <div class="user-box">
                         <input id="loginPassword" type="password" name="Password" required="" />
                         <label>Password</label>
                         <span class="password-toggle-icon">
-                            <i class="fas fa-eye"></i>
+                            <i class="fa fa-eye"></i>
                         </span>
                     </div>
                     <div class="user-box" id="tokenCon" style="display: none;">
@@ -113,7 +113,7 @@
                             title="Token must be exactly 6 digits" maxlength="6" minlength="6" />
                         <label>Token</label>
                         <span class="info-icon" onclick="tokeninfo()">
-                            <i class="fas fa-info-circle"></i>
+                            <i class="fa fa-info-circle"></i>
                         </span>
                     </div>
                     <div class="wrap">
@@ -127,7 +127,7 @@
                 {{/if }}
                 <p class="info maincssp">
                     <span class="">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="fa fa-info-circle"></i>
                     </span>By Logging In, You Are Automatically Agreeing To Our
                     <a class="links" href="/info/Terms&Conditions">Use Of Terms & Conditions
                     </a>
@@ -236,10 +236,10 @@
         toggleIcon.addEventListener('click', function () { // Toggle the type of the input field
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text'; // Show password
-                toggleIcon.innerHTML = '<i class="fas fa-eye-slash"></i>'; // Change icon to closed eye
+                toggleIcon.innerHTML = '<i class="fa fa-eye-slash"></i>'; // Change icon to closed eye
             } else {
                 passwordInput.type = 'password'; // Hide password
-                toggleIcon.innerHTML = '<i class="fas fa-eye"></i>'; // Change icon to open eye
+                toggleIcon.innerHTML = '<i class="fa fa-eye"></i>'; // Change icon to open eye
             }
         });
     });
