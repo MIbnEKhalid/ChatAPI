@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add this with your other CDN links -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="/Assets/Scripts/logout.js"></script>
     <style>
         /* Root variables for consistent theming */
@@ -423,26 +426,27 @@
         }
 
         .message-bubble {
-            padding: 0.6rem 1rem;
-            border-radius: 1.5rem;
-            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 1.25rem;
+            max-width: 85%;
             word-wrap: break-word;
             line-height: 1.6;
             background: var(--user-message-bg);
             color: var(--text-color);
             box-shadow: var(--shadow);
             position: relative;
-            overflow: hidden;
         }
 
         .user-message .message-bubble {
             background: #323232d9;
             color: #ffffff;
+            border-bottom-right-radius: 0.25rem;
         }
 
         .ai-message .message-bubble {
             background: #323232d9;
             color: #fff;
+            border-bottom-left-radius: 0.25rem;
         }
 
         /* Typing indicator */
@@ -476,21 +480,90 @@
             margin-left: 0.5rem;
         }
 
-        /* Code blocks */
         pre {
-            font-family: 'Consolas', monospace;
-            background: var(--input-bg);
-            padding: 1rem;
-            border-radius: 0.75rem;
-            overflow-x: auto;
-            line-height: 1.5;
-            margin: 0.5rem 0;
-            box-shadow: var(--shadow);
             position: relative;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #272822 !important;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            line-height: 1.5;
+            box-shadow: var(--shadow);
         }
 
+
         pre code {
+            display: block;
+            color: #f8f8f2;
+            background: transparent !important;
+            padding: 0;
+            overflow-x: auto;
+        }
+        pre code .line-number {
+            display: inline-block;
+            width: 2em;
+            user-select: none;
+            opacity: 0.5;
+            margin-right: 1em;
+            text-align: right;
+            color: #6c6c6c;
+            pointer-events: none;
+        }
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .markdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .markdown-table th,
+        .markdown-table td {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .markdown-table th {
+            background-color: var(--input-bg);
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .markdown-table tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Inline code */
+        .message-content code:not(pre code) {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: var(--input-bg);
             color: var(--text-color);
+            padding: 0.2em 0.4em;
+            border-radius: 0.3em;
+            font-size: 0.9em;
+        }
+
+        /* Images */
+        .message-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+        }
+
+        /* Horizontal rule */
+        .message-content hr {
+            border: none;
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 1.5rem 0;
         }
 
         .code-copy-button {
@@ -786,6 +859,60 @@
             border-radius: 4px;
             /* Rounded corners for the scrollbar track */
         }
+
+        /* Improved Markdown rendering */
+        .message-content {
+            line-height: 1.6;
+        }
+
+        .message-content p {
+            margin-bottom: 1em;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+
+        .message-content li {
+            margin-bottom: 0.5em;
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1em;
+            margin-left: 0;
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 1em;
+        }
+
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+            font-weight: 600;
+        }
+
+        .message-content h1 { font-size: 1.8em; }
+        .message-content h2 { font-size: 1.6em; }
+        .message-content h3 { font-size: 1.4em; }
+        .message-content h4 { font-size: 1.2em; }
+        .message-content h5 { font-size: 1.1em; }
+        .message-content h6 { font-size: 1em; }
+
+        .message-content a,
+        .message-content a:visited,{
+            color: blue;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
     </style>
 </head>
 
@@ -956,6 +1083,19 @@
         const settingsOverlay = document.getElementById('settings-popup-overlay');
         const chatListOverlay = document.getElementById('chat-list-overlay');
         const scrollDownBtn = document.getElementById('scroll-down-btn');
+
+marked.setOptions({
+    breaks: true,       // Add <br> on single line breaks
+    gfm: true,          // Enable GitHub Flavored Markdown
+    smartypants: true,  // Smart quotes and other typographic enhancements
+    tables: true,       // Enable table support
+    highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(lang, code).value;
+        }
+        return hljs.highlightAuto(code).value;
+    }
+});
 
         // State variables
         let currentChatId = '{{chatId}}' || null;
@@ -1172,39 +1312,122 @@
         function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message`;
-            const content = sender === 'ai' ? marked.parse(text) : text;
-            messageDiv.innerHTML = `<div class="message-bubble">${content}</div>`;
+            
+            // Sanitize and process the message
+            const processedText = sender === 'ai' ? marked.parse(text) : escapeHtml(text);
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${processedText}</div>
+                </div>
+            `;
+            
             if (sender === 'ai') {
                 setTimeout(() => {
-                    const codeBlocks = messageDiv.querySelectorAll('pre code');
-                    codeBlocks.forEach((codeBlock) => {
-                        const preElement = codeBlock.closest('pre');
-                        if (preElement && !preElement.querySelector('.code-copy-button')) {
-                            const copyButton = document.createElement('button');
-                            copyButton.className = 'code-copy-button';
-                            copyButton.setAttribute('aria-label', 'Copy code');
-                            copyButton.title = 'Copy code';
-                            copyButton.innerHTML = '<i class="fa fa-copy"></i>';
-                            copyButton.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                const code = codeBlock.textContent;
-                                copyToClipboard(code);
-                                copyButton.innerHTML = '<i class="fa fa-check"></i>';
-                                copyButton.style.background = 'linear-gradient(135deg, #45a049, #1976d2)';
-                                setTimeout(() => {
-                                    copyButton.innerHTML = '<i class="fa fa-copy"></i>';
-                                    copyButton.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
-                                }, 2000);
-                            });
-                            preElement.appendChild(copyButton);
-                        }
+                    // Highlight all code blocks
+                    document.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
                     });
+                    
+                    // Add line numbers to code blocks
+                    // addLineNumbersToCodeBlocks();
+                    
+                    // Add copy buttons
+                    addCopyButtonsToCodeBlocks();
+                    
+                    // Make links open in new tab
+                    makeLinksOpenInNewTab(messageDiv);
+                    
+                    // Process tables for better display
+                    styleTables(messageDiv);
                 }, 0);
             }
+            
             chatMessages.appendChild(messageDiv);
             setTimeout(() => messageDiv.classList.add('show'), 10);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             updateScrollDownBtnVisibility();
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\n/g, "<br>");
+        }
+        function addLineNumbersToCodeBlocks() {
+            document.querySelectorAll('pre code').forEach((block) => {
+                // Skip if line numbers already exist
+                if (block.querySelector('.line-number')) return;
+                
+                const lines = block.innerHTML.split('\n');
+                // Remove empty last line if it exists
+                if (lines[lines.length - 1].trim() === '') lines.pop();
+                
+                // Only add line numbers if there are multiple lines
+                if (lines.length > 1) {
+                    block.innerHTML = lines.map((line, i) => 
+                        `<span class="line-number">${i + 1}</span>${line}`).join('\n');
+                }
+            });
+        }
+        
+        function addCopyButtonsToCodeBlocks() {
+            document.querySelectorAll('pre').forEach((preElement) => {
+                if (!preElement.querySelector('.code-copy-button')) {
+                    const codeBlock = preElement.querySelector('code');
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'code-copy-button';
+                    copyButton.setAttribute('aria-label', 'Copy code');
+                    copyButton.title = 'Copy code';
+                    copyButton.innerHTML = '<i class="fa fa-copy"></i>';
+                    copyButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Extract only the code text without line numbers
+                        const code = Array.from(codeBlock.childNodes)
+                            .map(node => {
+                                if (node.nodeType === Node.TEXT_NODE) {
+                                    return node.textContent;
+                                } else if (node.classList && node.classList.contains('line-number')) {
+                                    return '';
+                                }
+                                return node.textContent;
+                            })
+                            .join('')
+                            .replace(/\n$/, ''); // Remove trailing newline
+                        
+                        copyToClipboard(code);
+                        copyButton.innerHTML = '<i class="fa fa-check"></i>';
+                        copyButton.style.background = 'linear-gradient(135deg, #45a049, #1976d2)';
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fa fa-copy"></i>';
+                            copyButton.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+                        }, 2000);
+                    });
+                    preElement.appendChild(copyButton);
+                }
+            });
+        }
+                
+
+        function makeLinksOpenInNewTab(container) {
+            container.querySelectorAll('a').forEach(link => {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            });
+        }
+
+        function styleTables(container) {
+            container.querySelectorAll('table').forEach(table => {
+                table.classList.add('markdown-table');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-wrapper';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            });
         }
 
         // Copy to clipboard

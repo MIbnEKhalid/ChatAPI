@@ -4,13 +4,47 @@ import fetch from 'node-fetch';
 import { pool } from "./pool.js";
 import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
+import { GoogleAuth } from 'google-auth-library';
+import { google } from 'googleapis';
 
 dotenv.config();
 const router = express.Router();
 
+ 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
+
+
+// Test GoogleAuth connection
+router.get('/test-google-auth', async (req, res) => {
+    if (googleAuthError) {
+        return res.status(500).json({
+            success: false,
+            message: "GoogleAuth initialization failed during startup.",
+            error: googleAuthError.message,
+            details: googleAuthError.stack // Provide more detail if needed
+        });
+    }
+    try {
+        // Re-authenticate or get a fresh token to be sure
+        const currentClient = await auth.getClient(); // Use the top-level auth
+        const token = await currentClient.getAccessToken();
+        res.json({
+            success: true,
+            message: "GoogleAuth connection appears successful.",
+            projectId: projectId,
+            accessTokenObtained: !!token.token
+        });
+    } catch (error) {
+        console.error("Error testing GoogleAuth connection:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to test GoogleAuth connection.",
+            error: error.message
+        });
+    }
+});
 
 router.get(["/login", "/signin"], (req, res) => {
     if (req.session?.user) {
@@ -224,6 +258,194 @@ async function NVIDIA(apiKey, modelName, conversationHistory, temperature) {
         throw error;
     }
 }
+
+
+
+
+router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+    try {
+        // Check if Google API initialization failed during startup
+        if (googleAuthError) {
+            return res.status(500).render("templates/Error/500", {
+                error: "Google API client initialization failed during startup.",
+                details: googleAuthError.message
+            });
+        }
+        if (!serviceusage || !projectId) {
+            return res.status(500).render("templates/Error/500", {
+                error: "Google Service Usage client or Project ID not available. Initialization might have failed.",
+            });
+        }
+
+
+        const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed; // Make sure this env var is set
+        if (!geminiApiKey) {
+            return res.status(500).render("templates/Error/500", {
+                error: "Gemini API Key (GEMINI_API_KEY_maaz_waheed) is not configured in environment variables."
+            });
+        }
+
+        // 1. Get Gemini Models Information (Keep this part as is)
+        const geminiModels = [
+            'gemini-2.0-flash',
+            'gemini-2.0-flash-lite',
+            'gemini-1.5-flash',
+            'gemini-1.5-flash-8b',
+            'gemini-1.5-pro'
+        ];
+
+        console.log("Fetching Gemini model details...");
+        const modelDataPromises = geminiModels.map(async (model) => {
+            // ... (your existing model fetching logic - seems okay) ...
+            try {
+                const modelInfoUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${geminiApiKey}`;
+                const infoResponse = await fetch(modelInfoUrl);
+
+                if (!infoResponse.ok) {
+                    console.warn(`Failed to fetch info for model ${model}: ${infoResponse.status}`);
+                    return {
+                        name: model,
+                        available: false,
+                        error: `Model info not available (${infoResponse.status})`
+                    };
+                }
+                const infoData = await infoResponse.json();
+
+                // Count tokens (optional, can be slow) - Consider removing if not essential for dashboard speed
+                const tokenResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:countTokens?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Test query" }] }]
+                    })
+                });
+                const tokenData = tokenResponse.ok ? await tokenResponse.json() : null;
+
+                return {
+                    name: model,
+                    available: true,
+                    description: infoData.description || 'No description',
+                    inputTokenLimit: infoData.inputTokenLimit || 'Unknown',
+                    outputTokenLimit: infoData.outputTokenLimit || 'Unknown',
+                    supportedMethods: infoData.supportedGenerationMethods || [],
+                    testTokens: tokenData?.totalTokens || (tokenResponse.ok ? 'N/A' : 'Count failed'),
+                    lastTested: new Date().toISOString()
+                };
+            } catch (err) {
+                console.error(`Error processing model ${model}:`, err);
+                return { name: model, available: false, error: err.message };
+            }
+        });
+        const modelData = await Promise.all(modelDataPromises);
+        console.log("Gemini model details fetched.");
+
+
+        // 2. Get Quota Information from Google Cloud API
+        let quotaInfo = {};
+        try {
+            console.log(`Fetching quota for project: ${projectId}, service: generativelanguage.googleapis.com`);
+
+            // --- Add diagnostic logging ---
+            console.log('Is serviceusage client defined?', !!serviceusage);
+            if (serviceusage) {
+                 console.log('Is serviceusage.services defined?', !!serviceusage.services);
+                 if (serviceusage.services) {
+                    // --- Log the available keys/methods on serviceusage.services ---
+                    console.log('Keys available on serviceusage.services:', Object.keys(serviceusage.services));
+                    // --- End logging keys ---
+
+                    console.log('Is serviceusage.services.consumerQuotaMetrics defined?', !!serviceusage.services.consumerQuotaMetrics);
+                     if (serviceusage.services.consumerQuotaMetrics) {
+                         console.log('Is serviceusage.services.consumerQuotaMetrics.list a function?', typeof serviceusage.services.consumerQuotaMetrics.list === 'function');
+                     }
+                 }
+            }
+            // --- End diagnostic logging ---
+
+
+            // Use the pre-initialized serviceusage client from the top level
+            const quotas = await serviceusage.services.consumerQuotaMetrics.list({ // <-- Error occurs here
+                parent: `projects/${projectId}/services/generativelanguage.googleapis.com`
+            });
+            console.log("Quota data received:", quotas.data); // Log the raw response
+
+            // Process quota metrics
+            const processMetric = (metric) => {
+                // Adjust parsing based on actual 'quotas.data' structure logged above
+                const limitInfo = metric.consumerQuotaLimits?.[0]?.quotaBuckets?.[0];
+                const limit = limitInfo?.effectiveLimit;
+                const usage = limitInfo?.currentUsage ?? limitInfo?.consumerUsage ?? 0; // Check both potential usage fields or default to 0
+                const name = metric.metric || metric.name || 'Unknown Metric'; // Be flexible with name field
+
+                // Calculate percentage carefully, handle potential string 'Unlimited' or large numbers
+                let percentage = 'N/A';
+                if (limit && limit !== 'Unlimited' && !isNaN(Number(limit)) && Number(limit) > 0 && !isNaN(Number(usage))) {
+                    percentage = Math.round((Number(usage) / Number(limit)) * 100) + '%';
+                } else if (limit === 'Unlimited') {
+                    percentage = '0%'; // Usage against unlimited is effectively 0% of limit
+                }
+
+                return {
+                    displayName: metric.displayName || name, // Prefer display name
+                    name: name,
+                    limit: limit || 'N/A', // Use 'N/A' if undefined
+                    usage: usage,
+                    percentage: percentage
+                };
+            };
+
+            quotaInfo = {
+                metrics: quotas.data?.metrics?.map(processMetric) || [], // Safely access metrics
+                updatedAt: new Date().toISOString()
+            };
+            console.log("Processed quota info:", quotaInfo);
+
+        } catch (quotaError) {
+            // ... existing catch block ...
+             console.error("Failed to fetch or process quota:", quotaError);
+             // Add logging for the object structure if the error is related to finding the method
+             if (quotaError instanceof TypeError && quotaError.message.includes('undefined')) {
+                console.error("Potential structure issue. serviceusage object:", serviceusage); // Log the whole client
+                if (serviceusage?.services) {
+                    console.error("serviceusage.services object:", serviceusage.services); // Log the services part
+                }
+             }
+             console.error("Quota Error Details:", quotaError.response?.data || quotaError.message);
+             quotaInfo = { /* ... existing error info ... */ };
+        }
+
+        // 3. Prepare data for Handlebars
+        const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleString() : 'N/A';
+        const availableModels = modelData.filter(m => m.available);
+        const unavailableModels = modelData.filter(m => !m.available);
+
+        res.render("mainPages/geminiDashboard", {
+            title: "Gemini API Dashboard",
+            models: availableModels,
+            unavailableModels,
+            quotaInfo,
+            lastUpdated: formatDate(new Date().toISOString()),
+            apiKeyConfigured: !!geminiApiKey,
+            googleAuthError: googleAuthError ? googleAuthError.message : null, // Pass auth error to template
+            projectId: projectId, // Pass project ID for display
+            helpers: {
+                json: (context) => JSON.stringify(context, null, 2), // Pretty print JSON
+                join: (array, separator) => Array.isArray(array) ? array.join(separator) : 'None',
+                formatNumber: (num) => (typeof num === 'number' || (typeof num === 'string' && !isNaN(Number(num)))) ? Number(num).toLocaleString() : num?.toString() || '0', // Handle numbers and strings safely
+                findMetric: (metrics, name) => Array.isArray(metrics) ? (metrics.find(m => m.name === name) || { name: name, usage: 'Not found', limit: 'N/A', percentage: 'N/A' }) : { name: name, usage: 'Metrics unavailable', limit: 'N/A', percentage: 'N/A' },
+                isError: (obj) => obj && obj.error, // Helper to check if quotaInfo has an error
+                formatDate: formatDate // Make formatDate available
+            }
+        });
+
+    } catch (error) {
+        console.error("Unexpected error in /admin/chatbot/gemini route:", error);
+        res.status(500).render("templates/Error/500", {
+            error: "Failed to retrieve Gemini API information due to an unexpected server error.",
+            details: error.message
+        });
+    }
+});
 
 router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
     const { message, chatId } = req.body;
@@ -443,4 +665,5 @@ router.post('/api/logout', validateSessionAndRole("Any"), (req, res) => {
     });
 });
 
+// router.get('/favicon.ico', (_, res) => res.sendFile(path.join(__dirname, '..', 'public','Assets','Images', 'dg.svg')));
 export default router;
