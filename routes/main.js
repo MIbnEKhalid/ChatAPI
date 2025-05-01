@@ -6,47 +6,15 @@ import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
 import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
-import keys from './ss.json' assert { type: 'json' };
 
 dotenv.config();
 const router = express.Router();
 
-const gapi = JSON.stringify(keys);
-
+ 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-// --- Google API Initialization (Do this ONCE at the top level) ---
-let auth, client, projectId, serviceusage, googleAuthError = null;
 
-try {
-    console.log("Initializing Google Auth...");
-    auth = new GoogleAuth({
-        credentials: process.env.GOOGLE_APPLICATION_CREDENTIALS ? JSON.parse(gapi) : undefined,
-        scopes: ['https://www.googleapis.com/auth/cloud-platform']
-    });
-
-    console.log("Getting Google Auth Client...");
-    client = await auth.getClient();
-    console.log("Google Auth Client obtained.");
-
-    console.log("Getting Project ID...");
-    projectId = await auth.getProjectId();
-    console.log(`Project ID: ${projectId}`);
-
-    console.log("Initializing Google Service Usage API Client...");
-    serviceusage = google.serviceusage({
-        version: 'v1',
-        auth: client // Use the authenticated client obtained above
-    });
-    console.log("Google Service Usage API Client initialized.");
-
-} catch (err) {
-    console.error("FATAL: Failed to initialize Google API clients:", err);
-    googleAuthError = err; // Store the error to report later
-    // Depending on your app's needs, you might want to prevent the app from starting
-    // process.exit(1);
-}
 
 // Test GoogleAuth connection
 router.get('/test-google-auth', async (req, res) => {
