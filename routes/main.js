@@ -38,7 +38,6 @@ let projectId = null;
     serviceusage = google.serviceusage('v1');
   } catch (error) {
     googleAuthError = error;
-    console.error("Google Auth initialization error:", error);
   }
 })();
 
@@ -46,21 +45,21 @@ let projectId = null;
 const formatChatTime = (createdAt) => {
   const now = new Date();
   const diffInSeconds = Math.floor((now - createdAt) / 1000);
-  
+
   if (diffInSeconds < 60) return `${diffInSeconds} second${diffInSeconds > 1 ? 's' : ''} ago`;
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) > 1 ? 's' : ''} ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) > 1 ? 's' : ''} ago`;
   if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) > 1 ? 's' : ''} ago`;
-  
+
   return createdAt.toLocaleDateString();
 };
 
 const handleApiError = (res, error, context) => {
   console.error(`Error in ${context}:`, error);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: `Error ${context}`,
-    error: error.message 
+    error: error.message
   });
 };
 
@@ -131,22 +130,18 @@ const db = {
         )
       ]);
 
-      const messageCount = messageLog.rows[0]?.message_count || 0;
-      
       return settingsResult.rows.length > 0 ? {
         theme: settingsResult.rows[0].theme || DEFAULT_THEME,
         font_size: settingsResult.rows[0].font_size || DEFAULT_FONT_SIZE,
         ai_model: settingsResult.rows[0].ai_model || DEFAULT_MODEL,
         temperature: settingsResult.rows[0].temperature || DEFAULT_TEMPERATURE,
         dailyLimit: settingsResult.rows[0].daily_message_limit || DEFAULT_DAILY_LIMIT,
-        messageCount
       } : {
         theme: DEFAULT_THEME,
         font_size: DEFAULT_FONT_SIZE,
         ai_model: DEFAULT_MODEL,
         temperature: DEFAULT_TEMPERATURE,
         dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
       };
     } catch (error) {
       console.error("Database error fetching user settings:", error);
@@ -156,7 +151,6 @@ const db = {
         ai_model: DEFAULT_MODEL,
         temperature: DEFAULT_TEMPERATURE,
         dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
       };
     }
   },
@@ -259,7 +253,7 @@ const aiServices = {
       });
 
       const responseBody = await response.text();
-      
+
       if (!response.ok) {
         let errorData = {};
         try {
@@ -291,7 +285,7 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
     const { chatId } = req.params;
     const { username, role } = req.session.user;
     const userSettings = await db.fetchUserSettings(username);
-    
+
     res.render('mainPages/chatbot.handlebars', {
       chatId: chatId || null,
       settings: {
@@ -323,7 +317,7 @@ router.get('/api/chat/histories/:chatId', validateSessionAndRole("Any"), async (
 
   try {
     const chatHistory = await db.fetchChatHistoryById(chatId);
-    chatHistory 
+    chatHistory
       ? res.json(chatHistory)
       : res.status(404).json({ message: "Chat history not found" });
   } catch (error) {
@@ -365,7 +359,7 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
       try {
         const modelInfoUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${geminiApiKey}`;
         const infoResponse = await fetch(modelInfoUrl);
-        
+
         if (!infoResponse.ok) {
           return {
             name: model,
@@ -385,10 +379,10 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
           lastTested: new Date().toISOString()
         };
       } catch (error) {
-        return { 
-          name: model, 
-          available: false, 
-          error: error.message 
+        return {
+          name: model,
+          available: false,
+          error: error.message
         };
       }
     }));
@@ -429,11 +423,11 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
       helpers: {
         json: (context) => JSON.stringify(context, null, 2),
         join: (array, separator) => Array.isArray(array) ? array.join(separator) : 'None',
-        formatNumber: (num) => (typeof num === 'number' || !isNaN(Number(num))) 
-          ? Number(num).toLocaleString() 
+        formatNumber: (num) => (typeof num === 'number' || !isNaN(Number(num)))
+          ? Number(num).toLocaleString()
           : num?.toString() || '0',
-        findMetric: (metrics, name) => Array.isArray(metrics) 
-          ? (metrics.find(m => m.name === name) || { name, usage: 'Not found', limit: 'N/A', percentage: 'N/A' }) 
+        findMetric: (metrics, name) => Array.isArray(metrics)
+          ? (metrics.find(m => m.name === name) || { name, usage: 'Not found', limit: 'N/A', percentage: 'N/A' })
           : { name, usage: 'Metrics unavailable', limit: 'N/A', percentage: 'N/A' },
         isError: (obj) => obj && obj.error,
         formatDate: (isoString) => isoString ? new Date(isoString).toLocaleString() : 'N/A'
@@ -448,62 +442,61 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
   }
 });
 
-// Add this to your Express router
 router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), async (req, res) => {
-    const { chatId } = req.params;
-    const { messageId } = req.body;
+  const { chatId } = req.params;
+  const { messageId } = req.body;
 
-    console.log(`Request received to delete message. Chat ID: ${chatId}, Message ID: ${messageId}`);
+  console.log(`Request received to delete message. Chat ID: ${chatId}, Message ID: ${messageId}`);
 
-    if (!chatId) {
-        console.error("Chat ID is missing in the request");
-        return res.status(400).json({ message: "Chat ID is required" });
+  if (!chatId) {
+    console.error("Chat ID is missing in the request");
+    return res.status(400).json({ message: "Chat ID is required" });
+  }
+  if (!messageId) {
+    console.error("Message ID is missing in the request");
+    return res.status(400).json({ message: "Message ID is required" });
+  }
+
+  try {
+    console.log(`Fetching chat history for Chat ID: ${chatId}`);
+    const chatHistory = await db.fetchChatHistoryById(chatId);
+    if (!chatHistory) {
+      console.error(`Chat history not found for Chat ID: ${chatId}`);
+      return res.status(404).json({ message: "Chat history not found" });
     }
-    if (!messageId) {
-        console.error("Message ID is missing in the request");
-        return res.status(400).json({ message: "Message ID is required" });
-    }
 
-    try {
-        console.log(`Fetching chat history for Chat ID: ${chatId}`);
-        const chatHistory = await db.fetchChatHistoryById(chatId);
-        if (!chatHistory) {
-            console.error(`Chat history not found for Chat ID: ${chatId}`);
-            return res.status(404).json({ message: "Chat history not found" });
-        }
+    console.log(`Parsing conversation history for Chat ID: ${chatId}`);
+    let conversationHistory = typeof chatHistory.conversation_history === 'string'
+      ? JSON.parse(chatHistory.conversation_history)
+      : chatHistory.conversation_history;
 
-        console.log(`Parsing conversation history for Chat ID: ${chatId}`);
-        let conversationHistory = typeof chatHistory.conversation_history === 'string'
-            ? JSON.parse(chatHistory.conversation_history)
-            : chatHistory.conversation_history;
+    console.log(`Original conversation history length: ${conversationHistory.length}`);
+    conversationHistory = conversationHistory.filter((msg, index) => index.toString() !== messageId);
+    console.log(`Updated conversation history length: ${conversationHistory.length}`);
 
-        console.log(`Original conversation history length: ${conversationHistory.length}`);
-        conversationHistory = conversationHistory.filter((msg, index) => index.toString() !== messageId);
-        console.log(`Updated conversation history length: ${conversationHistory.length}`);
+    console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
+    await pool.query(
+      'UPDATE Ai_history SET conversation_history = $1 WHERE id = $2',
+      [JSON.stringify(conversationHistory), chatId]
+    );
 
-        console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
-        await pool.query(
-            'UPDATE Ai_history SET conversation_history = $1 WHERE id = $2',
-            [JSON.stringify(conversationHistory), chatId]
-        );
-
-        console.log(`Message with ID: ${messageId} successfully deleted from Chat ID: ${chatId}`);
-        res.json({ success: true, message: "Message deleted" });
-    } catch (error) {
-        console.error(`Error deleting message with ID: ${messageId} from Chat ID: ${chatId}`, error);
-        handleApiError(res, error, "deleting message");
-    }
+    console.log(`Message with ID: ${messageId} successfully deleted from Chat ID: ${chatId}`);
+    res.json({ success: true, message: "Message deleted" });
+  } catch (error) {
+    console.error(`Error deleting message with ID: ${messageId} from Chat ID: ${chatId}`, error);
+    handleApiError(res, error, "deleting message");
+  }
 });
 
 router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   const { message, chatId } = req.body;
   const { username } = req.session.user;
-  
+
   try {
     // Get user settings
     const userSettings = await db.fetchUserSettings(username);
     const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
-    
+
     // Get conversation history
     let conversationHistory = [];
     if (chatId) {
@@ -516,15 +509,15 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         return res.status(404).json({ message: "Chat history not found" });
       }
     }
-    
+
     // Add new user message
     conversationHistory.push({ role: "user", parts: [{ text: message }] });
-    
+
     // Determine AI provider and model
-    const [provider, model] = userSettings.ai_model.includes('/') 
+    const [provider, model] = userSettings.ai_model.includes('/')
       ? userSettings.ai_model.split('/')
       : ['gemini', userSettings.ai_model];
-    
+
     // Call appropriate AI service
     let aiResponseText;
     switch (provider.toLowerCase()) {
@@ -542,7 +535,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         if (!geminiApiKey) throw new Error("Gemini API key not configured");
         aiResponseText = await aiServices.gemini(geminiApiKey, model, conversationHistory, temperature);
     }
-    
+
     // Save conversation if not Mallow
     let newChatId = chatId;
     if (provider !== 'mallow') {
@@ -554,11 +547,11 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         temperature
       });
     }
-    
+
     res.json({ aiResponse: aiResponseText, newChatId });
   } catch (error) {
     console.error("Error in bot chat:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: `Error processing ${req.body.provider || 'AI'} request`,
       error: error.message
     });
