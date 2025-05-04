@@ -10,9 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Add this with your other CDN links -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="/Assets/Scripts/logout.js"></script>
     <style>
@@ -161,11 +160,64 @@
 
         @media (max-width: 768px) {
             .chat-list-container {
-                width: 80%;
                 position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 85%;
+                max-width: 300px;
                 height: 100vh;
                 z-index: 1000;
-                border-radius: 0 1rem 1rem 0;
+                border-radius: 0;
+                transform: translateX(-100%);
+                transition: transform var(--transition-duration) ease-in-out;
+            }
+
+            .chat-list-container:not(.hidden) {
+                transform: translateX(0);
+            }
+
+            .chat-container {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .chat-container.full {
+                width: 100%;
+            }
+
+            .chat-header {
+                padding: 0.5rem;
+            }
+
+            .chat-header-title {
+                font-size: 1.2rem;
+            }
+
+            .chat-input-container {
+                padding: 0.75rem;
+            }
+
+            .chat-input {
+                font-size: 0.9rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .message-bubble {
+                max-width: 90%;
+                padding: 0.75rem 1rem;
+            }
+ 
+
+            .btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .scroll-down-btn {
+                bottom: 4rem;
+                width: 1.75rem;
+                height: 1.75rem;
             }
         }
 
@@ -237,34 +289,20 @@
             opacity: 1;
         }
 
+        /* Chat container */
         .chat-container {
             display: flex;
             flex-direction: column;
             height: 100%;
             flex: 1;
-            /* Changed from width: calc(100% - 250px) */
             transition: margin var(--transition-duration) ease-in-out;
             background: var(--bg-color);
+            width: 100%;
         }
 
-        ..chat-container.full {
+        .chat-container.full {
             width: 100%;
             max-width: 100%;
-        }
-
-        .chat-list-container {
-            flex: 0 0 250px;
-            max-width: 300px;
-            background-color: var(--header-bg);
-            border-right: 1px solid var(--border-color);
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            transition: transform var(--transition-duration) ease-in-out, opacity var(--transition-duration) ease-in-out;
-            position: relative;
-            z-index: 10;
-            box-shadow: var(--shadow);
         }
 
         /* Chat header */

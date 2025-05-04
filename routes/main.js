@@ -130,18 +130,22 @@ const db = {
         )
       ]);
 
+      const messageCount = messageLog.rows[0]?.message_count || 0;
+
       return settingsResult.rows.length > 0 ? {
         theme: settingsResult.rows[0].theme || DEFAULT_THEME,
         font_size: settingsResult.rows[0].font_size || DEFAULT_FONT_SIZE,
         ai_model: settingsResult.rows[0].ai_model || DEFAULT_MODEL,
         temperature: settingsResult.rows[0].temperature || DEFAULT_TEMPERATURE,
         dailyLimit: settingsResult.rows[0].daily_message_limit || DEFAULT_DAILY_LIMIT,
+        messageCount
       } : {
         theme: DEFAULT_THEME,
         font_size: DEFAULT_FONT_SIZE,
         ai_model: DEFAULT_MODEL,
         temperature: DEFAULT_TEMPERATURE,
         dailyLimit: DEFAULT_DAILY_LIMIT,
+        messageCount: 0
       };
     } catch (error) {
       console.error("Database error fetching user settings:", error);
@@ -151,6 +155,7 @@ const db = {
         ai_model: DEFAULT_MODEL,
         temperature: DEFAULT_TEMPERATURE,
         dailyLimit: DEFAULT_DAILY_LIMIT,
+        messageCount: 0
       };
     }
   },
