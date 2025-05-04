@@ -71,14 +71,87 @@ const db = {
         'SELECT id, created_at, temperature FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
         [username]
       );
-      return rows.map(row => ({
-        id: row.id,
-        created_at: formatChatTime(new Date(row.created_at)),
-        temperature: row.temperature || 0.5
-      }));
+
+      // Group chats by time period
+      const now = new Date();
+      const today = new Date(now.setHours(0, 0, 0, 0));
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const groupedChats = {
+        today: [],
+        yesterday: [],
+        last7Days: [],
+        last30Days: [],
+        older: []
+      };
+
+      // Month-year format for older chats
+      const monthYearFormat = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      rows.forEach(row => {
+        const createdAt = new Date(row.created_at);
+        const formattedDate = formatChatTime(createdAt);
+        const monthYear = monthYearFormat.format(createdAt);
+
+        if (createdAt >= today) {
+          groupedChats.today.push({
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+          });
+        } else if (createdAt >= yesterday) {
+          groupedChats.yesterday.push({
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+          });
+        } else if (createdAt >= sevenDaysAgo) {
+          groupedChats.last7Days.push({
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+          });
+        } else if (createdAt >= thirtyDaysAgo) {
+          groupedChats.last30Days.push({
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+          });
+        } else {
+          if (!groupedChats.older[monthYear]) {
+            groupedChats.older[monthYear] = [];
+          }
+          groupedChats.older[monthYear].push({
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+          });
+        }
+      });
+
+      return groupedChats;
     } catch (error) {
       console.error("Database error fetching chat histories:", error);
-      return [];
+      return {
+        today: [],
+        yesterday: [],
+        last7Days: [],
+        last30Days: [],
+        older: []
+      };
     }
   },
 
@@ -184,6 +257,24 @@ const db = {
 
 // AI Service Integrations
 const aiServices = {
+
+  formatResponse: (responseText, provider) => {
+    const identityQuestions = [
+      /who\s*(are|is)\s*you/i,
+      /what\s*(are|is)\s*you/i,
+      /your\s*(name|identity)/i,
+      /introduce\s*yourself/i,
+      /are\s*you\s*(chatgpt|gemini|ai|bot)/i
+    ];
+
+    const isIdentityQuestion = identityQuestions.some(regex => regex.test(responseText));
+
+    if (isIdentityQuestion) {
+      return `I'm a general purpose AI assistant developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. How can I help you today? ${responseText}`;
+    }
+    return responseText;
+  },
+
   gemini: async (apiKey, model, conversationHistory, temperature) => {
     const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
     try {
@@ -202,7 +293,8 @@ const aiServices = {
       }
 
       const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini API";
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini API";
+      return aiServices.formatResponse(responseText, 'gemini');
     } catch (error) {
       console.error("Gemini API error:", error);
       throw error;
@@ -224,7 +316,8 @@ const aiServices = {
       }
 
       const data = await response.json();
-      return data.response || "No response from Mallow API";
+      const responseText = data.response || "No response from Mallow API";
+      return aiServices.formatResponse(responseText, 'mallow');
     } catch (error) {
       console.error("Mallow API error:", error);
       return "API service is not available. Please contact [Maaz Waheed](https://github.com/42Wor) to start the API service.";
@@ -270,7 +363,8 @@ const aiServices = {
       }
 
       const data = JSON.parse(responseBody);
-      return data.choices?.[0]?.message?.content || "No response from NVIDIA API";
+      const responseText = data.choices?.[0]?.message?.content || "No response from NVIDIA API";
+      return aiServices.formatResponse(responseText, 'nvidia');
     } catch (error) {
       console.error("NVIDIA API error:", error);
       throw error;
@@ -298,8 +392,7 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
         temperature_value: (userSettings.temperature || DEFAULT_TEMPERATURE).toFixed(1)
       },
       UserName: username,
-      role,
-      userLoggedIn: true
+      role
     });
   } catch (error) {
     console.error("Error rendering chatbot page:", error);
@@ -513,6 +606,14 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
       } else if (chatId) {
         return res.status(404).json({ message: "Chat history not found" });
       }
+    } else {
+      // Add system message for new chats
+      conversationHistory.push({
+        role: "user",  // Changed from "system" to "user"
+        parts: [{
+          text: "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
+        }]
+      });
     }
 
     // Add new user message
