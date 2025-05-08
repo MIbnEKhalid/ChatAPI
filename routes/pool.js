@@ -7,7 +7,7 @@ dotenv.config();
 
 // PostgreSQL connection pool for pool
 const poolConfig = {
-  connectionString: process.env.NEON_POSTGRES1,
+  connectionString: process.env.NEON_POSTGRES,
   ssl: {
     rejectUnauthorized: true,
   },
