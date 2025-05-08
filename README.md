@@ -42,6 +42,13 @@ GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_APPLICATION_CREDENTIALS=path_to_google_credentials
 ```
 
+## Get Free API
+
+### Gemini
+https://aistudio.google.com/app/apikey
+### Nvidia(llama)
+
+
 ## Installation Guide
 
 1. Clone the repository:

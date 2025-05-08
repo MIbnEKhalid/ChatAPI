@@ -55,6 +55,10 @@ router.engine("handlebars", engine({
         },
         jsonStringify: function (context) {
             return JSON.stringify(context);
+        },
+        percentage: function (used, total) {
+            if (total === 0) return 0;
+            return Math.round((used / total) * 100);
         }
     }
 }));

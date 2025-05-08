@@ -4,15 +4,9 @@ import fetch from 'node-fetch';
 import { pool } from "./pool.js";
 import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
-import { GoogleAuth } from 'google-auth-library';
-import { google } from 'googleapis';
 
 dotenv.config();
 const router = express.Router();
-
-// Middleware
-router.use(express.json());
-router.use(express.urlencoded({ extended: true }));
 
 // Constants
 const DEFAULT_MODEL = 'gemini/gemini-1.5-flash';
@@ -20,38 +14,37 @@ const DEFAULT_TEMPERATURE = 1.0;
 const DEFAULT_THEME = 'dark';
 const DEFAULT_FONT_SIZE = 16;
 const DEFAULT_DAILY_LIMIT = 100;
-
 const DEFAULT_PAGE_SIZE = 20;
+const IDENTITY_QUESTIONS = [
+  /who\s*(are|is)\s*you/i,
+  /what\s*(are|is)\s*you/i,
+  /your\s*(name|identity)/i,
+  /introduce\s*yourself/i,
+  /are\s*you\s*(chatgpt|gemini|ai|bot)/i
+];
 
-// API Clients
-let googleAuthError = null;
-let serviceusage = null;
-let projectId = null;
-
-// Initialize Google Auth
-(async () => {
-  try {
-    const auth = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS
-    });
-    const authClient = await auth.getClient();
-    projectId = await auth.getProjectId();
-    serviceusage = google.serviceusage('v1');
-  } catch (error) {
-    googleAuthError = error;
-  }
-})();
+// Middleware
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
 
 // Utility Functions
 const formatChatTime = (createdAt) => {
   const now = new Date();
   const diffInSeconds = Math.floor((now - createdAt) / 1000);
 
-  if (diffInSeconds < 60) return `${diffInSeconds} second${diffInSeconds > 1 ? 's' : ''} ago`;
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) > 1 ? 's' : ''} ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) > 1 ? 's' : ''} ago`;
-  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) > 1 ? 's' : ''} ago`;
+  const intervals = [
+    { seconds: 60, text: 'second' },
+    { seconds: 3600, text: 'minute', divisor: 60 },
+    { seconds: 86400, text: 'hour', divisor: 3600 },
+    { seconds: 2592000, text: 'day', divisor: 86400 }
+  ];
+
+  for (const interval of intervals) {
+    if (diffInSeconds < interval.seconds) {
+      const value = Math.floor(diffInSeconds / (interval.divisor || 1));
+      return `${value} ${interval.text}${value > 1 ? 's' : ''} ago`;
+    }
+  }
 
   return createdAt.toLocaleDateString();
 };
@@ -65,31 +58,32 @@ const handleApiError = (res, error, context) => {
   });
 };
 
+const isIdentityQuestion = (text) =>
+  IDENTITY_QUESTIONS.some(regex => regex.test(text));
+
 // Database Operations
 const db = {
-
   fetchChatHistories: async (username, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+    const offset = (page - 1) * pageSize;
+    const monthYearFormat = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' });
+
     try {
-      const offset = (page - 1) * pageSize;
+      const [countResult, chatResult] = await Promise.all([
+        pool.query(
+          'SELECT COUNT(*) FROM ai_history_chatapi WHERE username = $1',
+          [username]
+        ),
+        pool.query(
+          `SELECT id, created_at, temperature 
+           FROM ai_history_chatapi 
+           WHERE username = $1 
+           ORDER BY created_at DESC
+           LIMIT $2 OFFSET $3`,
+          [username, pageSize, offset]
+        )
+      ]);
 
-      // Get total count
-      const countResult = await pool.query(
-        'SELECT COUNT(*) FROM ai_history_chatapi WHERE username = $1',
-        [username]
-      );
       const totalCount = parseInt(countResult.rows[0].count);
-
-      // Get paginated results
-      const { rows } = await pool.query(
-        `SELECT id, created_at, temperature 
-         FROM ai_history_chatapi 
-         WHERE username = $1 
-         ORDER BY created_at DESC
-         LIMIT $2 OFFSET $3`,
-        [username, pageSize, offset]
-      );
-
-      // Group chats by time period (your existing logic)
       const now = new Date();
       const today = new Date(now.setHours(0, 0, 0, 0));
       const yesterday = new Date(today);
@@ -104,7 +98,7 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: [],
+        older: {},
         pagination: {
           currentPage: page,
           pageSize,
@@ -113,50 +107,28 @@ const db = {
         }
       };
 
-      // Your existing grouping logic...
-      rows.forEach(row => {
+      chatResult.rows.forEach(row => {
         const createdAt = new Date(row.created_at);
         const formattedDate = formatChatTime(createdAt);
-        // Add this line near the top of the file, after imports and constants
-        const monthYearFormat = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' });
+        const chatItem = {
+          id: row.id,
+          created_at: formattedDate,
+          temperature: row.temperature || 0.5,
+          rawDate: createdAt
+        };
+
         if (createdAt >= today) {
-          groupedChats.today.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.today.push(chatItem);
         } else if (createdAt >= yesterday) {
-          groupedChats.yesterday.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.yesterday.push(chatItem);
         } else if (createdAt >= sevenDaysAgo) {
-          groupedChats.last7Days.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.last7Days.push(chatItem);
         } else if (createdAt >= thirtyDaysAgo) {
-          groupedChats.last30Days.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.last30Days.push(chatItem);
         } else {
-          if (!groupedChats.older[monthYear]) {
-            groupedChats.older[monthYear] = [];
-          }
-          groupedChats.older[monthYear].push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          const monthYear = monthYearFormat.format(createdAt);
+          groupedChats.older[monthYear] = groupedChats.older[monthYear] || [];
+          groupedChats.older[monthYear].push(chatItem);
         }
       });
 
@@ -168,7 +140,7 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: [],
+        older: {},
         pagination: {
           currentPage: 1,
           pageSize: DEFAULT_PAGE_SIZE,
@@ -200,13 +172,13 @@ const db = {
           [JSON.stringify(history), chatId, temperature]
         );
         return chatId;
-      } else {
-        const { rows } = await pool.query(
-          'INSERT INTO ai_history_chatapi (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
-          [JSON.stringify(history), username, temperature]
-        );
-        return rows[0].id;
       }
+
+      const { rows } = await pool.query(
+        'INSERT INTO ai_history_chatapi (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
+        [JSON.stringify(history), username, temperature]
+      );
+      return rows[0].id;
     } catch (error) {
       console.error("Database error saving chat history:", error);
       throw error;
@@ -214,8 +186,17 @@ const db = {
   },
 
   fetchUserSettings: async (username) => {
+    const today = new Date().toISOString().split("T")[0];
+    const defaultSettings = {
+      theme: DEFAULT_THEME,
+      font_size: DEFAULT_FONT_SIZE,
+      ai_model: DEFAULT_MODEL,
+      temperature: DEFAULT_TEMPERATURE,
+      dailyLimit: DEFAULT_DAILY_LIMIT,
+      messageCount: 0
+    };
+
     try {
-      const today = new Date().toISOString().split("T")[0];
       const [settingsResult, messageLog] = await Promise.all([
         pool.query(
           'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE username = $1',
@@ -227,33 +208,18 @@ const db = {
         )
       ]);
 
-      const messageCount = messageLog.rows[0]?.message_count || 0;
+      if (settingsResult.rows.length === 0) {
+        return defaultSettings;
+      }
 
-      return settingsResult.rows.length > 0 ? {
-        theme: settingsResult.rows[0].theme || DEFAULT_THEME,
-        font_size: settingsResult.rows[0].font_size || DEFAULT_FONT_SIZE,
-        ai_model: settingsResult.rows[0].ai_model || DEFAULT_MODEL,
-        temperature: settingsResult.rows[0].temperature || DEFAULT_TEMPERATURE,
-        dailyLimit: settingsResult.rows[0].daily_message_limit || DEFAULT_DAILY_LIMIT,
-        messageCount
-      } : {
-        theme: DEFAULT_THEME,
-        font_size: DEFAULT_FONT_SIZE,
-        ai_model: DEFAULT_MODEL,
-        temperature: DEFAULT_TEMPERATURE,
-        dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
+      return {
+        ...defaultSettings,
+        ...settingsResult.rows[0],
+        messageCount: messageLog.rows[0]?.message_count || 0
       };
     } catch (error) {
       console.error("Database error fetching user settings:", error);
-      return {
-        theme: DEFAULT_THEME,
-        font_size: DEFAULT_FONT_SIZE,
-        ai_model: DEFAULT_MODEL,
-        temperature: DEFAULT_TEMPERATURE,
-        dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
-      };
+      return defaultSettings;
     }
   },
 
@@ -264,10 +230,10 @@ const db = {
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (username)
          DO UPDATE SET
-            theme = $2,
-            font_size = $3,
-            ai_model = $4,
-            temperature = $5,
+            theme = EXCLUDED.theme,
+            font_size = EXCLUDED.font_size,
+            ai_model = EXCLUDED.ai_model,
+            temperature = EXCLUDED.temperature,
             updated_at = CURRENT_TIMESTAMP`,
         [username, settings.theme, settings.fontSize, settings.model, settings.temperature]
       );
@@ -281,19 +247,8 @@ const db = {
 
 // AI Service Integrations
 const aiServices = {
-
-  formatResponse: (responseText, provider) => {
-    const identityQuestions = [
-      /who\s*(are|is)\s*you/i,
-      /what\s*(are|is)\s*you/i,
-      /your\s*(name|identity)/i,
-      /introduce\s*yourself/i,
-      /are\s*you\s*(chatgpt|gemini|ai|bot)/i
-    ];
-
-    const isIdentityQuestion = identityQuestions.some(regex => regex.test(responseText));
-
-    if (isIdentityQuestion) {
+  formatResponse: (responseText) => {
+    if (isIdentityQuestion(responseText)) {
       return `I'm a general purpose AI assistant developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. How can I help you today? ${responseText}`;
     }
     return responseText;
@@ -301,6 +256,7 @@ const aiServices = {
 
   gemini: async (apiKey, model, conversationHistory, temperature) => {
     const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -324,7 +280,7 @@ const aiServices = {
 
       const data = await response.json();
       const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini API";
-      return aiServices.formatResponse(responseText, 'gemini');
+      return aiServices.formatResponse(responseText);
     } catch (error) {
       console.error("Gemini API error:", error);
       throw error;
@@ -333,6 +289,7 @@ const aiServices = {
 
   mallow: async (prompt) => {
     const url = "https://literate-slightly-seahorse.ngrok-free.app/generate";
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -347,14 +304,14 @@ const aiServices = {
 
       const data = await response.json();
       const responseText = data.response || "No response from Mallow API";
-      return aiServices.formatResponse(responseText, 'mallow');
+      return aiServices.formatResponse(responseText);
     } catch (error) {
       console.error("Mallow API error:", error);
       return "API service is not available. Please contact [Maaz Waheed](https://github.com/42Wor) to start the API service.";
     }
   },
 
-  nvidia: async (apiKey, model, conversationHistory, temperature) => {
+  nvidia: async (apiKey, model, conversationHistory) => {
     const url = "https://integrate.api.nvidia.com/v1/chat/completions";
     const formattedHistory = conversationHistory
       .map(message => ({
@@ -373,7 +330,7 @@ const aiServices = {
         body: JSON.stringify({
           model,
           messages: formattedHistory,
-          temperature: 0.5, // Use a fixed temperature for NVIDIA API
+          temperature: 0.5,
           top_p: 1.0,
           max_tokens: 4096,
           stream: false
@@ -394,7 +351,7 @@ const aiServices = {
 
       const data = JSON.parse(responseBody);
       const responseText = data.choices?.[0]?.message?.content || "No response from NVIDIA API";
-      return aiServices.formatResponse(responseText, 'nvidia');
+      return aiServices.formatResponse(responseText);
     } catch (error) {
       console.error("NVIDIA API error:", error);
       throw error;
@@ -402,6 +359,7 @@ const aiServices = {
   }
 };
 
+// Routes
 router.get(["/login", "/signin"], (req, res) => {
   res.render("staticPage/login.handlebars", {
     userLoggedIn: !!req.session?.user,
@@ -453,28 +411,169 @@ router.get('/api/chat/histories/:chatId', validateSessionAndRole("Any"), async (
 
   try {
     const chatHistory = await db.fetchChatHistoryById(chatId);
-    chatHistory
-      ? res.json(chatHistory)
-      : res.status(404).json({ message: "Chat history not found" });
+    if (!chatHistory) {
+      return res.status(404).json({ message: "Chat history not found" });
+    }
+    res.json(chatHistory);
   } catch (error) {
     handleApiError(res, error, "fetching chat history by ID");
   }
 });
 
-router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), async (req, res) => {
+  const { chatId } = req.params;
+  const { messageId } = req.body;
+
+  if (!chatId || !messageId) {
+    return res.status(400).json({
+      message: "Chat ID and Message ID are required"
+    });
+  }
+
   try {
-    if (googleAuthError) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Google API client initialization failed",
-        details: googleAuthError.message
+    const chatHistory = await db.fetchChatHistoryById(chatId);
+    if (!chatHistory) {
+      return res.status(404).json({ message: "Chat history not found" });
+    }
+
+    let conversationHistory = typeof chatHistory.conversation_history === 'string'
+      ? JSON.parse(chatHistory.conversation_history)
+      : chatHistory.conversation_history;
+
+    conversationHistory = conversationHistory.filter((_, index) =>
+      index.toString() !== messageId
+    );
+
+    await pool.query(
+      'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
+      [JSON.stringify(conversationHistory), chatId]
+    );
+
+    res.json({ success: true, message: "Message deleted" });
+  } catch (error) {
+    console.error(`Error deleting message from chat ${chatId}:`, error);
+    handleApiError(res, error, "deleting message");
+  }
+});
+
+router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
+  const { message, chatId } = req.body;
+  const { username } = req.session.user;
+
+  try {
+    const userSettings = await db.fetchUserSettings(username);
+    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
+    const [provider, model] = userSettings.ai_model.includes('/')
+      ? userSettings.ai_model.split('/')
+      : ['gemini', userSettings.ai_model];
+
+    let conversationHistory = [];
+    if (chatId) {
+      const fetchedHistory = await db.fetchChatHistoryById(chatId);
+      if (!fetchedHistory && chatId) {
+        return res.status(404).json({ message: "Chat history not found" });
+      }
+      if (fetchedHistory?.conversation_history) {
+        conversationHistory = typeof fetchedHistory.conversation_history === 'string'
+          ? JSON.parse(fetchedHistory.conversation_history)
+          : fetchedHistory.conversation_history;
+      }
+    } else {
+      conversationHistory.push({
+        role: "user",
+        parts: [{
+          text: "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio."
+        }]
       });
     }
 
-    if (!serviceusage || !projectId) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Google Service Usage client or Project ID not available"
+    conversationHistory.push({ role: "user", parts: [{ text: message }] });
+
+    let aiResponseText;
+    switch (provider.toLowerCase()) {
+      case 'mallow':
+        aiResponseText = await aiServices.mallow(message);
+        break;
+      case 'nvidia':
+        if (!process.env.NVIDIA_API) {
+          throw new Error("NVIDIA API key not configured");
+        }
+        aiResponseText = await aiServices.nvidia(
+          process.env.NVIDIA_API,
+          userSettings.ai_model,
+          conversationHistory
+        );
+        break;
+      case 'gemini':
+      default:
+        if (!process.env.GEMINI_API_KEY_maaz_waheed) {
+          throw new Error("Gemini API key not configured");
+        }
+        aiResponseText = await aiServices.gemini(
+          process.env.GEMINI_API_KEY_maaz_waheed,
+          model,
+          conversationHistory,
+          temperature
+        );
+    }
+
+    let newChatId = chatId;
+    if (provider !== 'mallow') {
+      conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+      newChatId = await db.saveChatHistory({
+        chatId,
+        history: conversationHistory,
+        username,
+        temperature
       });
     }
+
+    res.json({ aiResponse: aiResponseText, newChatId });
+  } catch (error) {
+    console.error("Error in bot chat:", error);
+    res.status(500).json({
+      message: `Error processing ${req.body.provider || 'AI'} request`,
+      error: error.message
+    });
+  }
+});
+
+router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), async (req, res) => {
+  const { chatId } = req.params;
+  if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
+
+  try {
+    await pool.query('DELETE FROM ai_history_chatapi WHERE id = $1', [chatId]);
+    res.json({ status: 200, message: "Chat history deleted", chatId });
+  } catch (error) {
+    handleApiError(res, error, "deleting chat history");
+  }
+});
+
+router.get('/api/user-settings', validateSessionAndRole("Any"), async (req, res) => {
+  try {
+    const userSettings = await db.fetchUserSettings(req.session.user.username);
+    res.json(userSettings);
+  } catch (error) {
+    handleApiError(res, error, "fetching user settings");
+  }
+});
+
+router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res) => {
+  try {
+    const success = await db.saveUserSettings(req.session.user.username, req.body);
+    res.json({
+      success,
+      message: success ? "Settings saved" : "Failed to save settings"
+    });
+  } catch (error) {
+    handleApiError(res, error, "saving settings");
+  }
+});
+
+router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async (_, res) => {
+  try {
+    const projectId = "mbktechstudiofilestorage"; // Ensure this environment variable is set
 
     const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
     if (!geminiApiKey) {
@@ -554,7 +653,6 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
       quotaInfo,
       lastUpdated: new Date().toISOString(),
       apiKeyConfigured: !!geminiApiKey,
-      googleAuthError: googleAuthError?.message,
       projectId,
       helpers: {
         json: (context) => JSON.stringify(context, null, 2),
@@ -575,162 +673,6 @@ router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async 
       error: "Failed to retrieve Gemini API information",
       details: error.message
     });
-  }
-});
-
-router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), async (req, res) => {
-  const { chatId } = req.params;
-  const { messageId } = req.body;
-
-  console.log(`Request received to delete message. Chat ID: ${chatId}, Message ID: ${messageId}`);
-
-  if (!chatId) {
-    console.error("Chat ID is missing in the request");
-    return res.status(400).json({ message: "Chat ID is required" });
-  }
-  if (!messageId) {
-    console.error("Message ID is missing in the request");
-    return res.status(400).json({ message: "Message ID is required" });
-  }
-
-  try {
-    console.log(`Fetching chat history for Chat ID: ${chatId}`);
-    const chatHistory = await db.fetchChatHistoryById(chatId);
-    if (!chatHistory) {
-      console.error(`Chat history not found for Chat ID: ${chatId}`);
-      return res.status(404).json({ message: "Chat history not found" });
-    }
-
-    console.log(`Parsing conversation history for Chat ID: ${chatId}`);
-    let conversationHistory = typeof chatHistory.conversation_history === 'string'
-      ? JSON.parse(chatHistory.conversation_history)
-      : chatHistory.conversation_history;
-
-    console.log(`Original conversation history length: ${conversationHistory.length}`);
-    conversationHistory = conversationHistory.filter((msg, index) => index.toString() !== messageId);
-    console.log(`Updated conversation history length: ${conversationHistory.length}`);
-
-    console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
-    await pool.query(
-      'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
-      [JSON.stringify(conversationHistory), chatId]
-    );
-
-    console.log(`Message with ID: ${messageId} successfully deleted from Chat ID: ${chatId}`);
-    res.json({ success: true, message: "Message deleted" });
-  } catch (error) {
-    console.error(`Error deleting message with ID: ${messageId} from Chat ID: ${chatId}`, error);
-    handleApiError(res, error, "deleting message");
-  }
-});
-
-router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
-  const { message, chatId } = req.body;
-  const { username } = req.session.user;
-
-  try {
-    // Get user settings
-    const userSettings = await db.fetchUserSettings(username);
-    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
-
-    // Get conversation history
-    let conversationHistory = [];
-    if (chatId) {
-      const fetchedHistory = await db.fetchChatHistoryById(chatId);
-      if (fetchedHistory?.conversation_history) {
-        conversationHistory = typeof fetchedHistory.conversation_history === 'string'
-          ? JSON.parse(fetchedHistory.conversation_history)
-          : fetchedHistory.conversation_history;
-      } else if (chatId) {
-        return res.status(404).json({ message: "Chat history not found" });
-      }
-    } else {
-      // Add system message for new chats
-      conversationHistory.push({
-        role: "user",  // Changed from "system" to "user"
-        parts: [{
-          text: "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
-        }]
-      });
-    }
-
-    // Add new user message
-    conversationHistory.push({ role: "user", parts: [{ text: message }] });
-
-    // Determine AI provider and model
-    const [provider, model] = userSettings.ai_model.includes('/')
-      ? userSettings.ai_model.split('/')
-      : ['gemini', userSettings.ai_model];
-
-    // Call appropriate AI service
-    let aiResponseText;
-    switch (provider.toLowerCase()) {
-      case 'mallow':
-        aiResponseText = await aiServices.mallow(message);
-        break;
-      case 'nvidia':
-        const nvidiaApiKey = process.env.NVIDIA_API;
-        if (!nvidiaApiKey) throw new Error("NVIDIA API key not configured");
-        aiResponseText = await aiServices.nvidia(nvidiaApiKey, userSettings.ai_model, conversationHistory, temperature);
-        break;
-      case 'gemini':
-      default:
-        const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-        if (!geminiApiKey) throw new Error("Gemini API key not configured");
-        aiResponseText = await aiServices.gemini(geminiApiKey, model, conversationHistory, temperature);
-    }
-
-    // Save conversation if not Mallow
-    let newChatId = chatId;
-    if (provider !== 'mallow') {
-      conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
-      newChatId = await db.saveChatHistory({
-        chatId,
-        history: conversationHistory,
-        username,
-        temperature
-      });
-    }
-
-    res.json({ aiResponse: aiResponseText, newChatId });
-  } catch (error) {
-    console.error("Error in bot chat:", error);
-    res.status(500).json({
-      message: `Error processing ${req.body.provider || 'AI'} request`,
-      error: error.message
-    });
-  }
-});
-
-router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), async (req, res) => {
-  const { chatId } = req.params;
-  if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
-
-  try {
-    await pool.query('DELETE FROM ai_history_chatapi WHERE id = $1', [chatId]);
-    res.json({ status: 200, message: "Chat history deleted", chatId });
-  } catch (error) {
-    handleApiError(res, error, "deleting chat history");
-  }
-});
-
-router.get('/api/user-settings', validateSessionAndRole("Any"), async (req, res) => {
-  try {
-    const userSettings = await db.fetchUserSettings(req.session.user.username);
-    res.json(userSettings);
-  } catch (error) {
-    handleApiError(res, error, "fetching user settings");
-  }
-});
-
-router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res) => {
-  try {
-    const isSaved = await db.saveUserSettings(req.session.user.username, req.body);
-    isSaved
-      ? res.json({ success: true, message: "Settings saved" })
-      : res.status(500).json({ success: false, message: "Failed to save settings" });
-  } catch (error) {
-    handleApiError(res, error, "saving settings");
   }
 });
 
