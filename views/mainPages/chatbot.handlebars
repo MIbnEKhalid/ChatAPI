@@ -94,6 +94,7 @@
             font-size: var(--base-font-size);
             line-height: 1.5;
         }
+
         /* Button styles */
         .btn {
             padding: 0.5rem 1rem;
@@ -438,6 +439,14 @@
             color: var(--text-color);
             box-shadow: var(--shadow);
             position: relative;
+        }
+
+        .response-time {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.5rem;
+            text-align: right;
+            font-style: italic;
         }
 
         .user-message .message-bubble {
@@ -841,32 +850,7 @@
         .settings-button {
             font-size: xx-large;
         }
-
-        /* Custom scrollbar for chat list */
-        .chat-list-container::-webkit-scrollbar {
-            width: 8px;
-            /* Width of the scrollbar */
-        }
-
-        .chat-list-container::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            /* Scrollbar thumb color */
-            border-radius: 4px;
-            /* Rounded corners for the scrollbar thumb */
-        }
-
-        .chat-list-container::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-color);
-            /* Hover color for the scrollbar thumb */
-        }
-
-        .chat-list-container::-webkit-scrollbar-track {
-            background: var(--header-bg);
-            /* Background color of the scrollbar track */
-            border-radius: 4px;
-            /* Rounded corners for the scrollbar track */
-        }
-
+        
         /* Improved Markdown rendering */
         .message-content {
             line-height: 1.6;
@@ -1003,13 +987,67 @@
             animation: fadeIn 0.3s ease;
         }
 
+        /* Add to your existing CSS */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
         .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--border-color);
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
             border-top-color: var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        .loading-more {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            height: auto !important;
+        }
+
+        /* Pagination controls */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+
+        .pagination-button {
+            padding: 0.5rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-button:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            padding: 0.5rem 1rem;
+            color: var(--text-color);
         }
 
         .chat-list-loading .chat-list-item {
@@ -1033,18 +1071,85 @@
         }
 
         .chat-list-section-header {
-            padding: 0.75rem 0.5rem 0.25rem;
+            padding: 0.75rem 1rem;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--secondary-color);
+            color: var(--text-color);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 0.75rem;
             position: sticky;
             top: 0;
             background-color: var(--header-bg);
             z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .chat-list-section-header::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+
+        .chat-list-section-header:hover {
+            color: var(--primary-color);
+        }
+
+        /* Custom scrollbar for chat list */
+        .chat-list {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--input-bg);
+        }
+
+        .chat-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-list::-webkit-scrollbar-track {
+            background: var(--input-bg);
+            border-radius: 4px;
+        }
+
+        .chat-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            border: 2px solid var(--input-bg);
+        }
+
+        .chat-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, var(--secondary-color), var(--primary-color));
+        }
+
+        /* Custom scrollbar for chat messages */
+        .chat-messages {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--input-bg);
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: var(--input-bg);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            border: 2px solid var(--input-bg);
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, var(--secondary-color), var(--primary-color));
         }
 
         .chat-list {
@@ -1086,6 +1191,7 @@
 
         .chat-list-item:hover button {
             opacity: 1;
+            border-color: #007bff;
         }
 
         .chat-list-item span {
@@ -1272,11 +1378,16 @@
         const chatListOverlay = document.getElementById('chat-list-overlay');
         const scrollDownBtn = document.getElementById('scroll-down-btn');
 
+        let currentPage = 1;
+        let totalPages = 1;
+        let isLoadingMore = false;
+
+
         marked.setOptions({
-            breaks: true,       // Add <br> on single line breaks
-            gfm: true,          // Enable GitHub Flavored Markdown
-            smartypants: true,  // Smart quotes and other typographic enhancements
-            tables: true,       // Enable table support
+            breaks: true,
+            gfm: true,
+            smartypants: true,
+            tables: true,
             highlight: function (code, lang) {
                 if (lang && hljs.getLanguage(lang)) {
                     return hljs.highlight(lang, code).value;
@@ -1292,10 +1403,10 @@
         let currentSettings = {
             model: '{{settings.ai_model}}',
             theme: '{{settings.theme}}',
-            temperature: {{ settings.temperature }},
-        fontSize: {{ settings.font_size }},
-        messageCount: {{ settings.messageCount }},
-        dailyLimit: {{ settings.dailyLimit }}
+            temperature: `{{ settings.temperature }}`,
+            fontSize: `{{ settings.font_size }}`,
+            messageCount: `{{ settings.messageCount }}`,
+            dailyLimit: `{{ settings.dailyLimit }}`
         };
 
         // Scroll button visibility
@@ -1373,31 +1484,256 @@
             });
         }
 
-        // Fetch chat history
-        function fetchChatHistoryList() {
-            // Show skeleton loading
-            chatList.classList.add('chat-list-loading');
-            chatList.innerHTML = '';
+        function setupScrollListener() {
+            chatList.addEventListener('scroll', () => {
+                if (!isLoadingMore && currentPage < totalPages && isScrolledToBottom()) {
+                    fetchChatHistoryList(currentPage + 1);
+                }
+            });
+        }
 
-            // Create 5 skeleton items
-            for (let i = 0; i < 5; i++) {
-                const skeletonItem = document.createElement('li');
-                skeletonItem.className = 'chat-list-item skeleton-loading';
-                skeletonItem.innerHTML = '<span style="visibility: hidden;">Loading...</span>';
-                chatList.appendChild(skeletonItem);
+        function isScrolledToBottom() {
+            return chatList.scrollTop + chatList.clientHeight >= chatList.scrollHeight - 100;
+        }
+
+        function fetchChatHistoryList(page = 1, append = false) {
+            if (isLoadingMore) return;
+
+            isLoadingMore = true;
+
+            // Show loading indicator only if it's not an append operation
+            if (!append) {
+                chatList.classList.add('chat-list-loading');
+                chatList.innerHTML = '';
+
+                // Create 5 skeleton items
+                for (let i = 0; i < 5; i++) {
+                    const skeletonItem = document.createElement('li');
+                    skeletonItem.className = 'chat-list-item skeleton-loading';
+                    skeletonItem.innerHTML = '<span style="visibility: hidden;">Loading...</span>';
+                    chatList.appendChild(skeletonItem);
+                }
+            } else {
+                // For append operations, just show a small loading spinner at the bottom
+                const loadingItem = document.createElement('li');
+                loadingItem.className = 'chat-list-item loading-more';
+                loadingItem.innerHTML = '<div class="loading-spinner"></div>';
+                chatList.appendChild(loadingItem);
             }
 
-            fetch('/api/chat/histories')
+            fetch(`/api/chat/histories?page=${page}`)
                 .then(response => response.ok ? response.json() : Promise.reject('Failed to fetch chat histories'))
                 .then(histories => {
-                    chatList.classList.remove('chat-list-loading');
-                    renderChatList(histories);
+                    // Remove loading indicators
+                    if (!append) {
+                        chatList.classList.remove('chat-list-loading');
+                    }
+                    const loadingItems = chatList.querySelectorAll('.loading-more, .skeleton-loading');
+                    loadingItems.forEach(item => item.remove());
+
+                    isLoadingMore = false;
+
+                    currentPage = histories.pagination.currentPage;
+                    totalPages = histories.pagination.totalPages;
+
+                    // If appending, we need to merge the new items with existing ones
+                    if (append) {
+                        // Merge the new items with existing grouped chats
+                        const existingChats = groupChatsFromDOM();
+                        const mergedChats = mergeChatGroups(existingChats, histories);
+                        renderChatList(mergedChats);
+                    } else {
+                        // First load, just render normally
+                        renderChatList(histories);
+                    }
                 })
                 .catch(error => {
                     chatList.classList.remove('chat-list-loading');
+                    const loadingItems = chatList.querySelectorAll('.loading-more');
+                    loadingItems.forEach(item => item.remove());
+                    isLoadingMore = false;
+
                     console.error("Error fetching chat histories:", error);
                     showErrorToast("Failed to load chat history");
                 });
+        }
+
+        // Helper function to get existing chats from DOM
+        function groupChatsFromDOM() {
+            const sections = Array.from(chatList.querySelectorAll('.chat-list-section-header'));
+            const groupedChats = {
+                today: [],
+                yesterday: [],
+                last7Days: [],
+                last30Days: [],
+                older: {}
+            };
+
+            sections.forEach(section => {
+                const sectionTitle = section.textContent.trim();
+                const nextElement = section.nextElementSibling;
+
+                if (nextElement && nextElement.classList.contains('chat-list-item')) {
+                    const items = [];
+                    let current = nextElement;
+
+                    while (current && current.classList.contains('chat-list-item')) {
+                        items.push({
+                            id: current.dataset.chatId,
+                            created_at: current.querySelector('span').textContent,
+                            rawDate: new Date(current.dataset.timestamp || 0)
+                        });
+                        current = current.nextElementSibling;
+                    }
+
+                    if (sectionTitle === 'Today') groupedChats.today = items;
+                    else if (sectionTitle === 'Yesterday') groupedChats.yesterday = items;
+                    else if (sectionTitle === 'Last 7 Days') groupedChats.last7Days = items;
+                    else if (sectionTitle === 'Last 30 Days') groupedChats.last30Days = items;
+                    else groupedChats.older[sectionTitle] = items;
+                }
+            });
+
+            return groupedChats;
+        }
+
+        // Helper function to merge chat groups
+        function mergeChatGroups(existing, newData) {
+            // Merge each time period
+            const merged = {
+                today: [...existing.today, ...newData.today],
+                yesterday: [...existing.yesterday, ...newData.yesterday],
+                last7Days: [...existing.last7Days, ...newData.last7Days],
+                last30Days: [...existing.last30Days, ...newData.last30Days],
+                older: { ...existing.older },
+                pagination: newData.pagination
+            };
+
+            // Merge older chats by month
+            for (const month in newData.older) {
+                if (merged.older[month]) {
+                    merged.older[month] = [...merged.older[month], ...newData.older[month]];
+                } else {
+                    merged.older[month] = newData.older[month];
+                }
+            }
+
+            return merged;
+        }
+
+        // Modify the scroll listener
+        function setupScrollListener() {
+            chatList.addEventListener('scroll', () => {
+                if (!isLoadingMore && currentPage < totalPages && isScrolledToBottom()) {
+                    fetchChatHistoryList(currentPage + 1, true); // Pass true to append
+                }
+            });
+        }
+
+        // Update renderChatList to preserve existing items
+        function renderChatList(groupedHistories) {
+            // Clear only if it's not an append operation
+            if (!isLoadingMore || currentPage === 1) {
+                chatList.innerHTML = '';
+            }
+
+            // Your existing render logic, but now it will append to existing items
+            const createSectionHeader = (title) => {
+                const header = document.createElement('div');
+                header.className = 'chat-list-section-header';
+                header.textContent = title;
+                return header;
+            };
+
+            const createChatItems = (chats) => {
+                if (!chats || chats.length === 0) return null;
+
+                const fragment = document.createDocumentFragment();
+                chats.forEach(history => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'chat-list-item';
+                    listItem.dataset.chatId = history.id;
+                    listItem.dataset.timestamp = history.rawDate?.getTime();
+                    listItem.innerHTML = `
+<span>${history.created_at}</span>
+<button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
+  <i class="fa fa-trash"></i>
+</button>
+`;
+                    listItem.addEventListener('click', () => {
+                        window.location.href = `/chatbot/${history.id}`;
+                    });
+                    fragment.appendChild(listItem);
+                });
+                return fragment;
+            };
+
+            // Today section
+            if (groupedHistories.today && groupedHistories.today.length > 0) {
+                const existingSection = chatList.querySelector('.chat-list-section-header:contains("Today")');
+                if (!existingSection) {
+                    chatList.appendChild(createSectionHeader('Today'));
+                }
+                const items = createChatItems(groupedHistories.today);
+                if (items) chatList.appendChild(items);
+            }
+
+            // Yesterday section
+            if (groupedHistories.yesterday && groupedHistories.yesterday.length > 0) {
+                const existingSection = chatList.querySelector('.chat-list-section-header:contains("Yesterday")');
+                if (!existingSection) {
+                    chatList.appendChild(createSectionHeader('Yesterday'));
+                }
+                const items = createChatItems(groupedHistories.yesterday);
+                if (items) chatList.appendChild(items);
+            }
+
+            // Last 7 Days section
+            if (groupedHistories.last7Days && groupedHistories.last7Days.length > 0) {
+                const existingSection = chatList.querySelector('.chat-list-section-header:contains("Last 7 Days")');
+                if (!existingSection) {
+                    chatList.appendChild(createSectionHeader('Last 7 Days'));
+                }
+                const items = createChatItems(groupedHistories.last7Days);
+                if (items) chatList.appendChild(items);
+            }
+
+            // Last 30 Days section
+            if (groupedHistories.last30Days && groupedHistories.last30Days.length > 0) {
+                const existingSection = chatList.querySelector('.chat-list-section-header:contains("Last 30 Days")');
+                if (!existingSection) {
+                    chatList.appendChild(createSectionHeader('Last 30 Days'));
+                }
+                const items = createChatItems(groupedHistories.last30Days);
+                if (items) chatList.appendChild(items);
+            }
+
+            // Older (by month) section
+            if (groupedHistories.older && Object.keys(groupedHistories.older).length > 0) {
+                // Sort months in descending order
+                const sortedMonths = Object.keys(groupedHistories.older).sort((a, b) => {
+                    return new Date(b) - new Date(a);
+                });
+
+                sortedMonths.forEach(month => {
+                    const existingSection = chatList.querySelector(`.chat-list-section-header:contains("${month}")`);
+                    if (!existingSection) {
+                        chatList.appendChild(createSectionHeader(month));
+                    }
+                    const items = createChatItems(groupedHistories.older[month]);
+                    if (items) chatList.appendChild(items);
+                });
+            }
+
+            // Empty state
+            if (chatList.children.length === 0) {
+                const emptyItem = document.createElement('li');
+                emptyItem.textContent = 'No chat history yet';
+                emptyItem.style.padding = '10px';
+                emptyItem.style.color = 'var(--text-color)';
+                emptyItem.style.textAlign = 'center';
+                chatList.appendChild(emptyItem);
+            }
         }
 
         // Render chat list
@@ -1422,11 +1758,11 @@
                     listItem.className = 'chat-list-item';
                     listItem.dataset.chatId = history.id;
                     listItem.innerHTML = `
-          <span>${history.created_at}</span>
-          <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
-            <i class="fa fa-trash"></i>
-          </button>
-        `;
+  <span>${history.created_at}</span>
+  <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
+    <i class="fa fa-trash"></i>
+  </button>
+`;
                     listItem.addEventListener('click', () => {
                         window.location.href = `/chatbot/${history.id}`;
                     });
@@ -1482,6 +1818,7 @@
                 chatList.appendChild(emptyItem);
             }
         }
+
         function loadChat(chatId) {
             currentChatId = chatId;
 
@@ -1497,8 +1834,8 @@
                 const loadingMessage = document.createElement('div');
                 loadingMessage.className = 'message message-loading';
                 loadingMessage.innerHTML = `
-                    <div class="message-bubble skeleton-loading" style="width: ${Math.random() * 200 + 100}px; height: ${Math.random() * 100 + 50}px;"></div>
-                `;
+            <div class="message-bubble skeleton-loading" style="width: ${Math.random() * 200 + 100}px; height: ${Math.random() * 100 + 50}px;"></div>
+        `;
                 chatMessages.appendChild(loadingMessage);
                 setTimeout(() => loadingMessage.classList.add('show'), 10);
             }
@@ -1530,6 +1867,7 @@
                     addMessage(`Error loading chat: ${error.message}`, 'ai');
                 });
         }
+
         // Start new chat
         function startNewChat() {
             currentChatId = null;
@@ -1564,6 +1902,7 @@
             e.preventDefault();
             const messageText = chatInput.value.trim();
             if (!messageText || isWaitingForResponse) return;
+            const startTime = Date.now(); // Add timestamp when request starts
             addMessage(messageText, 'user');
             chatInput.value = '';
             isWaitingForResponse = true;
@@ -1578,7 +1917,8 @@
             })
                 .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err.message || "Unknown error")))
                 .then(data => {
-                    if (data.aiResponse) addMessage(data.aiResponse, 'ai');
+                    const responseTime = Date.now() - startTime; // Calculate response time
+                    if (data.aiResponse) addMessage(data.aiResponse, 'ai', null, responseTime);
                     if (data.newChatId && !currentChatId) {
                         currentChatId = data.newChatId;
                         fetchChatHistoryList();
@@ -1626,24 +1966,29 @@
             }
         }
 
-        function addMessage(text, sender, messageId = Date.now()) {
+        function addMessage(text, sender, messageId = Date.now(), responseTime = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message message-loading`;
             messageDiv.dataset.messageId = messageId;
 
             const deleteButton = sender === 'ai' ?
                 `<button class="delete-message-btn" onclick="deleteMessage('${messageId}')" title="Delete message">
-            <i class="fa fa-trash"></i>
-            </button>` : '';
+    <i class="fa fa-trash"></i>
+    </button>` : '';
 
             const processedText = sender === 'ai' ? marked.parse(text) : escapeHtml(text);
 
+            // Add response time display for AI messages
+            const responseTimeDisplay = sender === 'ai' && responseTime ?
+                `<div class="response-time">Response time: ${(responseTime / 1000).toFixed(2)}s</div>` : '';
+
             messageDiv.innerHTML = `
-            <div class="message-bubble">
-            ${deleteButton}
-            <div class="message-content">${processedText}</div>
-            </div>
-        `;
+    <div class="message-bubble">
+    ${deleteButton}
+    <div class="message-content">${processedText}</div>
+    ${responseTimeDisplay}
+    </div>
+`;
 
             chatMessages.appendChild(messageDiv);
 
@@ -1683,6 +2028,7 @@
                 .replace(/'/g, "&#039;")
                 .replace(/\n/g, "<br>");
         }
+
         function addLineNumbersToCodeBlocks() {
             document.querySelectorAll('pre code').forEach((block) => {
                 // Skip if line numbers already exist
@@ -1736,7 +2082,6 @@
                 }
             });
         }
-
 
         function makeLinksOpenInNewTab(container) {
             container.querySelectorAll('a').forEach(link => {
@@ -1904,7 +2249,8 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
-            fetchChatHistoryList();
+            fetchChatHistoryList(1); // Start with page 1
+            setupScrollListener(); // Add this line
             setupResponsiveBehavior();
             if (currentChatId && currentChatId !== 'null') {
                 loadChat(currentChatId);
