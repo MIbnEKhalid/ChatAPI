@@ -21,6 +21,8 @@ const DEFAULT_THEME = 'dark';
 const DEFAULT_FONT_SIZE = 16;
 const DEFAULT_DAILY_LIMIT = 100;
 
+const DEFAULT_PAGE_SIZE = 20;
+
 // API Clients
 let googleAuthError = null;
 let serviceusage = null;
@@ -65,14 +67,29 @@ const handleApiError = (res, error, context) => {
 
 // Database Operations
 const db = {
-  fetchChatHistories: async (username) => {
+
+  fetchChatHistories: async (username, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     try {
-      const { rows } = await pool.query(
-        'SELECT id, created_at, temperature FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
+      const offset = (page - 1) * pageSize;
+
+      // Get total count
+      const countResult = await pool.query(
+        'SELECT COUNT(*) FROM ai_history_chatapi WHERE username = $1',
         [username]
       );
+      const totalCount = parseInt(countResult.rows[0].count);
 
-      // Group chats by time period
+      // Get paginated results
+      const { rows } = await pool.query(
+        `SELECT id, created_at, temperature 
+         FROM ai_history_chatapi 
+         WHERE username = $1 
+         ORDER BY created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [username, pageSize, offset]
+      );
+
+      // Group chats by time period (your existing logic)
       const now = new Date();
       const today = new Date(now.setHours(0, 0, 0, 0));
       const yesterday = new Date(today);
@@ -87,20 +104,21 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: []
+        older: [],
+        pagination: {
+          currentPage: page,
+          pageSize,
+          totalCount,
+          totalPages: Math.ceil(totalCount / pageSize)
+        }
       };
 
-      // Month-year format for older chats
-      const monthYearFormat = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        year: 'numeric'
-      });
-
+      // Your existing grouping logic...
       rows.forEach(row => {
         const createdAt = new Date(row.created_at);
         const formattedDate = formatChatTime(createdAt);
-        const monthYear = monthYearFormat.format(createdAt);
-
+        // Add this line near the top of the file, after imports and constants
+        const monthYearFormat = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' });
         if (createdAt >= today) {
           groupedChats.today.push({
             id: row.id,
@@ -150,7 +168,13 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: []
+        older: [],
+        pagination: {
+          currentPage: 1,
+          pageSize: DEFAULT_PAGE_SIZE,
+          totalCount: 0,
+          totalPages: 0
+        }
       };
     }
   },
@@ -158,7 +182,7 @@ const db = {
   fetchChatHistoryById: async (chatId) => {
     try {
       const { rows } = await pool.query(
-        'SELECT id, conversation_history, temperature FROM Ai_history WHERE id = $1',
+        'SELECT id, conversation_history, temperature FROM ai_history_chatapi WHERE id = $1',
         [chatId]
       );
       return rows[0] || null;
@@ -172,13 +196,13 @@ const db = {
     try {
       if (chatId) {
         await pool.query(
-          'UPDATE Ai_history SET conversation_history = $1, created_at = CURRENT_TIMESTAMP, temperature = $3 WHERE id = $2',
+          'UPDATE ai_history_chatapi SET conversation_history = $1, created_at = CURRENT_TIMESTAMP, temperature = $3 WHERE id = $2',
           [JSON.stringify(history), chatId, temperature]
         );
         return chatId;
       } else {
         const { rows } = await pool.query(
-          'INSERT INTO Ai_history (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
+          'INSERT INTO ai_history_chatapi (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
           [JSON.stringify(history), username, temperature]
         );
         return rows[0].id;
@@ -194,11 +218,11 @@ const db = {
       const today = new Date().toISOString().split("T")[0];
       const [settingsResult, messageLog] = await Promise.all([
         pool.query(
-          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings WHERE username = $1',
+          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE username = $1',
           [username]
         ),
         pool.query(
-          'SELECT message_count FROM user_message_logs WHERE username = $1 AND date = $2',
+          'SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2',
           [username, today]
         )
       ]);
@@ -236,7 +260,7 @@ const db = {
   saveUserSettings: async (username, settings) => {
     try {
       await pool.query(
-        `INSERT INTO user_settings (username, theme, font_size, ai_model, temperature)
+        `INSERT INTO user_settings_chatapi (username, theme, font_size, ai_model, temperature)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (username)
          DO UPDATE SET
@@ -289,7 +313,13 @@ const aiServices = {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+        const errorMessage = errorData.error?.message || 'Unknown error';
+
+        if (errorMessage.includes('You exceeded your current quota')) {
+          return `The Quota for the Gemini model "${model}" has been exceeded. Please select a different model and try again.`;
+        }
+
+        throw new Error(`Gemini API error: ${errorMessage}`);
       }
 
       const data = await response.json();
@@ -343,7 +373,7 @@ const aiServices = {
         body: JSON.stringify({
           model,
           messages: formattedHistory,
-          temperature,
+          temperature: 0.5, // Use a fixed temperature for NVIDIA API
           top_p: 1.0,
           max_tokens: 4096,
           stream: false
@@ -402,7 +432,15 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
 
 router.get('/api/chat/histories', validateSessionAndRole("Any"), async (req, res) => {
   try {
-    const chatHistories = await db.fetchChatHistories(req.session.user.username);
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || DEFAULT_PAGE_SIZE;
+
+    const chatHistories = await db.fetchChatHistories(
+      req.session.user.username,
+      page,
+      pageSize
+    );
+
     res.json(chatHistories);
   } catch (error) {
     handleApiError(res, error, "fetching chat histories");
@@ -574,7 +612,7 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
 
     console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
     await pool.query(
-      'UPDATE Ai_history SET conversation_history = $1 WHERE id = $2',
+      'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
       [JSON.stringify(conversationHistory), chatId]
     );
 
@@ -669,7 +707,7 @@ router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), as
   if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
 
   try {
-    await pool.query('DELETE FROM Ai_history WHERE id = $1', [chatId]);
+    await pool.query('DELETE FROM ai_history_chatapi WHERE id = $1', [chatId]);
     res.json({ status: 200, message: "Chat history deleted", chatId });
   } catch (error) {
     handleApiError(res, error, "deleting chat history");
