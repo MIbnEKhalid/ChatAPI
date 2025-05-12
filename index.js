@@ -168,6 +168,10 @@ router.use(mbkAuthRouter);
 router.use("/", mainRoutes);
 router.use("/", dashboardRoutes);
 
+router.get("/admin/*", async (req, res) => {
+  res.redirect("/admin/dashboard");
+});
+
 router.get('/simulate-error', (req, res, next) => {
   next(new Error('Simulated router error'));
 });
