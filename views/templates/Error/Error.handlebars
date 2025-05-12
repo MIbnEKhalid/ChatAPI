@@ -51,11 +51,21 @@
                 justify-content: center;
                 align-items: center;
             }
+            .error-code {
+                display: block;
+                margin-top: 10px;
+                font-size: 16px;
+                color: #3498db;
+                text-align: center;
+            }
         </style>
         <section class="about" id="about">
             <div class="content">
                 <img class="errorImg" src="/Assets/Images/Error/403.jpg">
                 <span class="error-message">{{error}}</span>
+                {{#if errorCode}}
+                    <span class="error-code">Error Code: {{errorCode}}</span>
+                {{/if}}
                 <div class="button">
                     <a class="buttons" style="font-size: 18px; margin-top: 15px;" href="/home">Go Back To Home</a>
                 </div>

@@ -15,7 +15,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="/Assets/Scripts/logout.js"></script>
     <style>
-        /* Root variables for consistent theming */
         :root {
             --base-font-size: 16px;
             --primary-color: #4caf50;
@@ -850,7 +849,7 @@
         .settings-button {
             font-size: xx-large;
         }
-        
+
         /* Improved Markdown rendering */
         .message-content {
             line-height: 1.6;
@@ -1233,6 +1232,11 @@
             </div>
         </header>
         <section class="chat-content">
+            {{#if isChatIdOfOtherUser}}
+               <div style="background-color: var(--input-bg); color: var(--text-color); padding: 0.25rem; border-radius: 0.5rem; box-shadow: var(--shadow); text-align: center;">
+                   This Chat ID Belongs to <strong>{{chatIdUsername}}</strong>
+               </div>
+            {{/if}}
             <div class="chat-messages" id="chat-messages"></div>
             <div id="scroll-down-btn" class="scroll-down-btn">
                 <i class="fa fa-arrow-down"></i>
@@ -1333,7 +1337,7 @@
                             {{/if}}
                         </div>
                     </div>
-                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-save"><i
+                    <a href="https://portal.mbktechstudio.com/user/settings/plan" target="_blank" class="btn btn-save"><i
                             class="fa fa-arrow-up"></i> Upgrade Plan</a>
                     <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-cancel"><i
                             class="fa fa-gear"></i> Account Settings</a>
@@ -1655,11 +1659,11 @@
                     listItem.dataset.chatId = history.id;
                     listItem.dataset.timestamp = history.rawDate?.getTime();
                     listItem.innerHTML = `
-<span>${history.created_at}</span>
-<button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
-  <i class="fa fa-trash"></i>
-</button>
-`;
+                        <span>${history.created_at}</span>
+                        <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    `;
                     listItem.addEventListener('click', () => {
                         window.location.href = `/chatbot/${history.id}`;
                     });
@@ -1758,11 +1762,11 @@
                     listItem.className = 'chat-list-item';
                     listItem.dataset.chatId = history.id;
                     listItem.innerHTML = `
-  <span>${history.created_at}</span>
-  <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
-    <i class="fa fa-trash"></i>
-  </button>
-`;
+                        <span>${history.created_at}</span>
+                        <button title="Delete chat" onclick="event.stopPropagation(); deleteChat('${history.id}')">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    `;
                     listItem.addEventListener('click', () => {
                         window.location.href = `/chatbot/${history.id}`;
                     });
@@ -1834,8 +1838,8 @@
                 const loadingMessage = document.createElement('div');
                 loadingMessage.className = 'message message-loading';
                 loadingMessage.innerHTML = `
-            <div class="message-bubble skeleton-loading" style="width: ${Math.random() * 200 + 100}px; height: ${Math.random() * 100 + 50}px;"></div>
-        `;
+                    <div class="message-bubble skeleton-loading" style="width: ${Math.random() * 200 + 100}px; height: ${Math.random() * 100 + 50}px;"></div>
+                `;
                 chatMessages.appendChild(loadingMessage);
                 setTimeout(() => loadingMessage.classList.add('show'), 10);
             }
@@ -1902,7 +1906,19 @@
             e.preventDefault();
             const messageText = chatInput.value.trim();
             if (!messageText || isWaitingForResponse) return;
-            const startTime = Date.now(); // Add timestamp when request starts
+
+            // Skip rendering if message is the specific context message
+            const contextMessages = [
+                "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio.",
+                "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
+            ];
+
+            if (contextMessages.includes(messageText)) {
+                chatInput.value = '';
+                return;
+            }
+
+            const startTime = Date.now();
             addMessage(messageText, 'user');
             chatInput.value = '';
             isWaitingForResponse = true;
@@ -1983,12 +1999,12 @@
                 `<div class="response-time">Response time: ${(responseTime / 1000).toFixed(2)}s</div>` : '';
 
             messageDiv.innerHTML = `
-    <div class="message-bubble">
-    ${deleteButton}
-    <div class="message-content">${processedText}</div>
-    ${responseTimeDisplay}
-    </div>
-`;
+                <div class="message-bubble">
+                    ${deleteButton}
+                    <div class="message-content">${processedText}</div>
+                        ${responseTimeDisplay}
+                    </div>
+            `;
 
             chatMessages.appendChild(messageDiv);
 
