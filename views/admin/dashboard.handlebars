@@ -1,0 +1,236 @@
+<head>
+  <link rel="stylesheet" href="/Assets/css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<div class="admin-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Admin Dashboard</h1>
+    <div class="last-updated text-muted small">Last updated: {{formatDate "now"}}</div>
+  </div>
+  
+  <p class="welcome-message text-muted mb-4">Welcome back, <strong>{{currentUser}}</strong>! Here's what's happening with your system.</p>
+  
+  <!-- Stats Overview -->
+  <div class="stats-grid">
+    <div class="stat-card fade-in" style="animation-delay: 0.1s">
+      <div class="stat-value">{{stats.total_chats}}</div>
+      <div class="stat-label">Total Chats</div>
+      <div class="stat-trend {{#if (gt stats.active_chats_last_hour 10)}}trend-up{{else}}trend-down{{/if}}">
+        <i class="fas fa-arrow-{{#if (gt stats.active_chats_last_hour 10)}}up{{else}}down{{/if}}"></i>
+        {{stats.active_chats_last_hour}} in last hour
+      </div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.2s">
+      <div class="stat-value">{{stats.unique_users}}</div>
+      <div class="stat-label">Unique Users</div>
+      <div class="stat-trend">
+        <i class="fas fa-users"></i>
+        {{stats.active_users_today}} active today
+      </div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.3s">
+      <div class="stat-value">{{stats.messages_today}}</div>
+      <div class="stat-label">Messages Today</div>
+      <div class="stat-trend">
+        <div id="hourlyChartContainer" style="height: 40px;"></div>
+      </div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.4s">
+      <div class="stat-value">
+        {{#if modelDistribution.0.avg_temp}}
+          {{modelDistribution.0.avg_temp}}
+        {{else}}
+          -
+        {{/if}}
+      </div>
+      <div class="stat-label">Avg Temperature</div>
+      <div class="stat-trend">
+        <i class="fas fa-robot"></i>
+        Top model: {{modelDistribution.0.ai_model}}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Activity Section -->
+  <div class="card mb-4 fade-in" style="animation-delay: 0.5s">
+    <div class="card-header">
+      <h2 class="mb-0">Recent Activity</h2>
+      <a href="/admin/chats" class="link">View All <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="card-body">
+      <div class="recent-chats">
+        {{#each recentChats}}
+        <div class="chat-card">
+          <div class="chat-header">
+            <span class="chat-user">{{this.username}}</span>
+            <span class="chat-time">{{formatDate this.created_at}}</span>
+          </div>
+          <div class="chat-meta">
+            <span><i class="fas fa-robot text-muted"></i> {{this.ai_model}}</span>
+            <span><i class="fas fa-thermometer-half text-muted"></i> {{this.temperature}}</span>
+            <span><i class="fas fa-comment text-muted"></i> {{this.message_count_in_chat}}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-value" style="width: {{divide this.message_count this.daily_message_limit 100}}%"></div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">{{this.message_count}}/{{this.daily_message_limit}} messages</small>
+            <a href="/chatbot/{{this.id}}" class="btn btn-sm btn-primary">View <i class="fas fa-external-link-alt"></i></a>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+  
+  <!-- User and Model Distribution -->
+  <div class="grid-cols-2 mb-4">
+    <!-- Top Users -->
+    <div class="card fade-in" style="animation-delay: 0.6s">
+      <div class="card-header">
+        <h2 class="mb-0">Top Users</h2>
+        <a href="/admin/users" class="link">View All <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Messages</th>
+                <th>Activity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each topUsers}}
+              <tr>
+                <td>
+                  <div class="font-weight-bold">{{this.username}}</div>
+                  <small class="text-muted">{{this.active_days}} active days</small>
+                </td>
+                <td class="font-weight-bold">{{this.total_messages}}</td>
+                <td>
+                  <small class="text-muted">Peak: {{this.peak_messages_in_day}}/day</small>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Model Distribution -->
+    <div class="card fade-in" style="animation-delay: 0.7s">
+      <div class="card-header">
+        <h2 class="mb-0">Model Usage</h2>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Users</th>
+                <th>Avg Temp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each modelDistribution}}
+              <tr>
+                <td class="font-weight-bold">{{this.ai_model}}</td>
+                <td>{{this.count}}</td>
+                <td>
+                  {{this.avg_temp}}
+                  <small class="text-muted d-block">Limit: {{this.avg_limit}}</small>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Quick Actions -->
+  <div class="card fade-in" style="animation-delay: 0.8s">
+    <div class="card-header">
+      <h2 class="mb-0">Quick Actions</h2>
+    </div>
+    <div class="card-body">
+      <div class="action-buttons">
+        <a href="/admin/users" class="action-button">
+          <i class="fas fa-users"></i>
+          <span>User Management</span>
+        </a>
+        <a href="/admin/chats" class="action-button">
+          <i class="fas fa-comments"></i>
+          <span>Chat Management</span>
+        </a>
+        <a href="/admin/settings" class="action-button">
+          <i class="fas fa-cog"></i>
+          <span>System Settings</span>
+        </a>
+        <a href="/admin/users/export?format=csv" class="action-button">
+          <i class="fas fa-file-export"></i>
+          <span>Export Data</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Initialize hourly chart
+  document.addEventListener('DOMContentLoaded', function() {
+    const hourlyData = JSON.parse('{{{hourlyData}}}');
+    
+    const ctx = document.createElement('canvas');
+    ctx.height = 40;
+    document.getElementById('hourlyChartContainer').appendChild(ctx);
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array(24).fill().map((_, i) => i),
+        datasets: [{
+          data: hourlyData,
+          borderColor: '#4361ee',
+          backgroundColor: 'rgba(67, 97, 238, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.parsed.y} messages at ${context.label}:00`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        },
+        elements: {
+          point: { radius: 0 }
+        }
+      }
+    });
+  });
+</script>

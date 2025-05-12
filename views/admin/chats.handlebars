@@ -1,0 +1,256 @@
+<head>
+  <link rel="stylesheet" href="/Assets/css/admin.css">
+</head>
+
+<div class="admin-container">
+  <h1>Chat Management</h1>
+
+  <div class="admin-actions">
+    <a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+
+    <form class="filter-form" method="GET" action="/admin/chats">
+      <div class="filter-group">
+        <input type="text" name="username" placeholder="Filter by username" value="{{usernameFilter}}">
+      </div>
+
+      <div class="filter-group">
+        <select name="model">
+          <option value="">All Models</option>
+          {{#each availableModels}}
+          <option value="{{this}}" {{#if (eq this ../selectedModel)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select name="dateRange" id="dateRangeSelect">
+          <option value="">All Dates</option>
+          {{#each dateRangeOptions}}
+          <option value="{{this.value}}" {{#if (eq this.value ../selectedDateRange)}}selected{{/if}}>{{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="filter-group date-range-inputs" id="customDateRange"
+        style="{{#if (neq selectedDateRange 'custom')}}display: none;{{/if}}">
+        <input type="date" name="startDate" value="{{startDate}}">
+        <span>to</span>
+        <input type="date" name="endDate" value="{{endDate}}">
+      </div>
+
+      <div class="filter-group">
+        <input type="text" name="search" placeholder="Search messages..." value="{{searchQuery}}">
+      </div>
+
+      <button type="submit" class="filter-button">Apply Filters</button>
+      <a href="/admin/chats" class="clear-filter">Clear All</a>
+    </form>
+  </div>
+
+  <div class="action-bar">
+    <div class="selected-count" id="selectedCount">0 chats selected</div>
+    <button class="bulk-action-btn" id="bulkDeleteBtn" disabled>Delete Selected</button>
+    <div class="export-container">
+      <select class="export-format" id="exportFormat">
+        <option value="csv">CSV</option>
+        <option value="json">JSON (File)</option>
+        <option value="json-raw">JSON (View)</option>
+      </select>
+      <button class="bulk-action-btn export-btn" id="exportSelectedBtn" disabled>
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <div class="chat-list">
+    <div class="chat-list-header">
+      <div class="header-item checkbox-cell">
+        <input type="checkbox" id="selectAllCheckbox">
+      </div>
+      <div class="header-item">Chat ID</div>
+      <div class="header-item">Username</div>
+      <div class="header-item">Date</div>
+      <div class="header-item">Model</div>
+      <div class="header-item">Messages</div>
+      <div class="header-item">Temperature</div>
+      <div class="header-item">Preview</div>
+      <div class="header-item">Actions</div>
+    </div>
+
+    {{#each chats}}
+    <div class="chat-row">
+      <div class="chat-cell checkbox-cell">
+        <input type="checkbox" class="chat-checkbox" data-id="{{this.id}}">
+      </div>
+      <div class="chat-cell">{{this.id}}</div>
+      <div class="chat-cell">{{this.username}}</div>
+      <div class="chat-cell">{{formatDate this.created_at}}</div>
+      <div class="chat-cell">{{this.ai_model}}</div>
+      <div class="chat-cell">{{this.message_count}}</div>
+      <div class="chat-cell">{{this.temperature}}</div>
+      <div class="chat-cell preview-cell" title="{{this.first_message_preview}}">
+        {{truncate this.first_message_preview 50}}
+      </div>
+      <div class="chat-cell actions">
+        <a href="/chatbot/{{this.id}}" class="view-btn">View</a>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <div class="pagination">
+    {{#if (gt pagination.currentPage 1)}}
+    <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}"
+      class="page-link">Previous</a>
+    {{/if}}
+
+    {{#each (range 1 pagination.totalPages)}}
+    <a href="?page={{this}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}"
+      class="page-link {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
+    {{/each}}
+
+    {{#if (lt pagination.currentPage pagination.totalPages)}}
+    <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}"
+      class="page-link">Next</a>
+    {{/if}}
+  </div>
+</div>
+
+<script>
+  // Toggle custom date range inputs
+  document.getElementById('dateRangeSelect').addEventListener('change', function () {
+    const customDateRange = document.getElementById('customDateRange');
+    customDateRange.style.display = this.value === 'custom' ? 'flex' : 'none';
+  });
+
+  // Bulk selection functionality
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const chatCheckboxes = document.querySelectorAll('.chat-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+
+    // Select all/none
+    selectAllCheckbox.addEventListener('change', function () {
+      chatCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+      });
+      updateSelectionCount();
+    });
+
+    // Individual checkbox changes
+    chatCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function () {
+        updateSelectionCount();
+      });
+    });
+
+    // Update selection count and button states
+    function updateSelectionCount() {
+      const selected = document.querySelectorAll('.chat-checkbox:checked');
+      selectedCount.textContent = `${selected.length} chats selected`;
+      bulkDeleteBtn.disabled = selected.length === 0;
+      exportSelectedBtn.disabled = selected.length === 0;
+
+      // Update select all checkbox state
+      selectAllCheckbox.checked = selected.length === chatCheckboxes.length && chatCheckboxes.length > 0;
+      selectAllCheckbox.indeterminate = selected.length > 0 && selected.length < chatCheckboxes.length;
+    }
+
+    // Bulk delete action
+    bulkDeleteBtn.addEventListener('click', function () {
+      if (this.disabled) return;
+
+      const selectedIds = Array.from(document.querySelectorAll('.chat-checkbox:checked'))
+        .map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+
+      if (confirm(`Are you sure you want to delete ${selectedIds.length} selected chats?`)) {
+        fetch('/admin/chats/bulk-delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ chatIds: selectedIds })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert('Error: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete chats');
+          });
+      }
+    });
+
+    exportSelectedBtn.addEventListener('click', async function () {
+      if (this.disabled) return;
+
+      const selectedIds = Array.from(document.querySelectorAll('.chat-checkbox:checked'))
+        .map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+
+      const format = document.getElementById('exportFormat').value;
+
+      // Show loading indicator
+      const originalText = this.innerHTML;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+      this.disabled = true;
+
+      try {
+        const response = await fetch('/admin/chats/export', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            chatIds: selectedIds,
+            format: format
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Export failed');
+        }
+
+        if (format === 'json-raw') {
+          // View JSON in new tab
+          const data = await response.json();
+          const win = window.open('', '_blank');
+          win.document.write(`
+        <html>
+          <head><title>Chat Export</title></head>
+          <body>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          </body>
+        </html>
+      `);
+        } else {
+          // Handle file download for both CSV and JSON
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `chats_export.${format === 'csv' ? 'csv' : 'json'}`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        }
+      } catch (error) {
+        console.error('Export error:', error);
+        alert(`Export failed: ${error.message}`);
+      } finally {
+        exportSelectedBtn.innerHTML = originalText;
+        exportSelectedBtn.disabled = false;
+      }
+    });
+  });
+</script>

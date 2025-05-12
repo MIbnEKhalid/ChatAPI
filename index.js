@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mainRoutes from "./routes/main.js";
+import dashboardRoutes from "./routes/dashboard.js";
 import { engine } from "express-handlebars";
 import Handlebars from "handlebars";
 import minifyHTML from "express-minify-html";
@@ -36,28 +37,92 @@ router.use(
 );
 // Configure Handlebars
 router.engine("handlebars", engine({
-    defaultLayout: false,
-    partialsDir: [
-        path.join(__dirname, "views/templates"),
-        path.join(__dirname, "views/notice"),
-        path.join(__dirname, "views")
-    ],
-    cache: false,
-    helpers: { // <-- ADD THIS helpers OBJECT
-        eq: function (a, b) { // <-- Move your helpers inside here
-            return a === b;
-        },
-        encodeURIComponent: function (str) {
-            return encodeURIComponent(str);
-        },
-        formatTimestamp: function (timestamp) {
-            return new Date(timestamp).toLocaleString();
-        },
-        jsonStringify: function (context) {
-            return JSON.stringify(context);
-        }
+  defaultLayout: false,
+  partialsDir: [
+    path.join(__dirname, "views/templates"),
+    path.join(__dirname, "views/notice"),
+    path.join(__dirname, "views")
+  ],
+  cache: false,
+  helpers: { // <-- ADD THIS helpers OBJECT
+    eq: function (a, b) { // <-- Move your helpers inside here
+      return a === b;
+    },
+    encodeURIComponent: function (str) {
+      return encodeURIComponent(str);
+    },
+    formatTimestamp: function (timestamp) {
+      return new Date(timestamp).toLocaleString();
+    },
+    jsonStringify: function (context) {
+      return JSON.stringify(context);
+    },
+    percentage: function (used, total) {
+      if (total === 0) return 0;
+      return Math.round((used / total) * 100);
+    }, formatDate: function (dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    },
+    gt: function (a, b) {
+      return a > b;
+    },
+    lt: function (a, b) {
+      return a < b;
+    },
+    add: function (a, b) {
+      return a + b;
+    },
+    subtract: function (a, b) {
+      return a - b;
+    },
+    range: function (start, end) {
+      const result = [];
+      for (let i = start; i <= end; i++) {
+        result.push(i);
+      }
+      return result;
+    },
+    formatTime: function (index) {
+      // Simple implementation - in a real app you might want actual timestamps
+      return `Message ${index + 1}`;
+    },
+    and: function (...args) {
+      // Remove the options object that is provided by Handlebars
+      const options = args.pop();
+      return args.every(Boolean);
+    }, 
+    neq: function (a, b, options) {
+      if (options && typeof options.fn === 'function') {
+        return a !== b ? options.fn(this) : options.inverse(this);
+      }
+      // Fallback for inline usage
+      return a !== b;
+    },
+    truncate: function (str, len) {
+      if (typeof str !== "string") return "";
+      // Default length = 50 if not provided
+      const limit = len || 50;
+      return str.length > limit ? str.substring(0, limit) + "..." : str;
+    },
+    formatUptime: function () { // <-- New helper
+      const uptime = process.uptime();
+      const h = Math.floor(uptime / 3600);
+      const m = Math.floor((uptime % 3600) / 60);
+      const s = Math.floor(uptime % 60);
+      return `${h}h ${m}m ${s}s`;
     }
+  }
 }));
+
+Handlebars.registerHelper('divide', function (value, divisor, multiplier) {
+  if (divisor == 0) {
+    return 0;
+  }
+  return (value / divisor) * multiplier;
+});
+
 router.set("view engine", "handlebars");
 router.set("views", path.join(__dirname, "views"));
 
@@ -101,6 +166,11 @@ router.get("/info/Credits", async (req, res) => {
 router.use(mbkAuthRouter);
 
 router.use("/", mainRoutes);
+router.use("/", dashboardRoutes);
+
+router.get("/admin/*", async (req, res) => {
+  res.redirect("/admin/dashboard");
+});
 
 router.get('/simulate-error', (req, res, next) => {
   next(new Error('Simulated router error'));
