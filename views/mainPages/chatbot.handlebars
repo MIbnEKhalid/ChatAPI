@@ -1232,6 +1232,11 @@
             </div>
         </header>
         <section class="chat-content">
+            {{#if isChatIdOfOtherUser}}
+               <div style="background-color: var(--input-bg); color: var(--text-color); padding: 0.25rem; border-radius: 0.5rem; box-shadow: var(--shadow); text-align: center;">
+                   This Chat ID Belongs to <strong>{{chatIdUsername}}</strong>
+               </div>
+            {{/if}}
             <div class="chat-messages" id="chat-messages"></div>
             <div id="scroll-down-btn" class="scroll-down-btn">
                 <i class="fa fa-arrow-down"></i>
@@ -1332,7 +1337,7 @@
                             {{/if}}
                         </div>
                     </div>
-                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-save"><i
+                    <a href="https://portal.mbktechstudio.com/user/settings/plan" target="_blank" class="btn btn-save"><i
                             class="fa fa-arrow-up"></i> Upgrade Plan</a>
                     <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-cancel"><i
                             class="fa fa-gear"></i> Account Settings</a>

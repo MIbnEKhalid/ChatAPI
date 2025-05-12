@@ -154,7 +154,7 @@ const db = {
   fetchChatHistoryById: async (chatId) => {
     try {
       const { rows } = await pool.query(
-        'SELECT id, conversation_history, temperature FROM ai_history_chatapi WHERE id = $1',
+        'SELECT id, conversation_history, username, temperature FROM ai_history_chatapi WHERE id = $1',
         [chatId]
       );
       return rows[0] || null;
@@ -371,6 +371,24 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
   try {
     const { chatId } = req.params;
     const { username, role } = req.session.user;
+
+    let chatHistory = null;
+    let isChatIdOfOtherUser = false;
+
+    if (chatId) {
+      chatHistory = await db.fetchChatHistoryById(chatId);
+
+      if (!chatHistory) {
+        return res.status(404).render("templates/Error/Error.handlebars", { error: "Chat ID not found", errorCode: 404 });
+      }
+
+      if (chatHistory.username !== username && role !== "SuperAdmin") {
+        return res.status(403).render("templates/Error/Error.handlebars", { error: "Access denied for this Chat ID", errorCode: 403 });
+      }
+
+      isChatIdOfOtherUser = (chatHistory.username !== username);
+    }
+
     const userSettings = await db.fetchUserSettings(username);
 
     res.render('mainPages/chatbot.handlebars', {
@@ -380,11 +398,13 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
         temperature_value: (userSettings.temperature || DEFAULT_TEMPERATURE).toFixed(1)
       },
       UserName: username,
-      role
+      role,
+      isChatIdOfOtherUser,
+      chatIdUsername: chatHistory?.username || null,
     });
   } catch (error) {
     console.error("Error rendering chatbot page:", error);
-    res.status(500).render("templates/Error/500", { error: error.message });
+    res.status(500).render("templates/Error/500.handlebars", { error: "Internal Server Error" });
   }
 });
 
@@ -568,111 +588,6 @@ router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res
     });
   } catch (error) {
     handleApiError(res, error, "saving settings");
-  }
-});
-
-router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async (_, res) => {
-  try {
-    const projectId = "mbktechstudiofilestorage"; // Ensure this environment variable is set
-
-    const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-    if (!geminiApiKey) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Gemini API Key not configured"
-      });
-    }
-
-    const geminiModels = [
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-8b',
-      'gemini-1.5-pro'
-    ];
-
-    const modelData = await Promise.all(geminiModels.map(async (model) => {
-      try {
-        const modelInfoUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${geminiApiKey}`;
-        const infoResponse = await fetch(modelInfoUrl);
-
-        if (!infoResponse.ok) {
-          return {
-            name: model,
-            available: false,
-            error: `Model info not available (${infoResponse.status})`
-          };
-        }
-
-        const infoData = await infoResponse.json();
-        return {
-          name: model,
-          available: true,
-          description: infoData.description || 'No description',
-          inputTokenLimit: infoData.inputTokenLimit || 'Unknown',
-          outputTokenLimit: infoData.outputTokenLimit || 'Unknown',
-          supportedMethods: infoData.supportedGenerationMethods || [],
-          lastTested: new Date().toISOString()
-        };
-      } catch (error) {
-        return {
-          name: model,
-          available: false,
-          error: error.message
-        };
-      }
-    }));
-
-    let quotaInfo = {};
-    try {
-      const quotas = await serviceusage.services.consumerQuotaMetrics.list({
-        parent: `projects/${projectId}/services/generativelanguage.googleapis.com`
-      });
-
-      quotaInfo = {
-        metrics: quotas.data?.metrics?.map(metric => ({
-          displayName: metric.displayName || metric.name || 'Unknown Metric',
-          name: metric.name,
-          limit: metric.consumerQuotaLimits?.[0]?.quotaBuckets?.[0]?.effectiveLimit || 'N/A',
-          usage: metric.consumerQuotaLimits?.[0]?.quotaBuckets?.[0]?.currentUsage || 0,
-          percentage: 'N/A' // Calculated in template
-        })) || [],
-        updatedAt: new Date().toISOString()
-      };
-    } catch (error) {
-      quotaInfo = {
-        error: true,
-        message: "Failed to fetch quota information",
-        details: error.message
-      };
-    }
-
-    res.render("mainPages/geminiDashboard", {
-      title: "Gemini API Dashboard",
-      models: modelData.filter(m => m.available),
-      unavailableModels: modelData.filter(m => !m.available),
-      quotaInfo,
-      lastUpdated: new Date().toISOString(),
-      apiKeyConfigured: !!geminiApiKey,
-      projectId,
-      helpers: {
-        json: (context) => JSON.stringify(context, null, 2),
-        join: (array, separator) => Array.isArray(array) ? array.join(separator) : 'None',
-        formatNumber: (num) => (typeof num === 'number' || !isNaN(Number(num)))
-          ? Number(num).toLocaleString()
-          : num?.toString() || '0',
-        findMetric: (metrics, name) => Array.isArray(metrics)
-          ? (metrics.find(m => m.name === name) || { name, usage: 'Not found', limit: 'N/A', percentage: 'N/A' })
-          : { name, usage: 'Metrics unavailable', limit: 'N/A', percentage: 'N/A' },
-        isError: (obj) => obj && obj.error,
-        formatDate: (isoString) => isoString ? new Date(isoString).toLocaleString() : 'N/A'
-      }
-    });
-  } catch (error) {
-    console.error("Error in Gemini dashboard:", error);
-    res.status(500).render("templates/Error/500", {
-      error: "Failed to retrieve Gemini API information",
-      details: error.message
-    });
   }
 });
 

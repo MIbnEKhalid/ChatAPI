@@ -1,0 +1,480 @@
+<div class="admin-container">
+  <h1>User Management</h1>
+  
+  <div class="admin-actions">
+    <a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+    
+    <form class="search-form" method="GET" action="/admin/users">
+      <input type="text" name="search" placeholder="Search users..." value="{{searchQuery}}">
+      <select name="model">
+        <option value="">All Models</option>
+        {{#each availableModels}}
+        <option value="{{this}}" {{#if (eq this ../selectedModel)}}selected{{/if}}>{{this}}</option>
+        {{/each}}
+      </select>
+      <button type="submit">Search</button>
+      <a href="/admin/users" class="clear-filter">Reset</a>
+    </form>
+  </div>
+  
+  <div class="user-list">
+    <div class="user-list-header">
+      <div class="header-item sortable {{#if (eq sortField 'u.username')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.username&order={{#if (and (eq sortField 'u.username') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Username
+          {{#if (eq sortField 'u.username')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item">AI Model</div>
+      <div class="header-item sortable {{#if (eq sortField 'u.daily_message_limit')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.daily_message_limit&order={{#if (and (eq sortField 'u.daily_message_limit') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Daily Limit
+          {{#if (eq sortField 'u.daily_message_limit')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'chat_count')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=chat_count&order={{#if (and (eq sortField 'chat_count') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Chats
+          {{#if (eq sortField 'chat_count')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'total_messages')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=total_messages&order={{#if (and (eq sortField 'total_messages') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Messages
+          {{#if (eq sortField 'total_messages')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'u.created_at')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.created_at&order={{#if (and (eq sortField 'u.created_at') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Joined
+          {{#if (eq sortField 'u.created_at')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item">Actions</div>
+    </div>
+    
+    {{#each users}}
+    <div class="user-row">
+      <div class="user-cell">{{this.username}}</div>
+      <div class="user-cell">{{this.ai_model}}</div>
+      <div class="user-cell">{{this.daily_message_limit}}</div>
+      <div class="user-cell">{{this.chat_count}}</div>
+      <div class="user-cell">{{this.total_messages}}</div>
+      <div class="user-cell">{{formatDate this.settings_created}}</div>
+      <div class="user-cell actions">
+        <button class="edit-btn" data-username="{{this.username}}" 
+          data-model="{{this.ai_model}}" 
+          data-limit="{{this.daily_message_limit}}"
+          data-temp="{{this.temperature}}">
+          Edit
+        </button>
+        <a href="/admin/chats?username={{this.username}}" class="chats-link">Chats</a>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  
+  <div class="pagination">
+    {{#if (gt pagination.currentPage 1)}}
+      <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link">Previous</a>
+    {{/if}}
+    
+    {{#each (range 1 pagination.totalPages)}}
+      <a href="?page={{this}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
+    {{/each}}
+    
+    {{#if (lt pagination.currentPage pagination.totalPages)}}
+      <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link">Next</a>
+    {{/if}}
+  </div>
+  
+  <!-- Edit User Modal -->
+  <div id="editUserModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Edit User Settings</h2>
+      <form id="editUserForm">
+        <input type="hidden" id="editUsername" name="username">
+        
+        <div class="form-group">
+          <label for="dailyLimit">Daily Message Limit</label>
+          <input type="number" id="dailyLimit" name="dailyLimit" min="1" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label for="aiModel">AI Model</label>
+          <select id="aiModel" name="aiModel" class="form-control">
+            {{#each availableModels}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="temperature">Temperature (0-2)</label>
+          <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" class="form-control">
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="submit-btn">Save Changes</button>
+          <button type="button" class="cancel-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  h1 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .admin-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .back-link {
+    color: #3498db;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  
+  .search-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .search-form input, .search-form select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 150px;
+  }
+  
+  .search-form button {
+    padding: 8px 15px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .search-form button:hover {
+    background: #2980b9;
+  }
+  
+  .clear-filter {
+    color: #e74c3c;
+    text-decoration: none;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  
+  .clear-filter:hover {
+    text-decoration: underline;
+  }
+  
+  .user-list {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  
+  .user-list-header, .user-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 0.8fr 0.8fr 0.8fr 1fr 1fr;
+    align-items: center;
+    padding: 12px 15px;
+  }
+  
+  .user-list-header {
+    background: #2c3e50;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .header-item {
+    padding: 5px;
+  }
+  
+  .header-item a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .header-item.sorted a {
+    font-weight: bold;
+  }
+  
+  .user-row {
+    border-bottom: 1px solid #ecf0f1;
+  }
+  
+  .user-row:last-child {
+    border-bottom: none;
+  }
+  
+  .user-row:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  
+  .user-cell {
+    padding: 8px 5px;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .edit-btn, .chats-link {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+  }
+  
+  .edit-btn {
+    background: #3498db;
+    color: white;
+    margin-right: 5px;
+  }
+  
+  .edit-btn:hover {
+    background: #2980b9;
+  }
+  
+  .chats-link {
+    background: #27ae60;
+    color: white;
+    display: inline-block;
+  }
+  
+  .chats-link:hover {
+    background: #219653;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+  }
+  
+  .page-link {
+    padding: 8px 12px;
+    background: #ecf0f1;
+    color: #2c3e50;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  
+  .page-link:hover, .page-link.active {
+    background: #3498db;
+    color: white;
+  }
+  
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+  }
+  
+  .modal-content {
+    background: white;
+    margin: 10% auto;
+    padding: 25px;
+    border-radius: 8px;
+    width: 450px;
+    max-width: 90%;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  
+  .close-modal {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #7f8c8d;
+  }
+  
+  .close-modal:hover {
+    color: #2c3e50;
+  }
+  
+  .modal h2 {
+    margin-top: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    color: #2c3e50;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .form-control:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+  }
+  
+  .submit-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .submit-btn:hover {
+    background: #219653;
+  }
+  
+  .cancel-btn {
+    background: #95a5a6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .cancel-btn:hover {
+    background: #7f8c8d;
+  }
+</style>
+
+<script>
+  // Handle edit button clicks
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const username = this.getAttribute('data-username');
+      const model = this.getAttribute('data-model');
+      const limit = this.getAttribute('data-limit');
+      const temp = this.getAttribute('data-temp');
+      
+      document.getElementById('editUsername').value = username;
+      document.getElementById('aiModel').value = model;
+      document.getElementById('dailyLimit').value = limit;
+      document.getElementById('temperature').value = temp;
+      
+      document.getElementById('editUserModal').style.display = 'block';
+    });
+  });
+  
+  // Close modal
+  document.querySelector('.close-modal').addEventListener('click', function() {
+    document.getElementById('editUserModal').style.display = 'none';
+  });
+  
+  document.querySelector('.cancel-btn').addEventListener('click', function() {
+    document.getElementById('editUserModal').style.display = 'none';
+  });
+  
+  // Handle form submission
+  document.getElementById('editUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+      username: document.getElementById('editUsername').value,
+      dailyLimit: document.getElementById('dailyLimit').value,
+      aiModel: document.getElementById('aiModel').value,
+      temperature: document.getElementById('temperature').value
+    };
+    
+    fetch('/admin/settings/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('User updated successfully');
+        document.getElementById('editUserModal').style.display = 'none';
+        location.reload(); // Refresh to see changes
+      } else {
+        alert('Error updating user: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Failed to update user');
+    });
+  });
+</script>
