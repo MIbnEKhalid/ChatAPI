@@ -2,467 +2,916 @@
 <html lang="en">
 
 <head>
-    <title>AI Chat Application - Product Page</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Discover our AI Chat Application: Seamless, customizable, and powerful. Connect with AI models like never before.">
+        content="A private Portal for the MBK Tech Studio team, offering streamlined operations and powerful administration tools.">
+    <meta name="keywords" content="MBK Tech Studio, Web-Portal, Web, Portal, Admin-Panel, Admin">
+    <meta property="og:title" content="Portal | MBK Tech Studio" />
+    <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png" />
+    <meta property="og:url" content="https://portal.mbktechstudio.com/">
+    <title>ChatAPI | MBK Tech Studio</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/Assets/Style/doc.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
-        /* Base Styles with Dark Theme */
         :root {
-            --main-border-color: #3d444d;
-            --base-font-size: 16px;
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
-            --header-bg: #1e1e1e;
-            --border-color: #333333;
-            --primary-color: #ff5722;
-            --secondary-color: #ff9800;
-            --accent-color: #03dac6;
-            --section-padding: 3rem 4%;
-
-            --primary-hover: #e64a19;
-            --secondary-hover: #f57c00;
-            --light-text: #ffffff;
-            --light-bg: #1e1e1e;
-            --dark-bg: #121212;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            --transition: all 0.3s ease;
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --primary-light: rgba(67, 97, 238, 0.1);
+            --secondary: #f72585;
+            --secondary-light: rgba(247, 37, 133, 0.1);
+            --dark: #121212;
+            --dark-light: #1e1e1e;
+            --darker: #0a0a0a;
+            --light: #f8f9fa;
+            --lighter: #ffffff;
+            --gray: #cccccc;
+            --gray-dark: #888888;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #ef233c;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+            --glass: rgba(30, 30, 30, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 15px 40px rgba(0, 0, 0, 0.3);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            font-size: var(--base-font-size);
+            background: var(--dark);
+            color: var(--light);
             line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
-        nav.sticky {
-            background: rgba(0, 0, 0, .3);
-            backdrop-filter: blur(8px);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
         }
 
         /* Typography */
         h1,
         h2,
         h3,
-        h4,
-        h5,
-        h6 {
-            margin-bottom: 1rem;
-            font-weight: 700;
+        h4 {
             line-height: 1.2;
-            color: var(--light-text);
+            font-weight: 700;
         }
 
-        h1 {
-            font-size: 2.5rem;
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            color: var(--accent-color);
-        }
-
-        p {
-            margin-bottom: 1rem;
-        }
-
-        a {
-            text-decoration: none;
-            color: var(--accent-color);
-            transition: var(--transition);
-        }
-
-        a:hover {
-            color: var(--primary-color);
+        .text-gradient {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         /* Buttons */
         .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            text-align: center;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
             transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
             border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            z-index: -1;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .btn:hover::after {
+            opacity: 1;
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
-            color: var(--light-text);
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-hover);
-            color: var(--light-text);
-            transform: translateY(-2px);
-            box-shadow: var(--box-shadow);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn-secondary {
-            background-color: var(--secondary-color);
-            color: var(--light-text);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
         }
 
         .btn-secondary:hover {
-            background-color: var(--secondary-hover);
-            color: var(--light-text);
-            transform: translateY(-2px);
-            box-shadow: var(--box-shadow);
+            background: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-sm);
         }
 
-        .btn-github {
-            background-color: #212830;
-            padding: 10px 10px !important;
-            border: 2px solid var(--main-border-color) !important;
-            color: var(--light-text);
-            transition: all 0.3s ease;
+        .btn-outline {
+            border: 2px solid var(--gray);
+            color: var(--light);
+            background: transparent;
         }
 
-        .btn-github:hover {
-            background-color: transparent;
-            border: 2px solid var(--main-border-color) !important;
-            color: var(--light-text);
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
-        /* Header & Navigation */
+        /* Navigation */
         header {
-            background-color: var(--header-bg);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             position: fixed;
-            width: 100%;
             top: 0;
+            left: 0;
+            width: 100%;
             z-index: 1000;
-            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+            background: linear-gradient(to bottom, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.7));
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         nav {
-            padding: 1rem 0;
+            padding: 15px 5%;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        nav .container {
+        .navbar {
             display: flex;
-            justify-content: space-evenly;
-            flex-wrap: nowrap;
-            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .logo {
-            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo img {
+            height: 30px;
+            width: auto;
+            transform: rotate(120deg);
+            transition: var(--transition);
+        }
+
+        .logo:hover img {
+            transform: rotate(15deg);
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
             font-weight: 700;
-            margin-right: auto;
-            color: var(--accent-color);
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            position: relative;
+            padding: 8px 0;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover::before {
+            width: 100%;
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+        }
+
+        .btn-login {
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-login:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .menu-toggle {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--text-color);
-            cursor: pointer;
             display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--light);
+            transition: var(--transition);
         }
 
-        nav ul {
-            display: flex;
-            list-style: none;
-            align-items: center;
-            gap: 1.5rem;
-            margin-left: auto;
-            /* Push the navigation buttons to the right */
-        }
-
-        nav ul li a {
-            color: var(--text-color);
-            font-weight: 500;
-        }
-
-        nav ul li a:hover {
-            color: var(--accent-color);
-        }
-
-        .login-icon {
-            margin-right: 0.5rem;
+        .menu-toggle:hover {
+            color: var(--primary);
         }
 
         /* Hero Section */
         .hero {
-            padding: 8rem 0 4rem;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 160px 5% 80px;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at 70% 20%, rgba(67, 97, 238, 0.15), transparent 60%);
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-text {
+            max-width: 700px;
         }
 
         .hero h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 1.5rem;
-            color: var(--light-text);
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .hero p {
-            font-size: 1.25rem;
-            max-width: 800px;
-            margin: 0 auto 2rem;
-            color: var(--text-color);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: var(--gray);
+            max-width: 600px;
         }
 
-        .hero-buttons {
+        .cta-buttons {
             display: flex;
-            justify-content: center;
             gap: 1rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        /* Floating AI Elements */
+        .ai-element {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .ai-element:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            font-size: 5rem;
+            animation-delay: 0s;
+        }
+
+        .ai-element:nth-child(2) {
+            top: 60%;
+            left: 80%;
+            font-size: 4rem;
+            animation-delay: 1s;
+        }
+
+        .ai-element:nth-child(3) {
+            top: 30%;
+            left: 70%;
+            font-size: 3rem;
+            animation-delay: 2s;
+        }
+
+        .ai-element:nth-child(4) {
+            top: 80%;
+            left: 20%;
+            font-size: 6rem;
+            animation-delay: 3s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
         }
 
         /* Features Section */
-        .features {
-            padding: var(--section-padding);
-            background-color: var(--dark-bg);
-            border-bottom: 1px solid var(--border-color);
+        .section {
+            padding: 100px 5%;
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+            font-size: 2.5rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient);
+            border-radius: 2px;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
-            margin-top: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .feature-card {
-            background-color: var(--header-bg);
+            background: var(--dark-light);
             padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
+            border-radius: var(--radius-lg);
             transition: var(--transition);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            opacity: 0;
+            transition: var(--transition);
+            z-index: -1;
         }
 
         .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-            border-color: var(--accent-color);
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+            border-color: transparent;
+        }
+
+        .feature-card:hover::before {
+            opacity: 0.1;
         }
 
         .feature-icon {
             font-size: 2.5rem;
-            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
             margin-bottom: 1rem;
+            color: var(--lighter);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            font-size: 1rem;
         }
 
         /* Product Details Section */
         .product-details {
-            padding: var(--section-padding);
-            background-color: var(--bg-color);
-            border-bottom: 1px solid var(--border-color);
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .product-details h3 {
-            margin: 2rem 0 1rem;
+        .detail-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
         }
 
-        .product-details ul,
-        .product-details ol {
-            margin: 1rem 0 2rem;
-            padding-left: 2rem;
-        }
-
-        .product-details li {
-            margin-bottom: 0.5rem;
-        }
-
-        .product-details strong {
-            color: var(--accent-color);
-        }
-
-        /* Model Selection Section */
-        .model-selection {
-            background-color: var(--header-bg);
+        .detail-card {
+            background: var(--dark-light);
+            border-radius: var(--radius-md);
             padding: 2rem;
-            border-radius: var(--border-radius);
-            margin: 2rem 0;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--glass-border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .detail-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient);
+        }
+
+        .detail-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--lighter);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-card h3 i {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .detail-card ul {
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-card li {
+            margin-bottom: 0.8rem;
+            position: relative;
+            list-style-type: none;
+            padding-left: 1.5rem;
+            color: var(--gray);
+        }
+
+        .detail-card li::before {
+            content: '▹';
+            color: var(--primary);
+            position: absolute;
+            left: 0;
         }
 
         .model-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        .model-table th, .model-table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
+            margin: 1.5rem 0;
+            background: var(--dark-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
         .model-table th {
-            background-color: rgba(3, 218, 198, 0.1);
-            color: var(--accent-color);
+            background: var(--gradient);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
         }
 
-        .model-table tr:hover {
-            background-color: rgba(255, 255, 255, 0.05);
+        .model-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--gray);
         }
 
-        /* Try Demo Section */
-        .try-demo {
-            padding: var(--section-padding);
-            background-color: var(--header-bg);
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
+        .model-table tr:last-child td {
+            border-bottom: none;
         }
 
-        /* Development Team Section */
-        .development {
-            padding: var(--section-padding);
-            background-color: var(--bg-color);
-            border-bottom: 1px solid var(--border-color);
+        .model-table tr:hover td {
+            background: var(--primary-light);
+            color: var(--lighter);
         }
 
-        .developer-grid {
-            display: flex;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-            justify-items: center;
-        }
-
-        .developer-card {
-            background-color: var(--header-bg);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
-            transition: all 0.3s ease;
-            width: 100%;
-            max-width: 350px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .developer-card:hover {
-            border-color: var(--accent-color);
-        }
-
-        .developer-card i {
-            font-size: 4rem;
-        }
-
-        .developer-name {
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--light-text);
-        }
-
-        .developer-github {
+        .badge {
             display: inline-block;
-            margin-top: 0.5rem;
-            font-size: 1rem;
-            color: var(--accent-color);
-            text-decoration: none;
-            transition: color 0.3s ease;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
-        .developer-github:hover {
-            color: var(--primary-color);
+        .badge-text {
+            background: var(--primary-light);
+            color: var(--primary);
         }
 
-        /* Learn More Section */
-        .learn-more {
-            padding: var(--section-padding);
-            background-color: var(--header-bg);
+        .badge-image {
+            background: var(--secondary-light);
+            color: var(--secondary);
+        }
+
+        /* Team Section */
+        .team-section {
+            background: var(--darker);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            margin-top: 3rem;
             text-align: center;
-            border-bottom: 1px solid var(--border-color);
+        }
+
+        .team-grid {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .team-card {
+            background: var(--dark-light);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 280px;
+            transition: var(--transition);
+            border: 1px solid var(--glass-border);
+        }
+
+        .team-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            border: 3px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .team-name {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--lighter);
+        }
+
+        .team-role {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .team-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .team-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .team-social a:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        /* Testimonials */
+        .testimonials {
+            margin-top: 5rem;
+        }
+
+        .testimonial-card {
+            background: var(--dark-light);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin: 1rem;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .testimonial-card::before {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 5rem;
+            color: var(--primary);
+            opacity: 0.1;
+            font-family: serif;
+            line-height: 1;
+        }
+
+        .testimonial-content {
+            position: relative;
+            z-index: 2;
         }
 
         /* Footer */
         footer {
-            background-color: #0d0d0d;
-            color: var(--light-text);
-            padding: 2rem 0;
-            text-align: center;
+            background: var(--darker);
+            padding: 4rem 5% 2rem;
+            border-top: 1px solid var(--glass-border);
+            position: relative;
         }
 
-        footer .container {
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-logo {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-logo img {
+            height: 30px;
+        }
+
+        .footer-description {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .social-links {
+            display: flex;
             gap: 1rem;
         }
 
-        footer a {
-            color: var(--text-color);
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--dark-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
         }
 
-        footer a:hover {
-            color: var(--accent-color);
+        .social-link:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
         }
 
-        /* Responsive Design */
+        .footer-links h3 {
+            color: var(--lighter);
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-links h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 3px;
+        }
+
+        .footer-link {
+            display: block;
+            color: var(--gray);
+            margin-bottom: 0.8rem;
+            transition: var(--transition);
+            padding: 5px 0;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+            padding-left: 8px;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 3rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--glass-border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .footer-bottom a {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+            z-index: 999;
+            border: none;
+            outline: none;
+        }
+
+        .scroll-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+
+        /* Glow Effects */
+        .glow {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(67, 97, 238, 0.2), transparent 70%);
+            filter: blur(30px);
+            z-index: 0;
+        }
+
+        .glow-1 {
+            top: 20%;
+            left: 10%;
+        }
+
+        .glow-2 {
+            bottom: 10%;
+            right: 15%;
+            background: radial-gradient(circle, rgba(247, 37, 133, 0.15), transparent 70%);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .menu-toggle {
                 display: block;
-                margin-left: auto;
-                /* Push the menu-toggle to the right */
-
             }
 
-            nav .container {
-                display: flex;
-                justify-content: space-between;
-                flex-direction: row-reverse;
-            }
-
-            nav ul {
+            .nav-links {
                 position: fixed;
-                top: 70px;
-                left: 0;
+                top: 80px;
+                left: -100%;
                 width: 100%;
-                background-color: var(--header-bg);
+                height: calc(100vh - 80px);
+                background: var(--darker);
                 flex-direction: column;
                 align-items: center;
-                padding: 2rem 0;
-                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-                transform: translateY(-150%);
-                transition: transform 0.3s ease-in-out;
+                justify-content: flex-start;
+                gap: 2rem;
+                padding-top: 3rem;
+                transition: var(--transition);
                 z-index: 999;
-                border-bottom: 1px solid var(--border-color);
             }
 
-            nav ul.active {
-                transform: translateY(0);
+            .nav-links.active {
+                left: 0;
+            }
+
+            .hero {
+                padding: 120px 5% 60px;
+                text-align: center;
+            }
+
+            .hero-text {
+                margin: 0 auto;
             }
 
             .hero h1 {
@@ -471,43 +920,35 @@
 
             .hero p {
                 font-size: 1.1rem;
+                margin: 0 auto 2rem;
             }
 
-            .hero-buttons {
+            .cta-buttons {
+                justify-content: center;
+            }
+
+            .team-grid {
                 flex-direction: column;
                 align-items: center;
             }
-
-            .btn {
-                width: 100%;
-                max-width: 250px;
-            }
-
-            footer .container {
-                flex-direction: column;
-            }
-
-            .model-table {
-                display: block;
-                overflow-x: auto;
-            }
         }
 
-        @media (max-width: 480px) {
-            :root {
-                --section-padding: 2rem 4%;
-            }
-
-            h1 {
+        @media (max-width: 576px) {
+            .hero h1 {
                 font-size: 2rem;
             }
 
-            h2 {
-                font-size: 1.75rem;
+            .section {
+                padding: 80px 5%;
             }
 
-            .hero {
-                padding: 6rem 0 3rem;
+            .feature-card,
+            .detail-card {
+                padding: 1.5rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -515,239 +956,404 @@
 
 <body>
     <header>
-        <nav class="sticky">
-            <div class="container">
-                <button class="menu-toggle" aria-label="Toggle navigation">
-                    <i class="fa fa-bars"></i>
-                </button>
-                <div class="logo">
-                    AI Chat App
-                    <span style="font-size: 10px;"> by <a href="https://mbktechstudio.com"
-                            target="_blank">mbktechstudio</a> </span>
+        <nav>
+            <div class="navbar">
+                <a href="#" class="logo">
+                    <img src="/Assets/Images/dg.svg" alt="MBK Tech Studio Logo">
+                    <span class="logo-text">ChatAPI</span>
+                </a>
+                <div class="nav-links">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#product-details" class="nav-link">Details</a>
+                    <a href="#development-team" class="nav-link">Team</a>
+                    <a href="/login" class="btn-login">Login</a>
                 </div>
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#details">Details</a></li>
-                    <li><a href="#try-demo">Demo</a></li>
-                    <li><a href="#developers">Developers</a></li>
-                    <li><a href="/login"><i class="fa fa-sign-in-alt login-icon"></i> Login</a></li>
-                </ul>
+                <div class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </div>
             </div>
         </nav>
     </header>
 
     <section class="hero">
-        <div class="container">
-            <h1>Experience the Power of AI Chat</h1>
-            <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI models
-                and enjoy a customizable, restriction-free chat experience.</p>
-            <div class="hero-buttons">
-                <a href="#try-demo" class="btn btn-primary">Try Live Demo</a>
-                <a href="#details" class="btn btn-secondary">Learn Features</a>
-                <a href="https://github.com/MIbnEKhalid/ChatAPI" target="_blank" class="btn btn-github"><i class="fab fa-github" aria-hidden="true"></i>  Open In GitHub</a>
-            </div>
-        </div>
-    </section>
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
 
-    <section class="features" id="features">
-        <div class="container">
-            <h2>Key Features</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fa fa-rocket feature-icon"></i>
-                    <h3>Seamless API Integration</h3>
-                    <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs
-                        effortlessly.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa fa-cog feature-icon"></i>
-                    <h3>Highly Customizable</h3>
-                    <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa fa-lock-open feature-icon"></i>
-                    <h3>Bypass Restrictions</h3>
-                    <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI
-                        anywhere.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa fa-code feature-icon"></i>
-                    <h3>Open Source & Extensible</h3>
-                    <p>Built on an open-source platform, allowing for community contributions and deep customization.
-                    </p>
+        <!-- Floating AI elements -->
+        <i class="fas fa-robot ai-element"></i>
+        <i class="fas fa-brain ai-element"></i>
+        <i class="fas fa-comment-dots ai-element"></i>
+        <i class="fas fa-microchip ai-element"></i>
+
+        <div class="hero-content">
+            <div class="hero-text fade-in-up">
+                <h1>Experience the <span>Power of AI Chat</span> by <span>MBK Tech Studio</span></h1>
+                <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI
+                    models and enjoy a customizable, restriction-free chat experience.</p>
+                <div class="cta-buttons">
+                    <a href="/login?username=demo&password=demo" class="btn btn-primary fade-in-up delay-1">
+                        <i class="fas fa-play-circle"></i> Try Live Demo
+                    </a>
+                    <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-secondary fade-in-up delay-2">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="product-details" id="details">
-        <div class="container">
-            <h2>Product Details</h2>
-            <p>Our AI Chat Application is designed to provide you with a flexible and powerful way to interact with AI
-                models. Here's a deeper look:</p>
-
-            <h3>Key Capabilities</h3>
-            <ul>
-                <li><strong>Multi-Model Support:</strong> Compatible with Gemini, DeepSeek, and easily extensible to
-                    other AI APIs.</li>
-                <li><strong>Customizable Settings:</strong> Adjust temperature, model selection, and appearance to
-                    personalize your experience.</li>
-                <li><strong>User-Friendly Interface:</strong> Clean and intuitive chat interface for seamless
-                    conversations.</li>
-                <li><strong>Deployment Flexibility:</strong> Deployable on Vercel, Netlify, and other platforms for
-                    unrestricted access.</li>
-                <li><strong>Open API Architecture:</strong> Allows developers to extend and integrate the chatbot into
-                    other systems.</li>
-            </ul>
-
-            <h3>Use Cases</h3>
-            <p>Our AI Chat Application is perfect for:</p>
-            <ol>
-                <li><strong>Workplace Productivity:</strong> Access AI assistants on restricted networks to boost
-                    efficiency.</li>
-                <li><strong>Educational Research:</strong> Enable students and educators to use AI for learning and
-                    research in schools and universities.</li>
-                <li><strong>Personal AI Assistance:</strong> Create a personal AI assistant for daily tasks,
-                    brainstorming, and information retrieval.</li>
-                <li><strong>Developer Experimentation:</strong> A platform for developers to test and integrate various
-                    AI models and chatbot functionalities.</li>
-            </ol>
-
-            <div class="model-selection">
-                <h3>Gemini Model Selection Guide</h3>
-                <p>Choose the right Gemini model for your needs based on these key features:</p>
-                
-                <table class="model-table">
-                    <thead>
-                        <tr>
-                            <th>Model</th>
-                            <th>Type</th>
-                            <th>Best For</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Gemini 2.0 Flash</strong></td>
-                            <td>Text</td>
-                            <td>Next generation features, speed, thinking, realtime responses</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Gemini 2.0 Flash-Lite</strong></td>
-                            <td>Text</td>
-                            <td>Cost efficiency and low latency requirements</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Gemini 1.5 Flash</strong></td>
-                            <td>Text</td>
-                            <td>Fast and versatile performance across a diverse variety of tasks</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Gemini 1.5 Flash-8B</strong></td>
-                            <td>Text</td>
-                            <td>High volume and lower intelligence tasks</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Gemini 1.5 Pro</strong></td>
-                            <td>Text</td>
-                            <td>Complex reasoning tasks requiring more intelligence</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <section class="try-demo" id="try-demo">
-        <div class="container">
-            <h2>Try the Live Demo</h2>
-            <p>Experience the AI Chat Application firsthand. Click the button below to access the live demo.</p>
-            <a href="/demo" class="btn btn-primary">Launch Demo</a>
-        </div>
-    </section>
-
-    <section class="development" id="developers">
-        <div class="container">
-            <h2>Development Team</h2>
-            <p>Meet the team behind the AI Chat Application:</p>
-            <div class="developer-grid">
-                <a target="_blank" href="http://portal.mbktechstudio.com/ibnekhalid" class="developer-card">
-                    <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fa fa-user-circle"></i></div>
-                    <p class="developer-name">Muhammad Bin Khalid</p>
+    <section class="section" style="padding-top: 0;">
+        <div class="detail-card" style="background: var(--gradient); color: white; text-align: center;">
+            <h2 style="color: white; margin-bottom: 1.5rem;">Ready to Transform Your AI Experience?</h2>
+            <p style="margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">Join hundreds of
+                users who are already leveraging the power of our AI Chat Application for their personal and
+                professional needs.</p>
+            <div class="cta-buttons" style="justify-content: center;">
+                <a href="/login?username=demo&password=demo" class="btn btn-primary"
+                    style="background: white; color: var(--primary);">
+                    <i class="fas fa-play-circle"></i> Try Live Demo
                 </a>
-                <a target="_blank" href="http://portal.mbktechstudio.com/maaz.waheed" class="developer-card">
-                    <div style="font-size: 4rem; margin-bottom: 0.5rem;"><i class="fa fa-user-circle"></i></div>
-                    <p class="developer-name">Maaz Waheed</p>
+                <a href="/login" class="btn btn-outline" style="border-color: white; color: white;">
+                    <i class="fas fa-sign-in-alt"></i> Login
                 </a>
             </div>
         </div>
     </section>
 
-    <section class="learn-more" id="learn-more">
-        <div class="container">
-            <h2>Want to Learn More?</h2>
-            <p>Explore our documentation, deployment guides, and FAQs to get a comprehensive understanding of the AI
-                Chat Application.</p>
-            <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-primary" target="_blank"
-                rel="noopener noreferrer">View on GitHub</a>
+    <section class="section" id="features">
+        <h2 class="section-title">Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card fade-in-up">
+                <div class="feature-icon">
+                    <i class="fas fa-plug"></i>
+                </div>
+                <h3>Seamless API Integration</h3>
+                <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs effortlessly
+                    with our intuitive interface.</p>
+            </div>
+            <div class="feature-card fade-in-up delay-1">
+                <div class="feature-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3>Highly Customizable</h3>
+                <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding
+                    requirements.</p>
+            </div>
+            <div class="feature-card fade-in-up delay-2">
+                <div class="feature-icon">
+                    <i class="fas fa-unlock-alt"></i>
+                </div>
+                <h3>Bypass Restrictions</h3>
+                <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI from
+                    anywhere in the world.</p>
+            </div>
+            <div class="feature-card fade-in-up delay-3">
+                <div class="feature-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h3>Open Source & Extensible</h3>
+                <p>Built on an open-source platform, allowing for community contributions and deep customization to fit
+                    any use case.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="product-details">
+        <h2 class="section-title">Technical Details</h2>
+        <div class="product-details">
+            <div class="detail-cards">
+                <div class="detail-card fade-in-up">
+                    <h3><i class="fas fa-cogs"></i> Core Features</h3>
+                    <ul>
+                        <li><strong>Multi-Model Support:</strong> Switch between Gemini, DeepSeek, and other AI APIs
+                            seamlessly with a single interface</li>
+                        <li><strong>Customizable Interface:</strong> Adjust themes, layout, and chat behavior to match
+                            your preferences</li>
+                        <li><strong>Advanced Settings:</strong> Fine-tune temperature, max tokens, and other model
+                            parameters for optimal results</li>
+                        <li><strong>Conversation History:</strong> Save and revisit past conversations with persistent
+                            storage options</li>
+                        <li><strong>API Key Management:</strong> Securely store and manage multiple API keys for
+                            different services</li>
+                    </ul>
+                </div>
+
+                <div class="detail-card fade-in-up delay-1">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Deployment Options</h3>
+                    <ul>
+                        <li><strong>Vercel/Netlify:</strong> One-click deployment for hassle-free hosting with minimal
+                            configuration</li>
+                        <li><strong>Docker:</strong> Containerized deployment for easy scaling and environment
+                            consistency</li>
+                        <li><strong>Self-Hosted:</strong> Full control with traditional server deployment on your
+                            infrastructure</li>
+                        <li><strong>Edge Functions:</strong> Optimized for serverless environments with fast response
+                            times</li>
+                        <li><strong>Custom Domains:</strong> Use your own domain for branded access and professional
+                            appearance</li>
+                    </ul>
+                </div>
+
+                <div class="detail-card fade-in-up delay-2">
+                    <h3><i class="fas fa-lightbulb"></i> Use Cases</h3>
+                    <ul>
+                        <li><strong>Enterprise AI:</strong> Deploy internal AI assistants for your team with custom
+                            knowledge</li>
+                        <li><strong>Education:</strong> Provide AI access in restricted academic networks for research
+                        </li>
+                        <li><strong>Development:</strong> Test and compare different AI models in one unified interface
+                        </li>
+                        <li><strong>Personal Use:</strong> Your private AI chat interface without limitations or
+                            tracking</li>
+                        <li><strong>Research:</strong> Conduct AI experiments with flexible parameters and
+                            configurations</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="detail-card fade-in-up delay-3" style="margin-top: 2rem;">
+                <h3><i class="fas fa-brain"></i> Model Selection Guide</h3>
+                <p>Choose the right AI model for your specific needs from our supported options:</p>
+
+                <div style="overflow-x: auto;">
+                    <table class="model-table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Type</th>
+                                <th>Best For</th>
+                                <th>Capacity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Gemini 2.0 Flash</td>
+                                <td><span class="badge badge-text">Text</span></td>
+                                <td>Next generation features, speed, thinking</td>
+                                <td>High</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini 2.0 Flash-Lite</td>
+                                <td><span class="badge badge-text">Text</span></td>
+                                <td>Cost efficiency and low latency</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini 1.5 Flash</td>
+                                <td><span class="badge badge-text">Text</span></td>
+                                <td>Versatile performance across tasks</td>
+                                <td>High</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini 1.5 Flash-8B</td>
+                                <td><span class="badge badge-text">Text</span></td>
+                                <td>High volume and lower intelligence tasks</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini 1.5 Pro</td>
+                                <td><span class="badge badge-text">Text</span></td>
+                                <td>Complex reasoning tasks</td>
+                                <td>Very High</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="development-team">
+        <h2 class="section-title">Development Team</h2>
+        <div class="team-section fade-in-up">
+            <p class="footer-description" style="max-width: 700px; margin: 0 auto 2rem;">The talented individuals behind
+                the AI Chat Application, bringing cutting-edge technology to your fingertips.</p>
+
+            <div class="team-grid">
+                <div class="team-card">
+                    <img src="https://avatars.githubusercontent.com/u/57322148?v=4" alt="Muhammad Bin Khalid"
+                        class="team-avatar">
+                    <h3 class="team-name">Muhammad Bin Khalid</h3>
+                </div>
+
+                <div class="team-card">
+                    <img src="https://avatars.githubusercontent.com/u/57322148?v=4" alt="Maaz Waheed"
+                        class="team-avatar">
+                    <h3 class="team-name">Maaz Waheed</h3>
+                </div>
+            </div>
         </div>
     </section>
 
     <footer>
-        <div class="container">
-            <span>
-                © <span id="year"></span> MBK Tech Studio
-            </span>
-            <span>
-                <a href="/info/Terms&Conditions" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
-                |
-                <a href="/FAQs" target="_blank" rel="noopener noreferrer">FAQs</a>
-                |
-                <a href="https://mbktechstudio.com/Support/" target="_blank" rel="noopener noreferrer">Support &
-                    Contact</a>
-            </span>
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="/Assets/Images/dg.svg" alt="MBK Tech Studio Logo">
+                    <span class="footer-logo-text">ChatAPI</span>
+                </div>
+                <p class="footer-description">An advanced AI chat solution by MBK Tech Studio, offering seamless
+                    integration with multiple AI models and customizable features for all your conversational needs.</p>
+                <div class="social-links">
+                    <a href="https://github.com/MIbnEKhalid/ChatAPI" class="social-link"><i
+                            class="fab fa-github"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Quick Links</h3>
+                <a href="#features" class="footer-link">Features</a>
+                <a href="#product-details" class="footer-link">Technical Details</a>
+                <a href="#development-team" class="footer-link">Our Team</a>
+                <a href="/login" class="footer-link">Login</a>
+            </div>
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <a href="#" class="footer-link">Documentation</a>
+                <a href="#" class="footer-link">API Reference</a>
+                <a href="#" class="footer-link">Community Forum</a>
+                <a href="https://mbktechstudio.com/Support" target="_blank" class="footer-link">Support Center</a>
+            </div>
+            <div class="footer-col">
+                <h3>Legal</h3>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Cookie Policy</a>
+                <a href="#" class="footer-link">GDPR Compliance</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© <span id="year"></span> <a href="https://github.com/MIbnEKhalid" target="_blank">Muhammad Bin
+                    Khalid</a> & <a href="#" target="_blank">MBK Tech Studio</a>. All Rights Reserved</span>
         </div>
     </footer>
 
+    <button class="scroll-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const menuToggle = document.querySelector('.menu-toggle');
-            const navMenu = document.querySelector('nav ul');
+        // Set current year
+        document.getElementById('year').textContent = new Date().getFullYear();
 
-            menuToggle.addEventListener('click', function () {
-                navMenu.classList.toggle('active');
-                const icon = this.querySelector('i');
-                icon.classList.toggle('fa-bars');
-                icon.classList.toggle('fa-times');
-            });
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
 
-            // Close menu when clicking on a link
-            document.querySelectorAll('nav a').forEach(link => {
-                link.addEventListener('click', function (event) {
-                    if (window.innerWidth <= 768) {
-                        navMenu.classList.remove('active');
-                        const icon = document.querySelector('.menu-toggle i');
-                        icon.classList.add('fa-bars');
-                        icon.classList.remove('fa-times');
-                    }
-
-                    // Adjust scroll position for sticky header
-                    const targetId = this.getAttribute('href').substring(1);
-                    const targetElement = document.getElementById(targetId);
-                    if (targetElement) {
-                        event.preventDefault();
-                        const offsetTop = targetElement.offsetTop - 70;
-                        window.scrollTo({
-                            top: offsetTop,
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
-
-            // Update year in footer
-            document.getElementById('year').textContent = new Date().getFullYear();
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            menuToggle.innerHTML = navLinks.classList.contains('active') ?
+                '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
         });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            });
+        });
+
+        // Sticky header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            header.classList.toggle('sticky', window.scrollY > 0);
+        });
+
+        // Scroll to top button
+        const scrollTop = document.querySelector('.scroll-top');
+
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTop.classList.add('active');
+            } else {
+                scrollTop.classList.remove('active');
+            }
+        });
+
+        scrollTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    // Close mobile menu if open
+                    if (navLinks.classList.contains('active')) {
+                        navLinks.classList.remove('active');
+                        menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Highlight active section in navigation
+        const sections = document.querySelectorAll('section');
+        const navItems = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+
+                if (pageYOffset >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === `#${current}`) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Animation on scroll
+        const animateOnScroll = () => {
+            const elements = document.querySelectorAll('.fade-in-up');
+
+            elements.forEach(element => {
+                const elementPosition = element.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.2;
+
+                if (elementPosition < screenPosition) {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }
+            });
+        };
+
+        // Initialize animations on load
+        window.addEventListener('load', () => {
+            animateOnScroll();
+
+            // Add slight delay to hero elements for better sequencing
+            const heroElements = document.querySelectorAll('.hero-text > *');
+            heroElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        window.addEventListener('scroll', animateOnScroll);
     </script>
 </body>
 

@@ -1233,9 +1233,10 @@
         </header>
         <section class="chat-content">
             {{#if isChatIdOfOtherUser}}
-               <div style="background-color: var(--input-bg); color: var(--text-color); padding: 0.25rem; border-radius: 0.5rem; box-shadow: var(--shadow); text-align: center;">
-                   This Chat ID Belongs to <strong>{{chatIdUsername}}</strong>
-               </div>
+            <div
+                style="background-color: var(--input-bg); color: var(--text-color); padding: 0.25rem; border-radius: 0.5rem; box-shadow: var(--shadow); text-align: center;">
+                This Chat ID Belongs to <strong>{{chatIdUsername}}</strong>
+            </div>
             {{/if}}
             <div class="chat-messages" id="chat-messages"></div>
             <div id="scroll-down-btn" class="scroll-down-btn">
@@ -1326,25 +1327,37 @@
                     <div class="settings-group">
                         <label>Subscription Details</label>
                         <div class="account-info">
-                            {{#if (eq role "SuperAdmin")}}
-                            <p>Plan: <span id="userSubscriptionPlan">MBK Tech Studio Team</span></p>
-                            <p>Messages Per Day: Unlimited</p>
-                            {{else}}
-                            <p>Plan: <span id="userSubscriptionPlan">Free</span></p>
+                            {{#if (eq role "NormalUser")}}
+                            <p>Plan: <span id="userSubscriptionPlan">Basic (Free)</span></p>
                             <p>Messages Per Day: <span id="messagesUsed">{{settings.messageCount}}</span>/<span
                                     id="messagesPerDay">{{#if settings.dailyLimit}}{{settings.dailyLimit}}{{else}}
                                     Unlimited{{/if}}</span></p>
                             {{/if}}
+
+                            {{#if (eq role "Guest")}}
+                            <p>Plan: <span id="userSubscriptionPlan">Guest (Restricted)</span></p>
+                            {{/if}}
+
+                            {{#if (eq role "Admin")}}
+                            <p>Plan: <span id="userSubscriptionPlan">MBK Tech
+                                    Studio Team</span></p>
+                            <p>Messages Per Day: Unlimited</p>
+                            {{/if}}
+
+                            {{#if (eq role "SuperAdmin")}}
+                            <p>Plan: <span id="userSubscriptionPlan">Administration</span></p>
+                            <p>Messages Per Day: Unlimited</p>
+                            {{/if}}
                         </div>
                     </div>
-                    <a href="https://portal.mbktechstudio.com/user/settings/plan" target="_blank" class="btn btn-save"><i
-                            class="fa fa-arrow-up"></i> Upgrade Plan</a>
+                    <a href="https://portal.mbktechstudio.com/user/settings/plan" target="_blank"
+                        class="btn btn-save"><i class="fa fa-arrow-up"></i> Upgrade Plan</a>
                     <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-cancel"><i
                             class="fa fa-gear"></i> Account Settings</a>
-                    <button id="logout-button" onclick="logout()" class="btn btn-danger"><i
-                            class="fa fa-sign-out-alt"></i> Logout</button>
                 </div>
                 <div class="settings-footer">
+                    <button id="logout-button" onclick="logout()" class="btn btn-danger"><i
+                            class="fa fa-sign-out-alt"></i> Logout</button>
                     <a id="save-settings" class="btn btn-save"><i class="fa fa-save" aria-hidden="true"></i> Save
                         Settings</a>
                     <a id="cancel-settings" class="btn btn-cancel">Cancel</a>
@@ -1907,17 +1920,6 @@
             const messageText = chatInput.value.trim();
             if (!messageText || isWaitingForResponse) return;
 
-            // Skip rendering if message is the specific context message
-            const contextMessages = [
-                "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio.",
-                "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
-            ];
-
-            if (contextMessages.includes(messageText)) {
-                chatInput.value = '';
-                return;
-            }
-
             const startTime = Date.now();
             addMessage(messageText, 'user');
             chatInput.value = '';
@@ -1983,14 +1985,28 @@
         }
 
         function addMessage(text, sender, messageId = Date.now(), responseTime = null) {
+            // Skip rendering the IMPORTANT CONTEXT message if it's the first message
+            if (chatMessages.children.length === 0) {
+ 
+                const contextMessages = [
+                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio.", 
+                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
+                ];
+
+                if (contextMessages.some(ctx => text.trim() === ctx.trim())) {
+                    console.log("Skipping IMPORTANT CONTEXT message.");
+                    return;
+                }
+            }
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message message-loading`;
             messageDiv.dataset.messageId = messageId;
 
             const deleteButton = sender === 'ai' ?
                 `<button class="delete-message-btn" onclick="deleteMessage('${messageId}')" title="Delete message">
-    <i class="fa fa-trash"></i>
-    </button>` : '';
+                    <i class="fa fa-trash"></i>
+                </button>` : '';
 
             const processedText = sender === 'ai' ? marked.parse(text) : escapeHtml(text);
 
@@ -1999,12 +2015,12 @@
                 `<div class="response-time">Response time: ${(responseTime / 1000).toFixed(2)}s</div>` : '';
 
             messageDiv.innerHTML = `
-                <div class="message-bubble">
-                    ${deleteButton}
-                    <div class="message-content">${processedText}</div>
-                        ${responseTimeDisplay}
-                    </div>
-            `;
+        <div class="message-bubble">
+            ${deleteButton}
+            <div class="message-content">${processedText}</div>
+                ${responseTimeDisplay}
+            </div>
+    `;
 
             chatMessages.appendChild(messageDiv);
 
