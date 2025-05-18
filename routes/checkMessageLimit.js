@@ -39,7 +39,7 @@ export const checkMessageLimit = async (req, res, next) => {
     if (!userSettings) {
       console.log(`[checkMessageLimit] Fetching settings for user: ${username}`);
       const settingsQuery = await pool.query(
-        `SELECT daily_message_limit FROM user_settings WHERE username = $1`,
+        `SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1`,
         [username]
       );
 
@@ -55,10 +55,10 @@ export const checkMessageLimit = async (req, res, next) => {
 
     // Check message count with a single query using upsert approach
     const messageCountResult = await pool.query(
-      `INSERT INTO user_message_logs (username, date, message_count)
+      `INSERT INTO user_message_logs_chatapi (username, date, message_count)
        VALUES ($1, $2, 1)
        ON CONFLICT (username, date)
-       DO UPDATE SET message_count = user_message_logs.message_count + 1
+       DO UPDATE SET message_count = user_message_logs_chatapi.message_count + 1
        RETURNING message_count`,
       [username, dateString]
     );
@@ -70,7 +70,7 @@ export const checkMessageLimit = async (req, res, next) => {
 
       // Rollback the increment since they're over limit
       await pool.query(
-        `UPDATE user_message_logs 
+        `UPDATE user_message_logs_chatapi 
          SET message_count = message_count - 1 
          WHERE username = $1 AND date = $2`,
         [username, dateString]
