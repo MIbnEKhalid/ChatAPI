@@ -184,7 +184,9 @@ router.get("*", (req, res) => {
   return handleNext(req, res);
 });
 */
-
+router.get("/i", async (req, res) => {
+  res.render("index");
+});
 router.use((req, res) => {
   console.log(`Path not found: ${req.url}`);
   return res.render("staticPage/404");
