@@ -1,0 +1,204 @@
+<head>
+  <link rel="stylesheet" href="/Assets/css/admin.css">
+</head>
+
+<div class="admin-container">
+  <h1>User Management</h1>
+  
+  <div class="admin-actions">
+    <a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+    
+    <form class="search-form" method="GET" action="/admin/users">
+      <input type="text" name="search" placeholder="Search users..." value="{{searchQuery}}">
+      <select name="model">
+        <option value="">All Models</option>
+        {{#each availableModels}}
+        <option value="{{this}}" {{#if (eq this ../selectedModel)}}selected{{/if}}>{{this}}</option>
+        {{/each}}
+      </select>
+      <button type="submit">Search</button>
+      <a href="/admin/users" class="clear-filter">Reset</a>
+    </form>
+  </div>
+  
+  <div class="user-list">
+    <div class="user-list-header">
+      <div class="header-item sortable {{#if (eq sortField 'u.username')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.username&order={{#if (and (eq sortField 'u.username') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Username
+          {{#if (eq sortField 'u.username')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item">AI Model</div>
+      <div class="header-item sortable {{#if (eq sortField 'u.daily_message_limit')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.daily_message_limit&order={{#if (and (eq sortField 'u.daily_message_limit') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Daily Limit
+          {{#if (eq sortField 'u.daily_message_limit')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'chat_count')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=chat_count&order={{#if (and (eq sortField 'chat_count') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Chats
+          {{#if (eq sortField 'chat_count')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'total_messages')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=total_messages&order={{#if (and (eq sortField 'total_messages') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Messages
+          {{#if (eq sortField 'total_messages')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item sortable {{#if (eq sortField 'u.created_at')}}sorted{{/if}}">
+        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.created_at&order={{#if (and (eq sortField 'u.created_at') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
+          Joined
+          {{#if (eq sortField 'u.created_at')}}
+            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
+          {{/if}}
+        </a>
+      </div>
+      <div class="header-item">Actions</div>
+    </div>
+    
+    {{#each users}}
+    <div class="user-row">
+      <div class="user-cell">{{this.username}}</div>
+      <div class="user-cell">{{this.ai_model}}</div>
+      <div class="user-cell">{{this.daily_message_limit}}</div>
+      <div class="user-cell">{{this.chat_count}}</div>
+      <div class="user-cell">{{this.total_messages}}</div>
+      <div class="user-cell">{{formatDate this.settings_created}}</div>
+      <div class="user-cell actions">
+        <button class="edit-btn" data-username="{{this.username}}" 
+          data-model="{{this.ai_model}}" 
+          data-limit="{{this.daily_message_limit}}"
+          data-temp="{{this.temperature}}">
+          Edit
+        </button>
+        <a href="/admin/chats?username={{this.username}}" class="chats-link">Chats</a>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  
+  <div class="pagination">
+    {{#if (gt pagination.currentPage 1)}}
+      <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link">Previous</a>
+    {{/if}}
+    
+    {{#each (range 1 pagination.totalPages)}}
+      <a href="?page={{this}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
+    {{/each}}
+    
+    {{#if (lt pagination.currentPage pagination.totalPages)}}
+      <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+        class="page-link">Next</a>
+    {{/if}}
+  </div>
+  
+  <!-- Edit User Modal -->
+  <div id="editUserModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Edit User Settings</h2>
+      <form id="editUserForm">
+        <input type="hidden" id="editUsername" name="username">
+        
+        <div class="form-group">
+          <label for="dailyLimit">Daily Message Limit</label>
+          <input type="number" id="dailyLimit" name="dailyLimit" min="1" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label for="aiModel">AI Model</label>
+          <select id="aiModel" name="aiModel" class="form-control">
+            {{#each availableModels}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="temperature">Temperature (0-2)</label>
+          <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" class="form-control">
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="submit-btn">Save Changes</button>
+          <button type="button" class="cancel-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Handle edit button clicks
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const username = this.getAttribute('data-username');
+      const model = this.getAttribute('data-model');
+      const limit = this.getAttribute('data-limit');
+      const temp = this.getAttribute('data-temp');
+      
+      document.getElementById('editUsername').value = username;
+      document.getElementById('aiModel').value = model;
+      document.getElementById('dailyLimit').value = limit;
+      document.getElementById('temperature').value = temp;
+      
+      document.getElementById('editUserModal').style.display = 'block';
+    });
+  });
+  
+  // Close modal
+  document.querySelector('.close-modal').addEventListener('click', function() {
+    document.getElementById('editUserModal').style.display = 'none';
+  });
+  
+  document.querySelector('.cancel-btn').addEventListener('click', function() {
+    document.getElementById('editUserModal').style.display = 'none';
+  });
+  
+  // Handle form submission
+  document.getElementById('editUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+      username: document.getElementById('editUsername').value,
+      dailyLimit: document.getElementById('dailyLimit').value,
+      aiModel: document.getElementById('aiModel').value,
+      temperature: document.getElementById('temperature').value
+    };
+    
+    fetch('/admin/settings/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('User updated successfully');
+        document.getElementById('editUserModal').style.display = 'none';
+        location.reload(); // Refresh to see changes
+      } else {
+        alert('Error updating user: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Failed to update user');
+    });
+  });
+</script>

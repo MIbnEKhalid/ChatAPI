@@ -1599,94 +1599,80 @@
                 });
         }
 
-        async function deleteMessage(messageIdFromButton) { // messageIdFromButton is what's in data-message-id
-    if (!currentChatId) {
-        showErrorToast('No active chat selected.');
-        return;
-    }
+        async function deleteMessage(messageId) {
+            if (!currentChatId) return;
 
-    if (!confirm('Are you sure you want to delete this message?')) return;
+            if (!confirm('Are you sure you want to delete this message?')) return;
 
-    const messageElement = document.querySelector(`.message[data-message-id="${messageIdFromButton}"]`);
-    if (!messageElement) {
-        showErrorToast('Could not find the message to delete.');
-        return;
-    }
-
-    const allMessageElements = Array.from(chatMessages.querySelectorAll('.message'));
-    const messageIndex = allMessageElements.indexOf(messageElement);
-
-    if (messageIndex === -1) {
-        showErrorToast('Error determining message position.');
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/chat/delete-message/${currentChatId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messageIndex: messageIndex.toString() }) // Send the calculated index
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'Failed to delete message from server.' }));
-            throw new Error(errorData.message || 'Failed to delete message from server.');
-        }
-
-        // Successfully deleted on server, now remove from UI
-        messageElement.remove();
-        showErrorToast("Message deleted successfully."); // Or a success toast
-
-    } catch (error) {
-        console.error('Error deleting message:', error);
-        showErrorToast(error.message || 'Failed to delete message.');
-    }
-}
-
-        function addMessage(text, sender, messageId = null) {
-    const uniqueId = messageId !== null ? messageId : (Date.now().toString() + Math.random().toString(36).substring(2, 7));
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message message-loading`;
-    messageDiv.dataset.messageId = uniqueId; // Use the generated or passed uniqueId
-
-    // Always add delete button, passing the uniqueId
-    const deleteButtonHtml = `
-        <button class="delete-message-btn" onclick="deleteMessage('${uniqueId}')" title="Delete message">
-            <i class="fa fa-trash"></i>
-        </button>`;
-
-    const processedText = sender === 'ai' ? marked.parse(text) : escapeHtml(text);
-
-    messageDiv.innerHTML = `
-        <div class="message-bubble">
-            ${deleteButtonHtml}
-            <div class="message-content">${processedText}</div>
-        </div>
-    `;
-
-    chatMessages.appendChild(messageDiv);
-
-    // Add staggered animation
-    setTimeout(() => {
-        messageDiv.classList.add('show');
-
-        if (sender === 'ai') {
-            setTimeout(() => {
-                document.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
+            try {
+                const response = await fetch(`/api/chat/delete-message/${currentChatId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messageId })
                 });
-                addCopyButtonsToCodeBlocks();
-                makeLinksOpenInNewTab(messageDiv);
-                styleTables(messageDiv);
-            }, 0);
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete message');
+                }
+
+                // Remove the message from the UI
+                const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.remove();
+                }
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showErrorToast('Failed to delete message');
+            }
         }
-    }, 100);
 
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    updateScrollDownBtnVisibility();
-}
+        function addMessage(text, sender, messageId = Date.now()) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message message-loading`;
+            messageDiv.dataset.messageId = messageId;
 
+            const deleteButton = sender === 'ai' ?
+                `<button class="delete-message-btn" onclick="deleteMessage('${messageId}')" title="Delete message">
+            <i class="fa fa-trash"></i>
+            </button>` : '';
+
+            const processedText = sender === 'ai' ? marked.parse(text) : escapeHtml(text);
+
+            messageDiv.innerHTML = `
+            <div class="message-bubble">
+            ${deleteButton}
+            <div class="message-content">${processedText}</div>
+            </div>
+        `;
+
+            chatMessages.appendChild(messageDiv);
+
+            // Add staggered animation
+            setTimeout(() => {
+                messageDiv.classList.add('show');
+
+                if (sender === 'ai') {
+                    setTimeout(() => {
+                        // Highlight all code blocks
+                        document.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+
+                        // Add copy buttons
+                        addCopyButtonsToCodeBlocks();
+
+                        // Make links open in new tab
+                        makeLinksOpenInNewTab(messageDiv);
+
+                        // Process tables for better display
+                        styleTables(messageDiv);
+                    }, 0);
+                }
+            }, 100); // Small delay for animation
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            updateScrollDownBtnVisibility();
+        }
 
         function escapeHtml(unsafe) {
             return unsafe
