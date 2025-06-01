@@ -18,8 +18,8 @@ const __dirname = path.dirname(__filename);
 
 const router = app;
 
-router.use(express.json());  // <--- Move express.json() to be first
-router.use(mbkAuthRouter);   // <--- Keep mbkAuthRouter after express.json()
+router.use(express.json());
+router.use(mbkAuthRouter);
 
 router.use(compression());
 router.use(minify());
@@ -37,7 +37,6 @@ router.use(
 );
 // Configure Handlebars
 router.engine("handlebars", engine({
-  defaultLayout: false,
   partialsDir: [
     path.join(__dirname, "views/templates"),
     path.join(__dirname, "views/notice"),
@@ -92,7 +91,7 @@ router.engine("handlebars", engine({
       // Remove the options object that is provided by Handlebars
       const options = args.pop();
       return args.every(Boolean);
-    }, 
+    },
     neq: function (a, b, options) {
       if (options && typeof options.fn === 'function') {
         return a !== b ? options.fn(this) : options.inverse(this);
@@ -144,7 +143,7 @@ router.use('/Assets/Images', express.static(path.join(__dirname, 'Assets'), {
 
 
 router.get(["/", "/info/main"], (req, res) => {
-  return res.render("staticPage/index.handlebars");
+  return res.render("staticPage/index.handlebars", { layout: false });
 });
 
 router.get(["/home", "/dashboard"], (req, res) => {
@@ -152,15 +151,15 @@ router.get(["/home", "/dashboard"], (req, res) => {
 });
 
 router.get("/info/Terms&Conditions", (req, res) => {
-  return res.render("staticPage/Terms&Conditions");
+  return res.render("staticPage/Terms&Conditions.handlebars", { layout: false });
 });
 
 router.get("/info/FAQs", async (req, res) => {
-  res.render("staticPage/FAQs");
+  res.render("staticPage/FAQs.handlebars", { layout: false });
 });
 
 router.get("/info/Credits", async (req, res) => {
-  res.render("staticPage/Credits");
+  res.render("staticPage/Credits.handlebars"), { layout: false };
 });
 
 router.use(mbkAuthRouter);
@@ -168,22 +167,13 @@ router.use(mbkAuthRouter);
 router.use("/", mainRoutes);
 router.use("/", dashboardRoutes);
 
-router.get("/admin/*", async (req, res) => {
+router.get("/admin*", async (req, res) => {
   res.redirect("/admin/dashboard");
 });
 
 router.get('/simulate-error', (req, res, next) => {
   next(new Error('Simulated router error'));
 });
-/*
-router.get("/custom/C", (req, res) => {
-  return nextApp.render(req, res, "/Custom", req.query);
-});
-//It Render React Page, /pages
-router.get("*", (req, res) => {
-  return handleNext(req, res);
-});
-*/
 
 router.use((req, res) => {
   console.log(`Path not found: ${req.url}`);
@@ -202,7 +192,5 @@ const port = 3030;
 router.listen(port, () => {
   console.log(`router running on http://localhost:${port}`);
 });
+
 export default router;
-/*
-});
-*/

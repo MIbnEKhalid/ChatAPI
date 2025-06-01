@@ -115,6 +115,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     });
 
     res.render("admin/dashboard.handlebars", {
+      page: "Dashboard",
       stats,
       recentChats,
       topUsers,
@@ -205,6 +206,7 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     const availableModels = modelsResult.rows.map(row => row.ai_model);
 
     res.render("admin/users.handlebars", {
+      page: "UserManagement",
       users,
       availableModels,
       searchQuery: search || "",
@@ -329,6 +331,7 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     const availableModels = modelsResult.rows.map(row => row.ai_model);
 
     res.render("admin/chats.handlebars", {
+      page: "ChatManagement",
       chats,
       usernameFilter: username || "",
       selectedModel: model || "",
