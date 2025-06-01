@@ -1002,23 +1002,83 @@
         </div>
     </section>
 
-    <section class="section" style="padding-top: 0;">
-        <div class="detail-card" style="background: var(--gradient); color: white; text-align: center;">
-            <h2 style="color: white; margin-bottom: 1.5rem;">Ready to Transform Your AI Experience?</h2>
-            <p style="margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">Join hundreds of
-                users who are already leveraging the power of our AI Chat Application for their personal and
-                professional needs.</p>
-            <div class="cta-buttons" style="justify-content: center;">
-                <a href="/login?username=demo&password=demo" class="btn btn-primary"
-                    style="background: white; color: var(--primary);">
-                    <i class="fas fa-play-circle"></i> Try Live Demo
-                </a>
-                <a href="/login" class="btn btn-outline" style="border-color: white; color: white;">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
+    <section class="section" id="gallery">
+        <h2 class="section-title">Gallery</h2>
+        <div class="gallery-container">
+            <div class="gallery-grid">
+                <!-- Chatbot Images -->
+                <div class="gallery-item fade-in-up">
+                    <a href="/Assets/Images/chatbot.png">
+                        <img src="/Assets/Images/chatbot.png" alt="Chatbot Interface" class="gallery-image">
+                    </a>
+                    <div class="gallery-caption">Modern Chatbot Interface</div>
+                </div>
+                <div class="gallery-item fade-in-up delay-1">
+                    <a href="/Assets/Images/chatbot-m.png">
+                        <img src="/Assets/Images/chatbot-m.png" alt="Mobile Chatbot" class="gallery-image">
+                    </a>
+                    <div class="gallery-caption">Mobile Responsive Design</div>
+                </div>
+
+                <!-- Admin Dashboard Images -->
+                <div class="gallery-item fade-in-up delay-2">
+                    <a href="/Assets/Images/dashboard.png">
+                        <img src="/Assets/Images/dashboard.png" alt="Admin Dashboard" class="gallery-image">
+                    </a>
+                    <div class="gallery-caption">Admin Dashboard Overview</div>
+                </div>
             </div>
         </div>
     </section>
+
+    <style>
+        .gallery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .gallery-item {
+            background: var(--dark-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: var(--transition);
+            border: 1px solid var(--glass-border);
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 250px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .gallery-caption {
+            padding: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+            color: var(--lighter);
+            background: var(--dark-light);
+        }
+
+        @media (max-width: 768px) {
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 
     <section class="section" id="features">
         <h2 class="section-title">Key Features</h2>

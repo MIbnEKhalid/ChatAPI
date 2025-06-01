@@ -374,6 +374,7 @@ const aiServices = {
 
 router.get(["/login", "/signin"], (req, res) => {
   res.render("staticPage/login.handlebars", {
+    layout: false,
     userLoggedIn: !!req.session?.user,
     UserName: req.session?.user?.username || ''
   });
@@ -386,6 +387,7 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
     const userSettings = await db.fetchUserSettings(username);
 
     res.render('mainPages/chatbot.handlebars', {
+      layout: false,
       chatId: chatId || null,
       settings: {
         ...userSettings,
