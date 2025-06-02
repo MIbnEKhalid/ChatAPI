@@ -38,6 +38,7 @@ router.use(
 // Configure Handlebars
 router.engine("handlebars", engine({
   partialsDir: [
+    path.join(__dirname, "node_modules/mbkauthe/views"),
     path.join(__dirname, "views/templates"),
     path.join(__dirname, "views/notice"),
     path.join(__dirname, "views")
@@ -123,7 +124,10 @@ Handlebars.registerHelper('divide', function (value, divisor, multiplier) {
 });
 
 router.set("view engine", "handlebars");
-router.set("views", path.join(__dirname, "views"));
+router.set("views", [
+  path.join(__dirname, "views"),
+  path.join(__dirname, "node_modules/mbkauthe/views")
+]);
 
 // Serve static files
 router.use(
@@ -177,7 +181,7 @@ router.get('/simulate-error', (req, res, next) => {
 
 router.use((req, res) => {
   console.log(`Path not found: ${req.url}`);
-  return res.render("staticPage/404");
+  return res.render("staticPage/404", { layout: false });
 });
 
 router.use((err, req, res, next) => {

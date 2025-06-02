@@ -68,7 +68,7 @@ const db = {
   fetchChatHistories: async (username) => {
     try {
       const { rows } = await pool.query(
-        'SELECT id, created_at, temperature FROM Ai_history WHERE username = $1 ORDER BY created_at DESC',
+        'SELECT id, created_at, temperature FROM ai_history_chatapi WHERE username = $1 ORDER BY created_at DESC',
         [username]
       );
 
@@ -158,7 +158,7 @@ const db = {
   fetchChatHistoryById: async (chatId) => {
     try {
       const { rows } = await pool.query(
-        'SELECT id, conversation_history, temperature FROM Ai_history WHERE id = $1',
+        'SELECT id, conversation_history, temperature FROM ai_history_chatapi WHERE id = $1',
         [chatId]
       );
       return rows[0] || null;
@@ -172,13 +172,13 @@ const db = {
     try {
       if (chatId) {
         await pool.query(
-          'UPDATE Ai_history SET conversation_history = $1, created_at = CURRENT_TIMESTAMP, temperature = $3 WHERE id = $2',
+          'UPDATE ai_history_chatapi SET conversation_history = $1, created_at = CURRENT_TIMESTAMP, temperature = $3 WHERE id = $2',
           [JSON.stringify(history), chatId, temperature]
         );
         return chatId;
       } else {
         const { rows } = await pool.query(
-          'INSERT INTO Ai_history (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
+          'INSERT INTO ai_history_chatapi (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
           [JSON.stringify(history), username, temperature]
         );
         return rows[0].id;
@@ -194,11 +194,11 @@ const db = {
       const today = new Date().toISOString().split("T")[0];
       const [settingsResult, messageLog] = await Promise.all([
         pool.query(
-          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings WHERE username = $1',
+          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE username = $1',
           [username]
         ),
         pool.query(
-          'SELECT message_count FROM user_message_logs WHERE username = $1 AND date = $2',
+          'SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2',
           [username, today]
         )
       ]);
@@ -236,7 +236,7 @@ const db = {
   saveUserSettings: async (username, settings) => {
     try {
       await pool.query(
-        `INSERT INTO user_settings (username, theme, font_size, ai_model, temperature)
+        `INSERT INTO user_settings_chatapi (username, theme, font_size, ai_model, temperature)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (username)
          DO UPDATE SET
@@ -576,7 +576,7 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
 
     console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
     await pool.query(
-      'UPDATE Ai_history SET conversation_history = $1 WHERE id = $2',
+      'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
       [JSON.stringify(conversationHistory), chatId]
     );
 
@@ -671,7 +671,7 @@ router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), as
   if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
 
   try {
-    await pool.query('DELETE FROM Ai_history WHERE id = $1', [chatId]);
+    await pool.query('DELETE FROM ai_history_chatapi WHERE id = $1', [chatId]);
     res.json({ status: 200, message: "Chat history deleted", chatId });
   } catch (error) {
     handleApiError(res, error, "deleting chat history");
