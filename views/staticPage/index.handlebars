@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="A private Portal for the MBK Tech Studio team, offering streamlined operations and powerful administration tools.">
-    <meta name="keywords" content="MBK Tech Studio, Web-Portal, Web, Portal, Admin-Panel, Admin">
-    <meta property="og:title" content="Portal | MBK Tech Studio" />
-    <meta property="og:image" content="https://www.mbktechstudio.com/Assets/Images/Icon/logo.png" />
-    <meta property="og:url" content="https://portal.mbktechstudio.com/">
+        content="AI Chat Application by MBK Tech Studio - A simple web interface for chatting with AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Open-source and customizable.">
+    <meta name="keywords" content="AI Chat, ChatAPI, MBK Tech Studio, Gemini AI, NVIDIA, Llama Nemotron, AI Assistant, Chatbot, Open Source, Node.js">
+    <meta property="og:title" content="ChatAPI - Simple AI Chat Application | MBK Tech Studio" />
+    <meta property="og:image" content="/Assets/Images/chatbot.png" />
+    <meta property="og:url" content="">
+    <meta property="og:description" content="A simple web interface for chatting with AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Open-source and easy to deploy." />
     <title>ChatAPI | MBK Tech Studio</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -964,6 +965,7 @@
                 </a>
                 <div class="nav-links">
                     <a href="#features" class="nav-link">Features</a>
+                    <a href="#whats-available" class="nav-link">What's Available</a>
                     <a href="#product-details" class="nav-link">Details</a>
                     <a href="#development-team" class="nav-link">Team</a>
                     <a href="/login" class="btn-login">Login</a>
@@ -987,15 +989,14 @@
 
         <div class="hero-content">
             <div class="hero-text fade-in-up">
-                <h1>Experience the <span>Power of AI Chat</span> by <span>MBK Tech Studio</span></h1>
-                <p>Unlock seamless conversations with our cutting-edge AI Chat Application. Connect with advanced AI
-                    models and enjoy a customizable, restriction-free chat experience.</p>
+                <h1>Simple <span>AI Chat Interface</span> by <span>MBK Tech Studio</span></h1>
+                <p>A straightforward web-based chat application that connects you with multiple AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Customize your chat experience with this open-source solution.</p>
                 <div class="cta-buttons">
-                    <a href="/login?username=demo&password=demo" class="btn btn-primary fade-in-up delay-1">
-                        <i class="fas fa-play-circle"></i> Try Live Demo
+                    <a href="/login" class="btn btn-primary fade-in-up delay-1">
+                        <i class="fas fa-rocket"></i> Open Chat
                     </a>
                     <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-secondary fade-in-up delay-2">
-                        <i class="fab fa-github"></i> View on GitHub
+                        <i class="fab fa-github"></i> Explore Code
                     </a>
                 </div>
             </div>
@@ -1004,10 +1005,9 @@
 
     <section class="section" id="gallery">
         <h2 class="section-title">Gallery</h2>
-        <div class="gallery-container">
-            <div class="gallery-intro">
-                <p>Explore our comprehensive AI chat solution with stunning visuals showcasing both desktop and mobile experiences.</p>
-            </div>
+        <div class="gallery-container">            <div class="gallery-intro">
+            <p>Explore the simple and clean interface of our AI chat application across desktop and mobile devices.</p>
+        </div>
             
             <!-- Desktop Experience -->
             <div class="gallery-category">
@@ -1324,35 +1324,31 @@
         <div class="features-grid">
             <div class="feature-card fade-in-up">
                 <div class="feature-icon">
-                    <i class="fas fa-plug"></i>
+                    <i class="fas fa-network-wired"></i>
                 </div>
-                <h3>Seamless API Integration</h3>
-                <p>Easily connect with various AI APIs like Gemini, DeepSeek, and more. Add and switch APIs effortlessly
-                    with our intuitive interface.</p>
+                <h3>AI Model Integration</h3>
+                <p>Connect with multiple AI models including Gemini 2.0 Flash, Gemini 1.5 variants, and NVIDIA Llama Nemotron models through a simple web interface with PostgreSQL database for conversation history.</p>
             </div>
             <div class="feature-card fade-in-up delay-1">
                 <div class="feature-icon">
-                    <i class="fas fa-sliders-h"></i>
+                    <i class="fas fa-palette"></i>
                 </div>
-                <h3>Highly Customizable</h3>
-                <p>Tailor the chatbot's behavior, prompts, and appearance to fit your specific needs and branding
-                    requirements.</p>
+                <h3>Customizable Interface</h3>
+                <p>Personalize your chat experience with theme options, adjustable font sizes, and model parameter controls like temperature settings.</p>
             </div>
             <div class="feature-card fade-in-up delay-2">
                 <div class="feature-icon">
-                    <i class="fas fa-unlock-alt"></i>
+                    <i class="fas fa-globe"></i>
                 </div>
-                <h3>Bypass Restrictions</h3>
-                <p>Deploy on platforms like Vercel or Netlify to overcome network limitations and access AI from
-                    anywhere in the world.</p>
+                <h3>Web-Based Access</h3>
+                <p>Access your AI chat through any web browser. Built with Node.js and Express, easy to deploy on various platforms.</p>
             </div>
             <div class="feature-card fade-in-up delay-3">
                 <div class="feature-icon">
-                    <i class="fas fa-code-branch"></i>
+                    <i class="fas fa-shield-alt"></i>
                 </div>
-                <h3>Open Source & Extensible</h3>
-                <p>Built on an open-source platform, allowing for community contributions and deep customization to fit
-                    any use case.</p>
+                <h3>Open Source & Secure</h3>
+                <p>Built as an open-source project with secure API key management. Your API keys are stored locally and used only for your requests.</p>
             </div>
         </div>
     </section>
@@ -1362,98 +1358,96 @@
         <div class="product-details">
             <div class="detail-cards">
                 <div class="detail-card fade-in-up">
-                    <h3><i class="fas fa-cogs"></i> Core Features</h3>
+                    <h3><i class="fas fa-brain"></i> AI Chat Features</h3>
                     <ul>
-                        <li><strong>Multi-Model Support:</strong> Switch between Gemini, DeepSeek, and other AI APIs
-                            seamlessly with a single interface</li>
-                        <li><strong>Customizable Interface:</strong> Adjust themes, layout, and chat behavior to match
-                            your preferences</li>
-                        <li><strong>Advanced Settings:</strong> Fine-tune temperature, max tokens, and other model
-                            parameters for optimal results</li>
-                        <li><strong>Conversation History:</strong> Save and revisit past conversations with persistent
-                            storage options</li>
-                        <li><strong>API Key Management:</strong> Securely store and manage multiple API keys for
-                            different services</li>
+                        <li><strong>Multiple AI Models:</strong> Access Gemini 2.0 Flash, Gemini 1.5 variants, and NVIDIA Llama Nemotron models</li>
+                        <li><strong>Conversation History:</strong> Save and manage your chat conversations with PostgreSQL database</li>
+                        <li><strong>Adjustable Parameters:</strong> Control temperature and other AI parameters</li>
+                        <li><strong>Message Management:</strong> Delete individual messages or clear entire conversations</li>
+                        <li><strong>User Authentication:</strong> Secure login system with session management</li>
+                        <li><strong>Daily Message Limits:</strong> Configurable message quotas per user</li>
                     </ul>
                 </div>
 
                 <div class="detail-card fade-in-up delay-1">
-                    <h3><i class="fas fa-cloud-upload-alt"></i> Deployment Options</h3>
+                    <h3><i class="fas fa-rocket"></i> Deployment Options</h3>
                     <ul>
-                        <li><strong>Vercel/Netlify:</strong> One-click deployment for hassle-free hosting with minimal
-                            configuration</li>
-                        <li><strong>Docker:</strong> Containerized deployment for easy scaling and environment
-                            consistency</li>
-                        <li><strong>Self-Hosted:</strong> Full control with traditional server deployment on your
-                            infrastructure</li>
-                        <li><strong>Edge Functions:</strong> Optimized for serverless environments with fast response
-                            times</li>
-                        <li><strong>Custom Domains:</strong> Use your own domain for branded access and professional
-                            appearance</li>
+                        <li><strong>Cloud Platforms:</strong> Deploy on platforms supporting Node.js applications</li>
+                        <li><strong>Self-Hosted:</strong> Run on your own server with Node.js and PostgreSQL</li>
+                        <li><strong>Environment Variables:</strong> Configure Google Gemini and NVIDIA API keys via .env files</li>
+                        <li><strong>Database Support:</strong> PostgreSQL database for user management and chat history</li>
+                        <li><strong>Session Management:</strong> Built-in user authentication with secure sessions</li>
                     </ul>
                 </div>
 
                 <div class="detail-card fade-in-up delay-2">
-                    <h3><i class="fas fa-lightbulb"></i> Use Cases</h3>
+                    <h3><i class="fas fa-users"></i> Use Cases</h3>
                     <ul>
-                        <li><strong>Enterprise AI:</strong> Deploy internal AI assistants for your team with custom
-                            knowledge</li>
-                        <li><strong>Education:</strong> Provide AI access in restricted academic networks for research
-                        </li>
-                        <li><strong>Development:</strong> Test and compare different AI models in one unified interface
-                        </li>
-                        <li><strong>Personal Use:</strong> Your private AI chat interface without limitations or
-                            tracking</li>
-                        <li><strong>Research:</strong> Conduct AI experiments with flexible parameters and
-                            configurations</li>
+                        <li><strong>Personal AI Assistant:</strong> Use various AI models for different types of conversations</li>
+                        <li><strong>Learning & Education:</strong> Interactive learning with multiple AI models in a web interface</li>
+                        <li><strong>Development & Testing:</strong> Test different AI models and compare their responses</li>
+                        <li><strong>Content Creation:</strong> Generate content using different AI models based on your needs</li>
+                        <li><strong>Research & Analysis:</strong> Analyze topics using various AI models for different perspectives</li>
                     </ul>
                 </div>
             </div>
 
             <div class="detail-card fade-in-up delay-3" style="margin-top: 2rem;">
-                <h3><i class="fas fa-brain"></i> Model Selection Guide</h3>
-                <p>Choose the right AI model for your specific needs from our supported options:</p>
+                <h3><i class="fas fa-chart-line"></i> Available AI Models</h3>
+                <p>Choose from multiple AI models based on your requirements:</p>
 
                 <div style="overflow-x: auto;">
                     <table class="model-table">
                         <thead>
                             <tr>
                                 <th>Model</th>
-                                <th>Type</th>
+                                <th>Provider</th>
                                 <th>Best For</th>
-                                <th>Capacity</th>
+                                <th>Version</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>Gemini 2.0 Flash</td>
-                                <td><span class="badge badge-text">Text</span></td>
-                                <td>Next generation features, speed, thinking</td>
-                                <td>High</td>
+                                <td><span class="badge badge-text">Google</span></td>
+                                <td>Latest model, fast responses</td>
+                                <td>2.0</td>
                             </tr>
                             <tr>
-                                <td>Gemini 2.0 Flash-Lite</td>
-                                <td><span class="badge badge-text">Text</span></td>
-                                <td>Cost efficiency and low latency</td>
-                                <td>Medium</td>
+                                <td>Gemini 2.0 Flash Lite</td>
+                                <td><span class="badge badge-text">Google</span></td>
+                                <td>Lightweight version, quick tasks</td>
+                                <td>2.0</td>
                             </tr>
                             <tr>
                                 <td>Gemini 1.5 Flash</td>
-                                <td><span class="badge badge-text">Text</span></td>
-                                <td>Versatile performance across tasks</td>
-                                <td>High</td>
+                                <td><span class="badge badge-text">Google</span></td>
+                                <td>Balanced performance and speed</td>
+                                <td>1.5</td>
                             </tr>
                             <tr>
-                                <td>Gemini 1.5 Flash-8B</td>
-                                <td><span class="badge badge-text">Text</span></td>
-                                <td>High volume and lower intelligence tasks</td>
-                                <td>Medium</td>
+                                <td>Gemini 1.5 Flash 8B</td>
+                                <td><span class="badge badge-text">Google</span></td>
+                                <td>8B parameter model, efficient</td>
+                                <td>1.5</td>
                             </tr>
                             <tr>
                                 <td>Gemini 1.5 Pro</td>
-                                <td><span class="badge badge-text">Text</span></td>
-                                <td>Complex reasoning tasks</td>
-                                <td>Very High</td>
+                                <td><span class="badge badge-text">Google</span></td>
+                                <td>Complex tasks, detailed responses</td>
+                                <td>1.5</td>
+                            </tr>
+                            <tr>
+                                <td>Llama-3.1-Nemotron-Nano-8B-v1</td>
+                                <td><span class="badge badge-image">NVIDIA</span></td>
+                                <td>Compact open-source model</td>
+                                <td>3.1</td>
+                            </tr>
+                            <tr>
+                                <td>Llama-3.3-Nemotron-Super-49B-v1</td>
+                                <td><span class="badge badge-image">NVIDIA</span></td>
+                                <td>Large parameter open-source model</td>
+                                <td>3.3</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1465,20 +1459,70 @@
     <section class="section" id="development-team">
         <h2 class="section-title">Development Team</h2>
         <div class="team-section fade-in-up">
-            <p class="footer-description" style="max-width: 700px; margin: 0 auto 2rem;">The talented individuals behind
-                the AI Chat Application, bringing cutting-edge technology to your fingertips.</p>
+            <p class="footer-description" style="max-width: 700px; margin: 0 auto 2rem;">Meet the developers behind ChatAPI - creating simple, effective tools for AI interaction.</p>
 
             <div class="team-grid">
                 <div class="team-card">
                     <img src="https://avatars.githubusercontent.com/u/57322148?v=4" alt="Muhammad Bin Khalid"
                         class="team-avatar">
                     <h3 class="team-name">Muhammad Bin Khalid</h3>
+                    <p class="team-role">Lead Developer</p>
+                    <div class="team-social">
+                        <a href="https://github.com/MIbnEKhalid" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="https://mbktechstudio.com" target="_blank"><i class="fas fa-globe"></i></a>
+                    </div>
                 </div>
 
                 <div class="team-card">
                     <img src="https://avatars.githubusercontent.com/u/57322148?v=4" alt="Maaz Waheed"
                         class="team-avatar">
                     <h3 class="team-name">Maaz Waheed</h3>
+                    <p class="team-role">Developer</p>
+                    <div class="team-social">
+                        <a href="https://github.com/42Wor" target="_blank"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="whats-available">
+        <h2 class="section-title">What's Available</h2>
+        <div class="product-details">
+            <div class="detail-cards">
+                <div class="detail-card fade-in-up">
+                    <h3><i class="fas fa-lightbulb"></i> Current Features</h3>
+                    <ul>
+                        <li><strong>Text Conversations:</strong> Chat with AI models through a clean web interface</li>
+                        <li><strong>Multiple AI Models:</strong> Choose from Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models</li>
+                        <li><strong>Chat History:</strong> Save and browse your conversation history in PostgreSQL</li>
+                        <li><strong>Theme Options:</strong> Switch between dark and light themes</li>
+                        <li><strong>Settings Panel:</strong> Adjust temperature and other parameters</li>
+                        <li><strong>User Management:</strong> Multi-user support with authentication</li>
+                    </ul>
+                </div>
+                
+                <div class="detail-card fade-in-up delay-1">
+                    <h3><i class="fas fa-cogs"></i> Technical Features</h3>
+                    <ul>
+                        <li><strong>User Authentication:</strong> Secure login system with session management</li>
+                        <li><strong>Database Storage:</strong> PostgreSQL for user data and chat history</li>
+                        <li><strong>API Integration:</strong> Google Gemini and NVIDIA API integration</li>
+                        <li><strong>Message Limits:</strong> Configurable daily message limits per user</li>
+                        <li><strong>Admin Dashboard:</strong> Manage users and view chat statistics</li>
+                        <li><strong>Environment Configuration:</strong> Secure .env file configuration</li>
+                    </ul>
+                </div>
+                
+                <div class="detail-card fade-in-up delay-2">
+                    <h3><i class="fas fa-shield-alt"></i> Security & Privacy</h3>
+                    <ul>
+                        <li><strong>API Key Management:</strong> Secure storage and handling of API keys</li>
+                        <li><strong>Session Security:</strong> Secure session management with encryption</li>
+                        <li><strong>Open Source:</strong> Full transparency with open-source code</li>
+                        <li><strong>Local Control:</strong> Host your own instance with full data control</li>
+                        <li><strong>Environment Variables:</strong> Secure configuration through environment variables</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -1489,12 +1533,11 @@
             <div class="footer-col">
                 <div class="footer-logo">
                     <img src="/Assets/Images/dg.svg" alt="MBK Tech Studio Logo">
-                    <span class="footer-logo-text">ChatAPI</span>
+                    MBK Tech Studio
                 </div>
-                <p class="footer-description">An advanced AI chat solution by MBK Tech Studio, offering seamless
-                    integration with multiple AI models and customizable features for all your conversational needs.</p>
+                <p class="footer-description">Empowering technology through open-source innovation and collaborative development.</p>
                 <div class="social-links">
-                    <a href="https://github.com/MIbnEKhalid/ChatAPI" class="social-link"><i
+                    <a href="https://github.com/MIbnEKhalid/" class="social-link"><i
                             class="fab fa-github"></i></a>
                     <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
                     <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
@@ -1503,28 +1546,27 @@
             <div class="footer-col">
                 <h3>Quick Links</h3>
                 <a href="#features" class="footer-link">Features</a>
+                <a href="#whats-available" class="footer-link">What's Available</a>
                 <a href="#product-details" class="footer-link">Technical Details</a>
                 <a href="#development-team" class="footer-link">Our Team</a>
                 <a href="/login" class="footer-link">Login</a>
             </div>
             <div class="footer-col">
                 <h3>Resources</h3>
-                <a href="#" class="footer-link">Documentation</a>
-                <a href="#" class="footer-link">API Reference</a>
-                <a href="#" class="footer-link">Community Forum</a>
+                <a href="https://github.com/MIbnEKhalid/ChatAPI" class="footer-link">GitHub Repository</a>
+                <a href="https://github.com/MIbnEKhalid/ChatAPI/blob/main/README.md" class="footer-link">Documentation</a>
                 <a href="https://mbktechstudio.com/Support" target="_blank" class="footer-link">Support Center</a>
             </div>
             <div class="footer-col">
                 <h3>Legal</h3>
-                <a href="#" class="footer-link">Terms of Service</a>
-                <a href="#" class="footer-link">Privacy Policy</a>
-                <a href="#" class="footer-link">Cookie Policy</a>
-                <a href="#" class="footer-link">GDPR Compliance</a>
+                <a href="https://github.com/MIbnEKhalid/ChatAPI/blob/main/LICENSE" class="footer-link">MIT License</a>
+                <a href="https://mbktechstudio.com/Privacy" class="footer-link">Privacy Policy</a>
+                <a href="https://mbktechstudio.com/Terms" class="footer-link">Terms of Service</a>
             </div>
         </div>
         <div class="footer-bottom">
             <span>© <span id="year"></span> <a href="https://github.com/MIbnEKhalid" target="_blank">Muhammad Bin
-                    Khalid</a> & <a href="#" target="_blank">MBK Tech Studio</a>. All Rights Reserved</span>
+                    Khalid</a> & <a href="https://mbktechstudio.com" target="_blank">MBK Tech Studio</a>. All Rights Reserved</span>
         </div>
     </footer>
 
