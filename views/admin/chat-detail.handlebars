@@ -1,0 +1,702 @@
+<head>
+  <link rel="stylesheet" href="/Assets/css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<div class="admin-container">
+  <div class="admin-header">
+    <div class="header-content">
+      <h1 class="admin-title">
+        <i class="fas fa-comment-dots"></i>
+        Chat Details
+      </h1>
+      <div class="header-actions">
+        <a href="/admin/chats" class="back-link">
+          <i class="fas fa-arrow-left"></i>
+          Back to Chats
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Information Card -->
+  <div class="dashboard-card chat-info fade-in">
+    <div class="card-header">
+      <h3><i class="fas fa-info-circle"></i> Chat Information</h3>
+      <div class="card-actions">
+        <button class="icon-btn" id="exportChatBtn" title="Export Chat">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="icon-btn danger" id="deleteChatBtn" title="Delete Chat">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="card-content">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Chat ID:</label>
+          <value>{{chat.id}}</value>
+        </div>
+        <div class="info-item">
+          <label>Username:</label>
+          <value class="username-value">{{chat.username}}</value>
+        </div>
+        <div class="info-item">
+          <label>Created:</label>
+          <value>{{formatDate chat.created_at}}</value>
+        </div>
+        <div class="info-item">
+          <label>AI Model:</label>
+          <value class="model-badge">{{chat.ai_model}}</value>
+        </div>
+        <div class="info-item">
+          <label>Temperature:</label>
+          <value class="temp-value">{{chat.temperature}}°</value>
+        </div>
+        <div class="info-item">
+          <label>Daily Limit:</label>
+          <value>{{chat.daily_message_limit}}</value>
+        </div>
+        <div class="info-item">
+          <label>Today's Messages:</label>
+          <value class="{{#if (gt chat.daily_messages 80)}}warning{{/if}}">
+            {{chat.daily_messages}}/{{chat.daily_message_limit}}
+          </value>
+        </div>
+        <div class="info-item">
+          <label>Total Messages:</label>
+          <value class="message-count">{{jsonb_array_length chat.conversation_history}}</value>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation History Card -->
+  <div class="dashboard-card conversation-history fade-in">
+    <div class="card-header">
+      <h3><i class="fas fa-history"></i> Conversation History</h3>
+      <div class="card-actions">
+        <div class="search-container">
+          <input type="text" id="searchMessages" placeholder="Search messages...">
+          <i class="fas fa-search"></i>
+        </div>
+      </div>
+    </div>
+    <div class="card-content">
+      <div class="conversation-container" id="conversationContainer">
+        {{#each chat.conversation_history}}
+        <div class="message-item {{#if (eq this.role 'user')}}user-message{{else}}assistant-message{{/if}}">
+          <div class="message-header">
+            <div class="message-role">
+              {{#if (eq this.role 'user')}}
+                <i class="fas fa-user"></i>
+                <span>User</span>
+              {{else}}
+                <i class="fas fa-robot"></i>
+                <span>Assistant</span>
+              {{/if}}
+            </div>
+            <div class="message-timestamp">
+              Message {{add @index 1}}
+            </div>
+          </div>
+          <div class="message-content">
+            {{#each this.parts}}
+              <div class="message-part">
+                {{#if this.text}}
+                  <div class="message-text">{{this.text}}</div>
+                {{/if}}
+                {{#if this.image}}
+                  <div class="message-image">
+                    <img src="{{this.image}}" alt="User uploaded image" loading="lazy">
+                  </div>
+                {{/if}}
+              </div>
+            {{/each}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Card -->
+  <div class="dashboard-card conversation-stats fade-in">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-bar"></i> Conversation Statistics</h3>
+    </div>
+    <div class="card-content">
+      <div class="stats-grid-mini">
+        <div class="stat-mini">
+          <div class="stat-value" id="totalMessages">{{jsonb_array_length chat.conversation_history}}</div>
+          <div class="stat-label">Total Messages</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-value" id="userMessages">0</div>
+          <div class="stat-label">User Messages</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-value" id="assistantMessages">0</div>
+          <div class="stat-label">Assistant Messages</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-value" id="avgMessageLength">0</div>
+          <div class="stat-label">Avg Length</div>
+        </div>
+      </div>
+      <div class="message-distribution">
+        <canvas id="messageDistributionChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+      <button class="close-btn" id="closeDelete">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this chat? This action cannot be undone.</p>
+      <div class="form-actions">
+        <button class="btn-danger" id="confirmDelete">
+          <i class="fas fa-trash"></i> Delete Chat
+        </button>
+        <button class="cancel-btn" id="cancelDelete">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal" id="exportModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-download"></i> Export Chat</h3>
+      <button class="close-btn" id="closeExport">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="export-options">
+        <div class="option-group">
+          <label>Export Format:</label>
+          <select id="exportFormat">
+            <option value="json">JSON</option>
+            <option value="txt">Plain Text</option>
+            <option value="html">HTML</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <label>
+            <input type="checkbox" id="includeMetadata" checked>
+            Include metadata (timestamps, roles, etc.)
+          </label>
+        </div>
+        <button class="btn-primary" id="downloadChat">
+          <i class="fas fa-download"></i> Download
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+class ChatDetailView {
+  constructor() {
+    this.chatData = {{{jsonStringify chat}}};
+    this.init();
+  }
+
+  init() {
+    this.calculateStats();
+    this.initializeChart();
+    this.setupEventListeners();
+  }
+
+  calculateStats() {
+    const conversation = this.chatData.conversation_history;
+    let userMessages = 0;
+    let assistantMessages = 0;
+    let totalLength = 0;
+
+    conversation.forEach(message => {
+      if (message.role === 'user') {
+        userMessages++;
+      } else {
+        assistantMessages++;
+      }
+      
+      message.parts.forEach(part => {
+        if (part.text) {
+          totalLength += part.text.length;
+        }
+      });
+    });
+
+    const avgLength = conversation.length > 0 ? Math.round(totalLength / conversation.length) : 0;
+
+    document.getElementById('userMessages').textContent = userMessages;
+    document.getElementById('assistantMessages').textContent = assistantMessages;
+    document.getElementById('avgMessageLength').textContent = avgLength;
+  }
+
+  initializeChart() {
+    const ctx = document.getElementById('messageDistributionChart');
+    const conversation = this.chatData.conversation_history;
+    
+    const userCount = conversation.filter(m => m.role === 'user').length;
+    const assistantCount = conversation.filter(m => m.role === 'assistant').length;
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['User Messages', 'Assistant Messages'],
+        datasets: [{
+          data: [userCount, assistantCount],
+          backgroundColor: ['#4F46E5', '#10B981'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true
+            }
+          }
+        }
+      }
+    });
+  }
+
+  setupEventListeners() {
+    // Search functionality
+    document.getElementById('searchMessages').addEventListener('input', (e) => {
+      this.searchMessages(e.target.value);
+    });
+
+    // Export functionality
+    document.getElementById('exportChatBtn').addEventListener('click', () => {
+      this.openExportModal();
+    });
+
+    document.getElementById('downloadChat').addEventListener('click', () => {
+      this.downloadChat();
+    });
+
+    // Delete functionality
+    document.getElementById('deleteChatBtn').addEventListener('click', () => {
+      this.openDeleteModal();
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', () => {
+      this.deleteChat();
+    });
+
+    // Modal controls
+    document.getElementById('closeExport').addEventListener('click', () => {
+      this.closeModal('exportModal');
+    });
+
+    document.getElementById('closeDelete').addEventListener('click', () => {
+      this.closeModal('deleteModal');
+    });
+
+    document.getElementById('cancelDelete').addEventListener('click', () => {
+      this.closeModal('deleteModal');
+    });
+  }
+
+  searchMessages(query) {
+    const messages = document.querySelectorAll('.message-item');
+    const searchTerm = query.toLowerCase();
+
+    messages.forEach(message => {
+      const text = message.textContent.toLowerCase();
+      if (text.includes(searchTerm)) {
+        message.style.display = 'block';
+        message.classList.add('highlight');
+      } else {
+        message.style.display = searchTerm ? 'none' : 'block';
+        message.classList.remove('highlight');
+      }
+    });
+  }
+
+  openExportModal() {
+    document.getElementById('exportModal').classList.add('active');
+  }
+
+  openDeleteModal() {
+    document.getElementById('deleteModal').classList.add('active');
+  }
+
+  closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+  }
+
+  async downloadChat() {
+    const format = document.getElementById('exportFormat').value;
+    const includeMetadata = document.getElementById('includeMetadata').checked;
+    
+    const conversation = this.chatData.conversation_history;
+    let content = '';
+    let filename = `chat_${this.chatData.id}_${new Date().toISOString().split('T')[0]}`;
+
+    switch (format) {
+      case 'json':
+        content = JSON.stringify({
+          chatId: this.chatData.id,
+          username: this.chatData.username,
+          createdAt: this.chatData.created_at,
+          aiModel: this.chatData.ai_model,
+          temperature: this.chatData.temperature,
+          conversation: includeMetadata ? conversation : conversation.map(m => ({
+            role: m.role,
+            parts: m.parts
+          }))
+        }, null, 2);
+        filename += '.json';
+        break;
+
+      case 'txt':
+        content = includeMetadata ? 
+          `Chat ID: ${this.chatData.id}\nUsername: ${this.chatData.username}\nCreated: ${this.chatData.created_at}\nAI Model: ${this.chatData.ai_model}\nTemperature: ${this.chatData.temperature}\n\n` : '';
+        
+        conversation.forEach((message, index) => {
+          if (includeMetadata) {
+            content += `[${index + 1}] ${message.role.toUpperCase()}:\n`;
+          }
+          message.parts.forEach(part => {
+            if (part.text) {
+              content += part.text + '\n';
+            }
+          });
+          content += '\n';
+        });
+        filename += '.txt';
+        break;
+
+      case 'html':
+        content = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Chat Export - ${this.chatData.id}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .metadata { background: #f5f5f5; padding: 10px; margin-bottom: 20px; }
+              .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
+              .user { background: #e3f2fd; }
+              .assistant { background: #f3e5f5; }
+              .role { font-weight: bold; margin-bottom: 5px; }
+            </style>
+          </head>
+          <body>
+        `;
+        
+        if (includeMetadata) {
+          content += `
+            <div class="metadata">
+              <h2>Chat Information</h2>
+              <p><strong>Chat ID:</strong> ${this.chatData.id}</p>
+              <p><strong>Username:</strong> ${this.chatData.username}</p>
+              <p><strong>Created:</strong> ${this.chatData.created_at}</p>
+              <p><strong>AI Model:</strong> ${this.chatData.ai_model}</p>
+              <p><strong>Temperature:</strong> ${this.chatData.temperature}</p>
+            </div>
+          `;
+        }
+        
+        content += '<div class="conversation">';
+        conversation.forEach((message, index) => {
+          content += `<div class="message ${message.role}">`;
+          if (includeMetadata) {
+            content += `<div class="role">${message.role.toUpperCase()}</div>`;
+          }
+          message.parts.forEach(part => {
+            if (part.text) {
+              content += `<p>${part.text.replace(/\n/g, '<br>')}</p>`;
+            }
+          });
+          content += '</div>';
+        });
+        content += '</div></body></html>';
+        filename += '.html';
+        break;
+    }
+
+    // Create and download file
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    this.closeModal('exportModal');
+  }
+
+  async deleteChat() {
+    const deleteBtn = document.getElementById('confirmDelete');
+    const originalContent = deleteBtn.innerHTML;
+    
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    deleteBtn.disabled = true;
+
+    try {
+      const response = await fetch(`/admin/chats/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatIds: [this.chatData.id]
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Chat deleted successfully');
+        window.location.href = '/admin/chats';
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Failed to delete chat. Please try again.');
+    } finally {
+      deleteBtn.innerHTML = originalContent;
+      deleteBtn.disabled = false;
+    }
+  }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  new ChatDetailView();
+});
+</script>
+
+<style>
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.info-item value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.username-value {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.model-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  width: fit-content;
+}
+
+.temp-value {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.warning {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+.conversation-container {
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.message-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.message-item.highlight {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.user-message {
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+}
+
+.assistant-message {
+  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.message-role {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.message-role i {
+  width: 20px;
+  text-align: center;
+}
+
+.message-timestamp {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.message-content {
+  padding: 1rem;
+}
+
+.message-text {
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.message-image {
+  margin-top: 1rem;
+}
+
+.message-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-container {
+  position: relative;
+}
+
+.search-container input {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  width: 200px;
+}
+
+.search-container i {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.stats-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-mini {
+  text-align: center;
+  padding: 1rem;
+  background: var(--light-color);
+  border-radius: var(--radius-md);
+}
+
+.stat-mini .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stat-mini .stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.message-distribution {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn.danger {
+  color: var(--error-color);
+}
+
+.icon-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-danger {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-danger:hover {
+  background: #DC2626;
+}
+
+.btn-danger:disabled {
+  background: var(--text-secondary);
+  cursor: not-allowed;
+}
+</style>

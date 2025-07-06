@@ -4,7 +4,6 @@ import fetch from 'node-fetch';
 import { pool } from "./pool.js";
 import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
-import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
 
 dotenv.config();
@@ -20,26 +19,6 @@ const DEFAULT_TEMPERATURE = 1.0;
 const DEFAULT_THEME = 'dark';
 const DEFAULT_FONT_SIZE = 16;
 const DEFAULT_DAILY_LIMIT = 100;
-
-// API Clients
-let googleAuthError = null;
-let serviceusage = null;
-let projectId = null;
-
-// Initialize Google Auth
-(async () => {
-  try {
-    const auth = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS
-    });
-    const authClient = await auth.getClient();
-    projectId = await auth.getProjectId();
-    serviceusage = google.serviceusage('v1');
-  } catch (error) {
-    googleAuthError = error;
-  }
-})();
 
 // Utility Functions
 const formatChatTime = (createdAt) => {
@@ -87,7 +66,7 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: []
+        older: {}
       };
 
       // Month-year format for older chats
@@ -150,13 +129,18 @@ const db = {
         yesterday: [],
         last7Days: [],
         last30Days: [],
-        older: []
+        older: {}
       };
     }
   },
 
   fetchChatHistoryById: async (chatId) => {
     try {
+      // Validate chatId
+      if (!chatId || (typeof chatId !== 'string' && typeof chatId !== 'number')) {
+        throw new Error('Invalid chat ID');
+      }
+
       const { rows } = await pool.query(
         'SELECT id, conversation_history, temperature FROM ai_history_chatapi WHERE id = $1',
         [chatId]
@@ -170,6 +154,19 @@ const db = {
 
   saveChatHistory: async ({ chatId, history, username, temperature }) => {
     try {
+      // Validate inputs
+      if (!username || typeof username !== 'string') {
+        throw new Error('Invalid username');
+      }
+
+      if (!history || !Array.isArray(history)) {
+        throw new Error('Invalid conversation history');
+      }
+
+      if (temperature !== undefined && (isNaN(temperature) || temperature < 0 || temperature > 2)) {
+        throw new Error('Invalid temperature value');
+      }
+
       if (chatId) {
         await pool.query(
           'UPDATE ai_history_chatapi SET conversation_history = $1, created_at = CURRENT_TIMESTAMP, temperature = $3 WHERE id = $2',
@@ -259,30 +256,44 @@ const db = {
 const aiServices = {
 
   formatResponse: (responseText, provider) => {
-    const identityQuestions = [
-      /who\s*(are|is)\s*you/i,
-      /what\s*(are|is)\s*you/i,
-      /your\s*(name|identity)/i,
-      /introduce\s*yourself/i,
-      /are\s*you\s*(chatgpt|gemini|ai|bot)/i
-    ];
-
-    const isIdentityQuestion = identityQuestions.some(regex => regex.test(responseText));
-
-    if (isIdentityQuestion) {
-      return `I'm a general purpose AI assistant developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. How can I help you today? ${responseText}`;
+    // Ensure responseText is a string
+    if (typeof responseText !== 'string') {
+      console.warn('formatResponse: responseText is not a string, converting...');
+      responseText = String(responseText || '');
     }
+
+    // Since we're using proper system messages, we don't need to inject identity here
     return responseText;
   },
 
   gemini: async (apiKey, model, conversationHistory, temperature) => {
     const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
     try {
+      // Gemini doesn't support system role, so we need to handle it differently
+      let systemInstruction = "";
+      let filteredHistory = conversationHistory.filter(msg => {
+        if (msg.role === 'system') {
+          systemInstruction = msg.parts?.[0]?.text || "";
+          return false; // Remove system message from history
+        }
+        return true;
+      });
+
+      // If we have a system instruction, prepend it to the first user message
+      if (systemInstruction && filteredHistory.length > 0 && filteredHistory[0].role === 'user') {
+        filteredHistory[0] = {
+          ...filteredHistory[0],
+          parts: [{
+            text: `${systemInstruction}\n\nUser: ${filteredHistory[0].parts?.[0]?.text || ""}`
+          }]
+        };
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: conversationHistory,
+          contents: filteredHistory,
           generationConfig: { temperature }
         })
       });
@@ -326,12 +337,30 @@ const aiServices = {
 
   nvidia: async (apiKey, model, conversationHistory, temperature) => {
     const url = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+    // Validate inputs
+    if (!apiKey || typeof apiKey !== 'string') {
+      throw new Error('Invalid NVIDIA API key');
+    }
+
+    if (!model || typeof model !== 'string') {
+      throw new Error('Invalid model specification');
+    }
+
+    if (!Array.isArray(conversationHistory)) {
+      throw new Error('Invalid conversation history format');
+    }
+
     const formattedHistory = conversationHistory
       .map(message => ({
         role: message.role === 'model' ? 'assistant' : message.role,
         content: message.parts?.[0]?.text || ''
       }))
-      .filter(msg => msg.content);
+      .filter(msg => msg.content && msg.role && ['user', 'assistant', 'system'].includes(msg.role));
+
+    if (formattedHistory.length === 0) {
+      throw new Error('No valid messages in conversation history');
+    }
 
     try {
       const response = await fetch(url, {
@@ -373,14 +402,12 @@ const aiServices = {
 };
 
 router.get(["/login", "/signin"], (req, res) => {
-  res.render("staticPage/login.handlebars", {
-    layout: false,
-    userLoggedIn: !!req.session?.user,
-    UserName: req.session?.user?.username || ''
-  });
+  const queryParams = new URLSearchParams(req.query).toString();
+  const redirectUrl = `/mbkauthe/login${queryParams ? `?${queryParams}` : ''}`;
+  return res.redirect(redirectUrl);
 });
 
-router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) => {
+router.get(["/chatbot/:chatId?", "/chat/:chatId?"], validateSessionAndRole("Any"), async (req, res) => {
   try {
     const { chatId } = req.params;
     const { username, role } = req.session.user;
@@ -398,7 +425,15 @@ router.get("/chatbot/:chatId?", validateSessionAndRole("Any"), async (req, res) 
     });
   } catch (error) {
     console.error("Error rendering chatbot page:", error);
-    res.status(500).render("templates/Error/500", { error: error.message });
+    return res.status(500).render("Error/dError.handlebars", {
+      layout: false,
+      code: 500,
+      error: "Internal Server Error",
+      message: "An unexpected error occurred on the server.",
+      details: error,
+      pagename: "Home",
+      page: `/dashboard`,
+    });
   }
 });
 
@@ -417,128 +452,26 @@ router.get('/api/chat/histories/:chatId', validateSessionAndRole("Any"), async (
 
   try {
     const chatHistory = await db.fetchChatHistoryById(chatId);
-    chatHistory
-      ? res.json(chatHistory)
-      : res.status(404).json({ message: "Chat history not found" });
+    if (chatHistory) {
+      // Filter out system messages from the conversation history before sending to frontend
+      let conversationHistory = chatHistory.conversation_history;
+      if (typeof conversationHistory === 'string') {
+        conversationHistory = JSON.parse(conversationHistory);
+      }
+
+      // Remove system messages from the conversation history
+      const filteredHistory = conversationHistory.filter(msg => msg.role !== 'system');
+
+      // Return the chat history with filtered conversation
+      res.json({
+        ...chatHistory,
+        conversation_history: filteredHistory
+      });
+    } else {
+      res.status(404).json({ message: "Chat history not found" });
+    }
   } catch (error) {
     handleApiError(res, error, "fetching chat history by ID");
-  }
-});
-
-router.get('/admin/chatbot/gemini', validateSessionAndRole("SuperAdmin"), async (req, res) => {
-  try {
-    if (googleAuthError) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Google API client initialization failed",
-        details: googleAuthError.message
-      });
-    }
-
-    if (!serviceusage || !projectId) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Google Service Usage client or Project ID not available"
-      });
-    }
-
-    const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
-    if (!geminiApiKey) {
-      return res.status(500).render("templates/Error/500", {
-        error: "Gemini API Key not configured"
-      });
-    }
-
-    const geminiModels = [
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-8b',
-      'gemini-1.5-pro'
-    ];
-
-    const modelData = await Promise.all(geminiModels.map(async (model) => {
-      try {
-        const modelInfoUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${geminiApiKey}`;
-        const infoResponse = await fetch(modelInfoUrl);
-
-        if (!infoResponse.ok) {
-          return {
-            name: model,
-            available: false,
-            error: `Model info not available (${infoResponse.status})`
-          };
-        }
-
-        const infoData = await infoResponse.json();
-        return {
-          name: model,
-          available: true,
-          description: infoData.description || 'No description',
-          inputTokenLimit: infoData.inputTokenLimit || 'Unknown',
-          outputTokenLimit: infoData.outputTokenLimit || 'Unknown',
-          supportedMethods: infoData.supportedGenerationMethods || [],
-          lastTested: new Date().toISOString()
-        };
-      } catch (error) {
-        return {
-          name: model,
-          available: false,
-          error: error.message
-        };
-      }
-    }));
-
-    let quotaInfo = {};
-    try {
-      const quotas = await serviceusage.services.consumerQuotaMetrics.list({
-        parent: `projects/${projectId}/services/generativelanguage.googleapis.com`
-      });
-
-      quotaInfo = {
-        metrics: quotas.data?.metrics?.map(metric => ({
-          displayName: metric.displayName || metric.name || 'Unknown Metric',
-          name: metric.name,
-          limit: metric.consumerQuotaLimits?.[0]?.quotaBuckets?.[0]?.effectiveLimit || 'N/A',
-          usage: metric.consumerQuotaLimits?.[0]?.quotaBuckets?.[0]?.currentUsage || 0,
-          percentage: 'N/A' // Calculated in template
-        })) || [],
-        updatedAt: new Date().toISOString()
-      };
-    } catch (error) {
-      quotaInfo = {
-        error: true,
-        message: "Failed to fetch quota information",
-        details: error.message
-      };
-    }
-
-    res.render("mainPages/geminiDashboard", {
-      title: "Gemini API Dashboard",
-      models: modelData.filter(m => m.available),
-      unavailableModels: modelData.filter(m => !m.available),
-      quotaInfo,
-      lastUpdated: new Date().toISOString(),
-      apiKeyConfigured: !!geminiApiKey,
-      googleAuthError: googleAuthError?.message,
-      projectId,
-      helpers: {
-        json: (context) => JSON.stringify(context, null, 2),
-        join: (array, separator) => Array.isArray(array) ? array.join(separator) : 'None',
-        formatNumber: (num) => (typeof num === 'number' || !isNaN(Number(num)))
-          ? Number(num).toLocaleString()
-          : num?.toString() || '0',
-        findMetric: (metrics, name) => Array.isArray(metrics)
-          ? (metrics.find(m => m.name === name) || { name, usage: 'Not found', limit: 'N/A', percentage: 'N/A' })
-          : { name, usage: 'Metrics unavailable', limit: 'N/A', percentage: 'N/A' },
-        isError: (obj) => obj && obj.error,
-        formatDate: (isoString) => isoString ? new Date(isoString).toLocaleString() : 'N/A'
-      }
-    });
-  } catch (error) {
-    console.error("Error in Gemini dashboard:", error);
-    res.status(500).render("templates/Error/500", {
-      error: "Failed to retrieve Gemini API information",
-      details: error.message
-    });
   }
 });
 
@@ -548,13 +481,20 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
 
   console.log(`Request received to delete message. Chat ID: ${chatId}, Message ID: ${messageId}`);
 
-  if (!chatId) {
-    console.error("Chat ID is missing in the request");
-    return res.status(400).json({ message: "Chat ID is required" });
+  if (!chatId || (typeof chatId !== 'string' && typeof chatId !== 'number')) {
+    console.error("Invalid Chat ID in the request");
+    return res.status(400).json({ message: "Valid Chat ID is required" });
   }
-  if (!messageId) {
+
+  if (messageId === undefined || messageId === null) {
     console.error("Message ID is missing in the request");
     return res.status(400).json({ message: "Message ID is required" });
+  }
+
+  // Validate messageId is a valid array index
+  if (typeof messageId !== 'string' && typeof messageId !== 'number') {
+    console.error("Invalid Message ID format");
+    return res.status(400).json({ message: "Invalid Message ID format" });
   }
 
   try {
@@ -566,12 +506,45 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
     }
 
     console.log(`Parsing conversation history for Chat ID: ${chatId}`);
-    let conversationHistory = typeof chatHistory.conversation_history === 'string'
-      ? JSON.parse(chatHistory.conversation_history)
-      : chatHistory.conversation_history;
+    let conversationHistory;
+    try {
+      conversationHistory = typeof chatHistory.conversation_history === 'string'
+        ? JSON.parse(chatHistory.conversation_history)
+        : chatHistory.conversation_history;
+    } catch (parseError) {
+      console.error(`Error parsing conversation history for Chat ID: ${chatId}`, parseError);
+      return res.status(500).json({ message: "Invalid conversation history format" });
+    }
+
+    if (!Array.isArray(conversationHistory)) {
+      console.error(`Conversation history is not an array for Chat ID: ${chatId}`);
+      return res.status(500).json({ message: "Invalid conversation history format" });
+    }
 
     console.log(`Original conversation history length: ${conversationHistory.length}`);
-    conversationHistory = conversationHistory.filter((msg, index) => index.toString() !== messageId);
+
+    // Create a filtered version to map frontend indices to actual indices
+    const filteredHistory = conversationHistory.filter(msg => msg.role !== 'system');
+    const filteredIndex = parseInt(messageId);
+
+    if (isNaN(filteredIndex) || filteredIndex < 0 || filteredIndex >= filteredHistory.length) {
+      console.error(`Invalid message ID: ${messageId} for Chat ID: ${chatId}`);
+      return res.status(400).json({ message: "Invalid message ID" });
+    }
+
+    // Find the actual index in the original conversation history
+    const targetMessage = filteredHistory[filteredIndex];
+    const actualIndex = conversationHistory.findIndex(msg =>
+      msg.role === targetMessage.role &&
+      msg.parts?.[0]?.text === targetMessage.parts?.[0]?.text
+    );
+
+    if (actualIndex === -1) {
+      console.error(`Could not find message to delete for Chat ID: ${chatId}`);
+      return res.status(500).json({ message: "Message not found" });
+    }
+
+    conversationHistory = conversationHistory.filter((msg, index) => index !== actualIndex);
     console.log(`Updated conversation history length: ${conversationHistory.length}`);
 
     console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
@@ -592,10 +565,32 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   const { message, chatId } = req.body;
   const { username } = req.session.user;
 
+  // Input validation
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ message: "Message is required and must be a string" });
+  }
+
+  if (message.trim().length === 0) {
+    return res.status(400).json({ message: "Message cannot be empty" });
+  }
+
+  if (message.length > 10000) {
+    return res.status(400).json({ message: "Message is too long (max 10000 characters)" });
+  }
+
+  if (chatId && (typeof chatId !== 'string' && typeof chatId !== 'number')) {
+    return res.status(400).json({ message: "Invalid chat ID format" });
+  }
+
   try {
     // Get user settings
     const userSettings = await db.fetchUserSettings(username);
     const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
+
+    // Validate temperature
+    if (isNaN(temperature)) {
+      return res.status(400).json({ message: "Invalid temperature value" });
+    }
 
     // Get conversation history
     let conversationHistory = [];
@@ -609,11 +604,11 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         return res.status(404).json({ message: "Chat history not found" });
       }
     } else {
-      // Add system message for new chats
+      // Add system message for new chats - use proper system role
       conversationHistory.push({
-        role: "user",  // Changed from "system" to "user"
+        role: "system",
         parts: [{
-          text: "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
+          text: "You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose AI assistant (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise and helpful."
         }]
       });
     }
@@ -622,9 +617,16 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
     conversationHistory.push({ role: "user", parts: [{ text: message }] });
 
     // Determine AI provider and model
-    const [provider, model] = userSettings.ai_model.includes('/')
-      ? userSettings.ai_model.split('/')
-      : ['gemini', userSettings.ai_model];
+    const aiModel = userSettings.ai_model || DEFAULT_MODEL;
+    const [provider, model] = aiModel.includes('/')
+      ? aiModel.split('/', 2)
+      : ['gemini', aiModel];
+
+    // Validate provider
+    const validProviders = ['gemini', 'nvidia', 'mallow'];
+    if (!validProviders.includes(provider.toLowerCase())) {
+      return res.status(400).json({ message: "Invalid AI provider" });
+    }
 
     // Call appropriate AI service
     let aiResponseText;
@@ -639,7 +641,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         break;
       case 'gemini':
       default:
-        const geminiApiKey = process.env.GEMINI_API_KEY_maaz_waheed;
+        const geminiApiKey = process.env.GEMINI_API_KEY;
         if (!geminiApiKey) throw new Error("Gemini API key not configured");
         aiResponseText = await aiServices.gemini(geminiApiKey, model, conversationHistory, temperature);
     }
@@ -689,6 +691,25 @@ router.get('/api/user-settings', validateSessionAndRole("Any"), async (req, res)
 
 router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res) => {
   try {
+    const { theme, fontSize, model, temperature } = req.body;
+
+    // Validate input
+    if (theme && typeof theme !== 'string') {
+      return res.status(400).json({ success: false, message: "Invalid theme format" });
+    }
+
+    if (fontSize && (typeof fontSize !== 'number' || fontSize < 8 || fontSize > 32)) {
+      return res.status(400).json({ success: false, message: "Font size must be between 8 and 32" });
+    }
+
+    if (model && typeof model !== 'string') {
+      return res.status(400).json({ success: false, message: "Invalid model format" });
+    }
+
+    if (temperature !== undefined && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
+      return res.status(400).json({ success: false, message: "Temperature must be between 0 and 2" });
+    }
+
     const isSaved = await db.saveUserSettings(req.session.user.username, req.body);
     isSaved
       ? res.json({ success: true, message: "Settings saved" })

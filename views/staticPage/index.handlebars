@@ -1005,27 +1005,129 @@
     <section class="section" id="gallery">
         <h2 class="section-title">Gallery</h2>
         <div class="gallery-container">
-            <div class="gallery-grid">
-                <!-- Chatbot Images -->
-                <div class="gallery-item fade-in-up">
-                    <a href="/Assets/Images/chatbot.png">
-                        <img src="/Assets/Images/chatbot.png" alt="Chatbot Interface" class="gallery-image">
-                    </a>
-                    <div class="gallery-caption">Modern Chatbot Interface</div>
+            <div class="gallery-intro">
+                <p>Explore our comprehensive AI chat solution with stunning visuals showcasing both desktop and mobile experiences.</p>
+            </div>
+            
+            <!-- Desktop Experience -->
+            <div class="gallery-category">
+                <h3 class="category-title">
+                    <i class="fas fa-desktop"></i>
+                    Desktop Experience
+                </h3>
+                <div class="gallery-grid">
+                    <div class="gallery-item fade-in-up">
+                        <a href="/Assets/Images/chatbot.png" class="gallery-link">
+                            <img src="/Assets/Images/chatbot.png" alt="Chatbot Interface" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Chatbot Interface</h4>
+                            <p>Modern AI chat interface with sleek design</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up delay-1">
+                        <a href="/Assets/Images/settings.png" class="gallery-link">
+                            <img src="/Assets/Images/settings.png" alt="Settings Panel" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Settings Panel</h4>
+                            <p>Comprehensive configuration options</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up delay-2">
+                        <a href="/Assets/Images/dashboard.png" class="gallery-link">
+                            <img src="/Assets/Images/dashboard.png" alt="Dashboard Home" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Dashboard Home</h4>
+                            <p>Administrative dashboard overview</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up delay-3">
+                        <a href="/Assets/Images/Userdashboard.png" class="gallery-link">
+                            <img src="/Assets/Images/Userdashboard.png" alt="User Management" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>User Management</h4>
+                            <p>Manage users and permissions</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up">
+                        <a href="/Assets/Images/Chatdashboard.png" class="gallery-link">
+                            <img src="/Assets/Images/Chatdashboard.png" alt="Chat Management" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Chat Management</h4>
+                            <p>Monitor and manage conversations</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="gallery-item fade-in-up delay-1">
-                    <a href="/Assets/Images/chatbot-m.png">
-                        <img src="/Assets/Images/chatbot-m.png" alt="Mobile Chatbot" class="gallery-image">
-                    </a>
-                    <div class="gallery-caption">Mobile Responsive Design</div>
-                </div>
+            </div>
 
-                <!-- Admin Dashboard Images -->
-                <div class="gallery-item fade-in-up delay-2">
-                    <a href="/Assets/Images/dashboard.png">
-                        <img src="/Assets/Images/dashboard.png" alt="Admin Dashboard" class="gallery-image">
-                    </a>
-                    <div class="gallery-caption">Admin Dashboard Overview</div>
+            <!-- Mobile Experience -->
+            <div class="gallery-category">
+                <h3 class="category-title">
+                    <i class="fas fa-mobile-alt"></i>
+                    Mobile Experience
+                </h3>
+                <div class="gallery-grid mobile-grid">
+                    <div class="gallery-item fade-in-up">
+                        <a href="/Assets/Images/mobile_chatbot.jpeg" class="gallery-link">
+                            <img src="/Assets/Images/mobile_chatbot.jpeg" alt="Mobile Chatbot" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Mobile Chatbot</h4>
+                            <p>Responsive chat interface for mobile</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up delay-1">
+                        <a href="/Assets/Images/mobile_sidebar.jpeg" class="gallery-link">
+                            <img src="/Assets/Images/mobile_sidebar.jpeg" alt="Mobile Sidebar" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Mobile Sidebar</h4>
+                            <p>Easy navigation on mobile devices</p>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-item fade-in-up delay-2">
+                        <a href="/Assets/Images/mobile_setting.jpeg" class="gallery-link">
+                            <img src="/Assets/Images/mobile_setting.jpeg" alt="Mobile Settings" class="gallery-image">
+                            <div class="gallery-overlay">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </a>
+                        <div class="gallery-caption">
+                            <h4>Mobile Settings</h4>
+                            <p>Touch-friendly settings interface</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1038,11 +1140,66 @@
             padding: 0 20px;
         }
 
+        .gallery-intro {
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .gallery-intro p {
+            font-size: 1.1rem;
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        .gallery-category {
+            margin-bottom: 4rem;
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--lighter);
+            justify-content: center;
+            position: relative;
+        }
+
+        .category-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 2px;
+        }
+
+        .category-title i {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.3rem;
+        }
+
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
             margin-top: 2rem;
+        }
+
+        .mobile-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            max-width: 800px;
+            margin: 2rem auto 0;
         }
 
         .gallery-item {
@@ -1051,11 +1208,20 @@
             overflow: hidden;
             transition: var(--transition);
             border: 1px solid var(--glass-border);
+            position: relative;
+            group: hover;
         }
 
         .gallery-item:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .gallery-link {
+            display: block;
+            position: relative;
+            overflow: hidden;
         }
 
         .gallery-image {
@@ -1063,19 +1229,92 @@
             height: 250px;
             object-fit: contain;
             display: block;
+            transition: var(--transition);
+            background: var(--darker);
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .gallery-overlay i {
+            font-size: 2rem;
+            color: var(--primary);
+            transform: scale(0.8);
+            transition: var(--transition);
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            opacity: 1;
+        }
+
+        .gallery-item:hover .gallery-overlay i {
+            transform: scale(1);
+        }
+
+        .gallery-item:hover .gallery-image {
+            transform: scale(1.05);
         }
 
         .gallery-caption {
             padding: 1.5rem;
             text-align: center;
-            font-weight: 500;
-            color: var(--lighter);
             background: var(--dark-light);
         }
 
+        .gallery-caption h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--lighter);
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-caption p {
+            font-size: 0.9rem;
+            color: var(--gray);
+            line-height: 1.4;
+        }
+
+        /* Mobile specific styles */
         @media (max-width: 768px) {
             .gallery-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .mobile-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .gallery-image {
+                height: 200px;
+            }
+            
+            .category-title {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery-caption {
+                padding: 1rem;
+            }
+            
+            .gallery-caption h4 {
+                font-size: 1rem;
+            }
+            
+            .gallery-caption p {
+                font-size: 0.85rem;
             }
         }
     </style>

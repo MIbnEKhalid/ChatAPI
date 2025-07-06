@@ -39,7 +39,6 @@ router.use(
 router.engine("handlebars", engine({
   partialsDir: [
     path.join(__dirname, "node_modules/mbkauthe/views"),
-    path.join(__dirname, "views/templates"),
     path.join(__dirname, "views/notice"),
     path.join(__dirname, "views")
   ],
@@ -71,11 +70,161 @@ router.engine("handlebars", engine({
     lt: function (a, b) {
       return a < b;
     },
+    lte: function (a, b) {
+      return a <= b;
+    },
+    gte: function (a, b) {
+      return a >= b;
+    },
     add: function (a, b) {
       return a + b;
     },
     subtract: function (a, b) {
       return a - b;
+    },
+    multiply: function (a, b) {
+      return a * b;
+    },
+    divide: function (a, b) {
+      if (b === 0) return 0;
+      return a / b;
+    },
+    jsonb_array_length: function (jsonArray) {
+      if (!jsonArray) return 0;
+      if (typeof jsonArray === 'string') {
+        try {
+          return JSON.parse(jsonArray).length;
+        } catch (e) {
+          return 0;
+        }
+      }
+      if (Array.isArray(jsonArray)) {
+        return jsonArray.length;
+      }
+      return 0;
+    },
+    includes: function (array, value) {
+      if (!array) return false;
+      if (Array.isArray(array)) {
+        return array.includes(value);
+      }
+      return false;
+    },
+    len: function (value) {
+      if (!value) return 0;
+      if (typeof value === 'string') return value.length;
+      if (Array.isArray(value)) return value.length;
+      if (typeof value === 'object') return Object.keys(value).length;
+      return 0;
+    },
+    isEmpty: function (value) {
+      if (!value) return true;
+      if (typeof value === 'string') return value.length === 0;
+      if (Array.isArray(value)) return value.length === 0;
+      if (typeof value === 'object') return Object.keys(value).length === 0;
+      return false;
+    },
+    isNotEmpty: function (value) {
+      return !this.isEmpty(value);
+    },
+    first: function (array) {
+      if (!array || !Array.isArray(array)) return null;
+      return array[0];
+    },
+    last: function (array) {
+      if (!array || !Array.isArray(array)) return null;
+      return array[array.length - 1];
+    },
+    slice: function (array, start, end) {
+      if (!array || !Array.isArray(array)) return [];
+      return array.slice(start, end);
+    },
+    join: function (array, separator) {
+      if (!array || !Array.isArray(array)) return '';
+      return array.join(separator || ',');
+    },
+    split: function (string, separator) {
+      if (!string || typeof string !== 'string') return [];
+      return string.split(separator || ',');
+    },
+    capitalize: function (str) {
+      if (!str || typeof str !== 'string') return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+    uppercase: function (str) {
+      if (!str || typeof str !== 'string') return '';
+      return str.toUpperCase();
+    },
+    lowercase: function (str) {
+      if (!str || typeof str !== 'string') return '';
+      return str.toLowerCase();
+    },
+    concat: function (...args) {
+      // Remove the options object that is provided by Handlebars
+      const options = args.pop();
+      return args.join('');
+    },
+    default: function (value, defaultValue) {
+      return value || defaultValue;
+    },
+    or: function (...args) {
+      // Remove the options object that is provided by Handlebars
+      const options = args.pop();
+      return args.find(arg => !!arg) || false;
+    },
+    not: function (value) {
+      return !value;
+    },
+    mod: function (a, b) {
+      if (b === 0) return 0;
+      return a % b;
+    },
+    abs: function (value) {
+      return Math.abs(value);
+    },
+    round: function (value, precision) {
+      if (precision) {
+        return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
+      }
+      return Math.round(value);
+    },
+    floor: function (value) {
+      return Math.floor(value);
+    },
+    ceil: function (value) {
+      return Math.ceil(value);
+    },
+    min: function (...args) {
+      const options = args.pop();
+      return Math.min(...args);
+    },
+    max: function (...args) {
+      const options = args.pop();
+      return Math.max(...args);
+    },
+    formatNumber: function (num, decimals) {
+      if (typeof num !== 'number') return '0';
+      return num.toFixed(decimals || 0);
+    },
+    formatBytes: function (bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+    formatDuration: function (seconds) {
+      if (!seconds) return '0s';
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      if (h > 0) return `${h}h ${m}m ${s}s`;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
+    },
+    formatPercent: function (value, total) {
+      if (!total || total === 0) return '0%';
+      return Math.round((value / total) * 100) + '%';
     },
     range: function (start, end) {
       const result = [];
@@ -123,6 +272,191 @@ Handlebars.registerHelper('divide', function (value, divisor, multiplier) {
   return (value / divisor) * multiplier;
 });
 
+Handlebars.registerHelper('multiply', function (a, b) {
+  return a * b;
+});
+
+Handlebars.registerHelper('subtract', function (a, b) {
+  return a - b;
+});
+
+Handlebars.registerHelper('add', function (a, b) {
+  return a + b;
+});
+
+Handlebars.registerHelper('gte', function (a, b) {
+  return a >= b;
+});
+
+Handlebars.registerHelper('lte', function (a, b) {
+  return a <= b;
+});
+
+// Additional commonly used helpers
+Handlebars.registerHelper('jsonb_array_length', function (jsonArray) {
+  if (!jsonArray) return 0;
+  if (typeof jsonArray === 'string') {
+    try {
+      return JSON.parse(jsonArray).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+  if (Array.isArray(jsonArray)) {
+    return jsonArray.length;
+  }
+  return 0;
+});
+
+Handlebars.registerHelper('includes', function (array, value) {
+  if (!array) return false;
+  if (Array.isArray(array)) {
+    return array.includes(value);
+  }
+  return false;
+});
+
+Handlebars.registerHelper('len', function (value) {
+  if (!value) return 0;
+  if (typeof value === 'string') return value.length;
+  if (Array.isArray(value)) return value.length;
+  if (typeof value === 'object') return Object.keys(value).length;
+  return 0;
+});
+
+Handlebars.registerHelper('isEmpty', function (value) {
+  if (!value) return true;
+  if (typeof value === 'string') return value.length === 0;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === 'object') return Object.keys(value).length === 0;
+  return false;
+});
+
+Handlebars.registerHelper('isNotEmpty', function (value) {
+  return !Handlebars.helpers.isEmpty(value);
+});
+
+Handlebars.registerHelper('or', function (...args) {
+  const options = args.pop();
+  return args.find(arg => !!arg) || false;
+});
+
+Handlebars.registerHelper('not', function (value) {
+  return !value;
+});
+
+Handlebars.registerHelper('concat', function (...args) {
+  const options = args.pop();
+  return args.join('');
+});
+
+Handlebars.registerHelper('default', function (value, defaultValue) {
+  return value || defaultValue;
+});
+
+Handlebars.registerHelper('capitalize', function (str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+});
+
+Handlebars.registerHelper('uppercase', function (str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.toUpperCase();
+});
+
+Handlebars.registerHelper('lowercase', function (str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.toLowerCase();
+});
+
+Handlebars.registerHelper('mod', function (a, b) {
+  if (b === 0) return 0;
+  return a % b;
+});
+
+Handlebars.registerHelper('abs', function (value) {
+  return Math.abs(value);
+});
+
+Handlebars.registerHelper('round', function (value, precision) {
+  if (precision) {
+    return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
+  }
+  return Math.round(value);
+});
+
+Handlebars.registerHelper('floor', function (value) {
+  return Math.floor(value);
+});
+
+Handlebars.registerHelper('ceil', function (value) {
+  return Math.ceil(value);
+});
+
+Handlebars.registerHelper('formatNumber', function (num, decimals) {
+  if (typeof num !== 'number') return '0';
+  return num.toFixed(decimals || 0);
+});
+
+Handlebars.registerHelper('formatBytes', function (bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+});
+
+Handlebars.registerHelper('formatDuration', function (seconds) {
+  if (!seconds) return '0s';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+});
+
+Handlebars.registerHelper('formatPercent', function (value, total) {
+  if (!total || total === 0) return '0%';
+  return Math.round((value / total) * 100) + '%';
+});
+
+Handlebars.registerHelper('join', function (array, separator) {
+  if (!array || !Array.isArray(array)) return '';
+  return array.join(separator || ',');
+});
+
+Handlebars.registerHelper('split', function (string, separator) {
+  if (!string || typeof string !== 'string') return [];
+  return string.split(separator || ',');
+});
+
+Handlebars.registerHelper('first', function (array) {
+  if (!array || !Array.isArray(array)) return null;
+  return array[0];
+});
+
+Handlebars.registerHelper('last', function (array) {
+  if (!array || !Array.isArray(array)) return null;
+  return array[array.length - 1];
+});
+
+Handlebars.registerHelper('slice', function (array, start, end) {
+  if (!array || !Array.isArray(array)) return [];
+  return array.slice(start, end);
+});
+
+Handlebars.registerHelper('min', function (...args) {
+  const options = args.pop();
+  return Math.min(...args);
+});
+
+Handlebars.registerHelper('max', function (...args) {
+  const options = args.pop();
+  return Math.max(...args);
+});
+
+
 router.set("view engine", "handlebars");
 router.set("views", [
   path.join(__dirname, "views"),
@@ -150,20 +484,8 @@ router.get(["/", "/info/main"], (req, res) => {
   return res.render("staticPage/index.handlebars", { layout: false });
 });
 
-router.get(["/home", "/dashboard"], (req, res) => {
+router.get(["/home"], (req, res) => {
   return res.redirect("/chatbot");
-});
-
-router.get("/info/Terms&Conditions", (req, res) => {
-  return res.render("staticPage/Terms&Conditions.handlebars", { layout: false });
-});
-
-router.get("/info/FAQs", async (req, res) => {
-  res.render("staticPage/FAQs.handlebars", { layout: false });
-});
-
-router.get("/info/Credits", async (req, res) => {
-  res.render("staticPage/Credits.handlebars"), { layout: false };
 });
 
 router.use(mbkAuthRouter);
@@ -181,13 +503,28 @@ router.get('/simulate-error', (req, res, next) => {
 
 router.use((req, res) => {
   console.log(`Path not found: ${req.url}`);
-  return res.render("staticPage/404", { layout: false });
+  return res.status(404).render("Error/dError.handlebars", {
+    layout: false,
+    code: 404,
+    error: "Not Found",
+    message: "The requested page was not found.",
+    pagename: "Home",
+    page: `/dashboard`,
+  });
 });
 
 router.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500);
-  res.render('templates/Error/500', { error: err });
+  return res.status(500).render("Error/dError.handlebars", {
+    layout: false,
+    code: 500,
+    error: "Internal Server Error",
+    message: "An unexpected error occurred on the server.",
+    details: err,
+    pagename: "Home",
+    page: `/dashboard`,
+  });
 });
 
 const port = 3030;
