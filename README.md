@@ -1,119 +1,220 @@
-# ChatAPI
-ChatAPI is a robust AI chatbot application designed to deliver seamless and customizable interactions with AI models. Developed using Node.js, Express, and Handlebars, it supports multiple AI providers and offers an intuitive interface for managing chat histories, settings, and more.
+# 🤖 ChatAPI - AI Chat Assistant
 
-## Key Features
+A modern, full-featured AI chat application powered by Google Gemini API with advanced user management, conversation history, and admin dashboard.
 
-- **Multi-Model Compatibility**: Supports AI models like Gemini, NVIDIA, and Mallow.
-- **Customizable User Experience**: Adjust themes, font sizes, temperature, and model preferences.
-- **Chat History Management**: Save, retrieve, and delete chat histories effortlessly.
-- **Modern Interface**: Clean, responsive design with features like skeleton loading, copy-to-clipboard for code blocks, and styled tables.
-- **Admin Dashboard**: Manage AI model configurations and quotas with ease.
-- **Robust Error Handling**: Comprehensive error management for API requests and database operations.
+![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)
+![Express.js](https://img.shields.io/badge/Express.js-4.21+-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-## Technology Stack
+## 🌟 Features
+
+### 🎯 Core Features
+- **AI-Powered Chat**: Intelligent conversations using Google Gemini API
+- **User Authentication**: Secure login/logout system with session management
+- **Conversation History**: Persistent chat history with organized conversation threads
+- **Real-time Chat**: Modern, responsive chat interface
+- **Multiple AI Models**: Support for various AI models including Gemini and NVIDIA APIs
+
+### 🎨 User Experience
+- **Modern UI**: Clean, responsive design with dark/light theme support
+- **Font Customization**: Adjustable font sizes for better accessibility
+- **Message Formatting**: Support for markdown, code highlighting, and rich text
+- **Mobile Responsive**: Optimized for all device sizes
+- **Real-time Updates**: Live chat updates and typing indicators
+
+### 🔧 Admin Features
+- **Admin Dashboard**: Comprehensive management panel
+- **User Management**: View and manage all users
+- **Chat Analytics**: Monitor conversation statistics
+- **Message Limits**: Configurable daily message limits per user
+- **System Monitoring**: Server uptime and performance metrics
+
+### 📊 Advanced Features
+- **Message Limits**: Daily message quotas with customizable limits
+- **Temperature Control**: Adjustable AI response creativity
+- **Conversation Threading**: Organized chat sessions with unique IDs
+- **Export Functionality**: Export conversation history
+- **Search & Filter**: Advanced search through chat history
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18 or higher
+- PostgreSQL database
+- Google Gemini API key
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/ChatAPI.git
+   cd ChatAPI
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.template .env
+   ```
+   Edit `.env` with your configuration (see [Environment Variables](#-environment-variables))
+
+4. **Set up the database**
+   ```bash
+   # Import the database schema
+   psql -U your_username -d your_database -f model/db.sql
+   ```
+
+5. **Start the application**
+   ```bash
+   npm start
+   ```
+
+6. **Access the application**
+   - Main Application: `http://localhost:3030`
+   - Admin Dashboard: `http://localhost:3030/admin`
+
+## 🔧 Environment Variables
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NEON_POSTGRES` | PostgreSQL connection string | `postgres://user:pass@host:5432/db` |
+| `GEMINI_API_KEY` | Google Gemini API key | `AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` |
+
+### Optional Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NVIDIA_API` | NVIDIA AI API key | - |
+| `PORT` | Server port | `3030` |
+| `NODE_ENV` | Environment mode | `development` |
+
+## 🗄️ Database Schema
+
+The application uses PostgreSQL with the following main tables:
+
+- **`ai_history_chatapi`**: Stores conversation history and metadata
+- **`user_settings_chatapi`**: User preferences and settings
+- **`user_message_logs_chatapi`**: Daily message usage tracking
+
+## 🛠️ Development
+
+### Project Structure
+```
+ChatAPI/
+├── index.js                 # Main application entry point
+├── package.json             # Dependencies and scripts
+├── vercel.json             # Vercel deployment configuration
+├── model/
+│   └── db.sql              # Database schema
+├── routes/
+│   ├── main.js             # Main chat routes
+│   ├── dashboard.js        # Admin dashboard routes
+│   ├── pool.js             # Database connection pool
+│   └── checkMessageLimit.js # Message limit middleware
+├── views/
+│   ├── mainPages/          # Main application pages
+│   ├── admin/              # Admin dashboard pages
+│   ├── layouts/            # Handlebars layouts
+│   └── staticPage/         # Static pages
+├── public/
+│   └── Assets/             # Static assets (CSS, JS, images)
+```
+
+### Available Scripts
+
+```bash
+npm start
+```
+
+### Tech Stack
 
 - **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL with connection pooling
+- **Template Engine**: Handlebars
+- **Authentication**: Custom session management (mbkauthe)
 - **AI Integration**: Google Gemini API
-- **Authentication**: Custom-built authentication system
-- **Frontend**: Handlebars templating engine
-- **Styling**: Custom CSS
-- **Performance Enhancements**: Compression and minification enabled
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Deployment**: Vercel-ready configuration
 
-## Prerequisites
+## 📱 API Endpoints
 
-- Node.js (v14 or higher)
-- PostgreSQL database
-- Google Cloud Platform account (for Gemini API)
-- Properly configured environment variables
+### Chat API
+- `GET /chatbot` - Main chat interface
+- `POST /api/chat` - Send message to AI
+- `GET /api/chat-history` - Retrieve conversation history
+- `POST /api/save-chat` - Save conversation
+- `DELETE /api/delete-chat/:id` - Delete conversation
 
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-NEON_POSTGRES=your_postgres_connection_string
-Main_SECRET_TOKEN=your_secret_token
-session_seceret_key=your_session_secret
-IsDeployed=true_or_false
-UserCredentialTable=your_credentials_table_name
-RECAPTCHA_SECRET_KEY=your_recaptcha_secret
-GEMINI_API_KEY=your_gemini_api_key
-GOOGLE_APPLICATION_CREDENTIALS=path_to_google_credentials
-```
-
-## Get Free API
-
-### Gemini
-https://aistudio.google.com/app/apikey
-### Nvidia(llama)
-
-
-## Installation Guide
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/MIbnEKhalid/ChatAPI
-    cd ChatAPI
-    ```
-
-2. Install dependencies:
-    ```bash
-    npm install
-    ```
-
-3. Set up the database:
-    - Update the connection strings in your `.env` file.
-    - [`routes/pool.js`](routes/pool.js) will automatically create tables in db from [`model/db.sql`](model/db.sql)
-
-4. Start the development server:
-    ```bash
-    npm run dev
-    ```
-
-    The application will be accessible at `http://localhost:3030`.
-
-## API Endpoints
-
-### Chat Endpoints
-- `POST /api/chat` - Interact with the AI.
-- `GET /api/chat/history` - Retrieve chat history.
-- `GET /api/chat/history/:id` - Fetch specific chat history.
-- `POST /api/chat/history` - Save chat history.
-- `DELETE /api/chat/history/:id` - Remove chat history.
-
-### User Settings
-- `GET /api/settings` - Retrieve user settings.
-- `POST /api/settings` - Update user settings.
+### User Management
+- `GET /admin/dashboard` - Admin dashboard
+- `GET /admin/users` - User management
+- `GET /admin/chats` - Chat management
+- `POST /api/user-settings` - Update user preferences
 
 ### Authentication
-- `POST /api/auth/login` - Log in a user.
-- `POST /api/auth/logout` - Log out a user.
-- `GET /api/auth/check` - Verify authentication status.
+- `POST /login` - User login
+- `POST /logout` - User logout
+- `GET /register` - User registration page
 
-## Project Structure
+## 🔐 Authentication & Security
 
+- Session-based authentication
+- CSRF protection
+- Input validation and sanitization
+- SQL injection prevention
+- Rate limiting for API endpoints
+- Message limit enforcement
+
+## 🎨 Customization
+
+### Themes
+- Dark theme (default)
+- Light theme
+- Custom CSS variables for easy theming
+
+### AI Models
+- Google Gemini 1.5 Flash (default)
+- NVIDIA AI models (optional)
+- Configurable temperature settings
+
+### User Settings
+- Adjustable font sizes
+- Theme preferences
+- Daily message limits
+- Model selection
+
+## 📊 Monitoring & Analytics
+
+- Real-time user activity tracking
+- Message usage statistics
+- System performance metrics
+- Conversation analytics
+- Error logging and monitoring
+
+### Manual Deployment
+```bash
+npm start
 ```
-├── routes/           # API routes and controllers
-├── views/            # Handlebars templates
-├── public/           # Static assets
-├── documentation/    # Project documentation
-├── index.js          # Main application file
-└── package.json      # Project dependencies
-```
 
-## Contribution Guidelines
+## 📝 License
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## License
+## 👨‍💻 Author
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+[**Muhammad Bin Khalid**](https://github.com/MIbnEKhalid/)
 
-## Authors
+[**Maaz Waheed**](https://github.com/42Wor/)
+- Developer and Maintainer
+- [MBK Tech Studio](https://mbktechstudio.com)
 
-Developed by Muhammad Bin Khalid (MIbnEKhalid) and Maaz Waheed (42Wor) at mbktechstudio.
+## Contact
+
+For questions or contributions, please contact Muhammad Bin Khalid at [mbktechstudio.com/Support](https://mbktechstudio.com/Support/?Project=MIbnEKhalidWeb), [support@mbktechstudio.com](mailto:support@mbktechstudio.com) or [chmuhammadbinkhalid28.com](mailto:chmuhammadbinkhalid28.com). 

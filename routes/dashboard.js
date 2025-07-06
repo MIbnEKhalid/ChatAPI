@@ -126,9 +126,14 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     });
   } catch (error) {
     console.error("Error in admin dashboard:", error);
-    res.status(500).render("admin/error.handlebars", {
-      message: "Failed to load dashboard data",
-      error: error.message
+    return res.status(500).render("Error/dError.handlebars", {
+      layout: false,
+      code: 500,
+      error: "Internal Server Error",
+      message: "An unexpected error occurred on the server.",
+      details: error,
+      pagename: "Home",
+      page: `/dashboard`,
     });
   }
 });
@@ -223,9 +228,14 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     });
   } catch (error) {
     console.error("Error in user management:", error);
-    res.status(500).render("admin/error.handlebars", {
-      message: "Failed to load user data",
-      error: error.message
+    return res.status(500).render("Error/dError.handlebars", {
+      layout: false,
+      code: 500,
+      error: "Internal Server Error",
+      message: "An unexpected error occurred on the server.",
+      details: error,
+      pagename: "Home",
+      page: `/dashboard`,
     });
   }
 });
@@ -351,9 +361,14 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     });
   } catch (error) {
     console.error("Error in chat management:", error);
-    res.status(500).render("admin/error.handlebars", {
-      message: "Failed to load chat data",
-      error: error.message
+    return res.status(500).render("Error/dError.handlebars", {
+      layout: false,
+      code: 500,
+      error: "Internal Server Error",
+      message: "An unexpected error occurred on the server.",
+      details: error,
+      pagename: "Home",
+      page: `/dashboard`,
     });
   }
 });
@@ -567,6 +582,377 @@ router.post("/admin/chats/export", validateSessionAndRole("SuperAdmin"), async (
       success: false,
       message: "Failed to export chats",
       error: error.message
+    });
+  }
+});
+
+// Add new endpoints for enhanced admin functionality
+
+// Analytics endpoint for detailed statistics
+router.get("/admin/analytics", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const { period = 'week', startDate, endDate } = req.query;
+    
+    // Calculate date range based on period
+    let dateFilter = "";
+    let paramIndex = 1;
+    const params = [];
+    
+    if (period === 'custom' && startDate && endDate) {
+      dateFilter = `WHERE created_at >= $${paramIndex++} AND created_at <= $${paramIndex++}`;
+      params.push(startDate, endDate + ' 23:59:59');
+    } else {
+      const intervals = {
+        'today': '1 day',
+        'week': '7 days',
+        'month': '30 days',
+        'year': '365 days'
+      };
+      dateFilter = `WHERE created_at >= CURRENT_DATE - INTERVAL '${intervals[period] || '7 days'}'`;
+    }
+
+    // Advanced analytics queries
+    const analyticsQueries = {
+      messagesByDay: `
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as message_count,
+          COUNT(DISTINCT username) as unique_users
+        FROM ai_history_chatapi ${dateFilter}
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `,
+      
+      userActivity: `
+        SELECT 
+          username,
+          COUNT(*) as total_messages,
+          MIN(created_at) as first_message,
+          MAX(created_at) as last_message,
+          COUNT(DISTINCT DATE(created_at)) as active_days
+        FROM ai_history_chatapi ${dateFilter}
+        GROUP BY username
+        ORDER BY total_messages DESC
+        LIMIT 20
+      `,
+      
+      modelUsage: `
+        SELECT 
+          u.ai_model,
+          COUNT(a.id) as usage_count,
+          AVG(a.temperature) as avg_temperature,
+          COUNT(DISTINCT a.username) as unique_users
+        FROM ai_history_chatapi a
+        JOIN user_settings_chatapi u ON a.username = u.username
+        ${dateFilter}
+        GROUP BY u.ai_model
+        ORDER BY usage_count DESC
+      `,
+      
+      peakHours: `
+        SELECT 
+          EXTRACT(HOUR FROM created_at) as hour,
+          COUNT(*) as message_count,
+          COUNT(DISTINCT username) as unique_users
+        FROM ai_history_chatapi ${dateFilter}
+        GROUP BY hour
+        ORDER BY hour
+      `,
+      
+      conversationStats: `
+        SELECT 
+          jsonb_array_length(conversation_history) as conversation_length,
+          COUNT(*) as conversation_count
+        FROM ai_history_chatapi ${dateFilter}
+        GROUP BY jsonb_array_length(conversation_history)
+        ORDER BY conversation_length
+      `
+    };
+
+    // Execute all analytics queries
+    const results = {};
+    for (const [key, query] of Object.entries(analyticsQueries)) {
+      results[key] = await pool.query(query, params);
+    }
+
+    res.json({
+      success: true,
+      period,
+      data: {
+        messagesByDay: results.messagesByDay.rows,
+        userActivity: results.userActivity.rows,
+        modelUsage: results.modelUsage.rows,
+        peakHours: results.peakHours.rows,
+        conversationStats: results.conversationStats.rows
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in analytics:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch analytics data",
+      error: error.message
+    });
+  }
+});
+
+// Export endpoint for data export
+router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { format = 'csv', ...filters } = req.query;
+    
+    let query = "";
+    let filename = "";
+    
+    switch (type) {
+      case 'users':
+        query = `
+          SELECT 
+            u.username,
+            u.ai_model,
+            u.daily_message_limit,
+            u.temperature,
+            u.created_at,
+            COALESCE(a.chat_count, 0) as total_chats,
+            COALESCE(l.total_messages, 0) as total_messages
+          FROM user_settings_chatapi u
+          LEFT JOIN (
+            SELECT username, COUNT(*) as chat_count FROM ai_history_chatapi GROUP BY username
+          ) a ON u.username = a.username
+          LEFT JOIN (
+            SELECT username, SUM(message_count) as total_messages FROM user_message_logs_chatapi GROUP BY username
+          ) l ON u.username = l.username
+          ORDER BY u.created_at DESC
+        `;
+        filename = `users_export_${new Date().toISOString().split('T')[0]}`;
+        break;
+        
+      case 'chats':
+        query = `
+          SELECT 
+            a.id,
+            a.username,
+            a.created_at,
+            a.temperature,
+            u.ai_model,
+            jsonb_array_length(a.conversation_history) as message_count,
+            (a.conversation_history->0->'parts'->0->>'text') as first_message
+          FROM ai_history_chatapi a
+          LEFT JOIN user_settings_chatapi u ON a.username = u.username
+          ORDER BY a.created_at DESC
+        `;
+        filename = `chats_export_${new Date().toISOString().split('T')[0]}`;
+        break;
+        
+      case 'analytics':
+        query = `
+          SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as total_messages,
+            COUNT(DISTINCT username) as unique_users,
+            AVG(temperature) as avg_temperature
+          FROM ai_history_chatapi
+          WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+          GROUP BY DATE(created_at)
+          ORDER BY date
+        `;
+        filename = `analytics_export_${new Date().toISOString().split('T')[0]}`;
+        break;
+        
+      default:
+        return res.status(400).json({ success: false, message: "Invalid export type" });
+    }
+
+    const result = await pool.query(query);
+    const data = result.rows;
+
+    if (format === 'csv') {
+      // Convert to CSV
+      const headers = Object.keys(data[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => 
+          JSON.stringify(row[header] || '')
+        ).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+      res.send(csvContent);
+    } else {
+      // JSON format
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+      res.json(data);
+    }
+
+  } catch (error) {
+    console.error("Error in export:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to export data",
+      error: error.message
+    });
+  }
+});
+
+// User settings update endpoint
+router.put("/admin/users/:username", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { dailyLimit, aiModel, temperature } = req.body;
+
+    // Validate inputs
+    if (dailyLimit && (dailyLimit < 1 || dailyLimit > 1000)) {
+      return res.status(400).json({
+        success: false,
+        message: "Daily limit must be between 1 and 1000"
+      });
+    }
+
+    if (temperature && (temperature < 0 || temperature > 2)) {
+      return res.status(400).json({
+        success: false,
+        message: "Temperature must be between 0 and 2"
+      });
+    }
+
+    // Update user settings
+    const updateQuery = `
+      UPDATE user_settings_chatapi 
+      SET 
+        daily_message_limit = COALESCE($1, daily_message_limit),
+        ai_model = COALESCE($2, ai_model),
+        temperature = COALESCE($3, temperature),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE username = $4
+      RETURNING *
+    `;
+
+    const result = await pool.query(updateQuery, [
+      dailyLimit || null,
+      aiModel || null,
+      temperature || null,
+      username
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "User settings updated successfully",
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user settings",
+      error: error.message
+    });
+  }
+});
+
+// System stats endpoint for real-time monitoring
+router.get("/admin/system-stats", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const systemStats = {
+      server: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        nodeVersion: process.version,
+        platform: process.platform,
+        cpu: process.cpuUsage()
+      },
+      database: {
+        connectionCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      },
+      application: {
+        timestamp: new Date().toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    };
+
+    // Get recent activity
+    const activityQuery = `
+      SELECT 
+        COUNT(*) as messages_last_hour,
+        COUNT(DISTINCT username) as active_users_last_hour
+      FROM ai_history_chatapi 
+      WHERE created_at >= NOW() - INTERVAL '1 hour'
+    `;
+
+    const activityResult = await pool.query(activityQuery);
+    systemStats.activity = activityResult.rows[0];
+
+    res.json({
+      success: true,
+      stats: systemStats
+    });
+
+  } catch (error) {
+    console.error("Error fetching system stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch system statistics",
+      error: error.message
+    });
+  }
+});
+
+// Enhanced chat view endpoint with full conversation
+router.get("/admin/chats/:chatId", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+  try {
+    const { chatId } = req.params;
+
+    const chatQuery = `
+      SELECT 
+        a.*,
+        u.ai_model,
+        u.daily_message_limit,
+        l.message_count as daily_messages
+      FROM ai_history_chatapi a
+      LEFT JOIN user_settings_chatapi u ON a.username = u.username
+      LEFT JOIN user_message_logs_chatapi l ON a.username = l.username AND l.date = DATE(a.created_at)
+      WHERE a.id = $1
+    `;
+
+    const result = await pool.query(chatQuery, [chatId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).render("admin/error.handlebars", {
+        page: "Chat Not Found",
+        error: "Chat not found",
+        message: "The requested chat could not be found.",
+        currentUser: req.session.user.username
+      });
+    }
+
+    const chat = result.rows[0];
+    
+    res.render("admin/chat-detail.handlebars", {
+      page: "Chat Details",
+      chat,
+      currentUser: req.session.user.username
+    });
+
+  } catch (error) {
+    console.error("Error viewing chat:", error);
+    return res.status(500).render("admin/error.handlebars", {
+      page: "Error",
+      error: "Failed to load chat",
+      message: "An error occurred while loading the chat details.",
+      currentUser: req.session.user.username
     });
   }
 });
