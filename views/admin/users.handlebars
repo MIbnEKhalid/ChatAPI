@@ -1,204 +1,1673 @@
 <head>
   <link rel="stylesheet" href="/Assets/css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <div class="admin-container">
-  <h1>User Management</h1>
-  
-  <div class="admin-actions">
-    <a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
-    
-    <form class="search-form" method="GET" action="/admin/users">
-      <input type="text" name="search" placeholder="Search users..." value="{{searchQuery}}">
-      <select name="model">
-        <option value="">All Models</option>
-        {{#each availableModels}}
-        <option value="{{this}}" {{#if (eq this ../selectedModel)}}selected{{/if}}>{{this}}</option>
-        {{/each}}
-      </select>
-      <button type="submit">Search</button>
-      <a href="/admin/users" class="clear-filter">Reset</a>
-    </form>
-  </div>
-  
-  <div class="user-list">
-    <div class="user-list-header">
-      <div class="header-item sortable {{#if (eq sortField 'u.username')}}sorted{{/if}}">
-        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.username&order={{#if (and (eq sortField 'u.username') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
-          Username
-          {{#if (eq sortField 'u.username')}}
-            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
-          {{/if}}
-        </a>
+  <!-- Header Section -->
+  <div class="admin-header">
+    <div class="header-content">
+      <div class="header-title">
+        <h1 class="admin-title">
+          <i class="fas fa-users"></i>
+          User Management
+        </h1>
+        <p class="admin-subtitle">Manage user accounts, settings, and permissions</p>
       </div>
-      <div class="header-item">AI Model</div>
-      <div class="header-item sortable {{#if (eq sortField 'u.daily_message_limit')}}sorted{{/if}}">
-        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.daily_message_limit&order={{#if (and (eq sortField 'u.daily_message_limit') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
-          Daily Limit
-          {{#if (eq sortField 'u.daily_message_limit')}}
-            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
-          {{/if}}
+      <div class="header-actions">
+        <a href="/admin/dashboard" class="btn btn-outline back-link">
+          <i class="fas fa-arrow-left"></i>
+          Back to Dashboard
         </a>
-      </div>
-      <div class="header-item sortable {{#if (eq sortField 'chat_count')}}sorted{{/if}}">
-        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=chat_count&order={{#if (and (eq sortField 'chat_count') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
-          Chats
-          {{#if (eq sortField 'chat_count')}}
-            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
-          {{/if}}
-        </a>
-      </div>
-      <div class="header-item sortable {{#if (eq sortField 'total_messages')}}sorted{{/if}}">
-        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=total_messages&order={{#if (and (eq sortField 'total_messages') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
-          Messages
-          {{#if (eq sortField 'total_messages')}}
-            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
-          {{/if}}
-        </a>
-      </div>
-      <div class="header-item sortable {{#if (eq sortField 'u.created_at')}}sorted{{/if}}">
-        <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.created_at&order={{#if (and (eq sortField 'u.created_at') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}">
-          Joined
-          {{#if (eq sortField 'u.created_at')}}
-            {{#if (eq sortOrder 'DESC')}}↓{{else}}↑{{/if}}
-          {{/if}}
-        </a>
-      </div>
-      <div class="header-item">Actions</div>
-    </div>
-    
-    {{#each users}}
-    <div class="user-row">
-      <div class="user-cell">{{this.username}}</div>
-      <div class="user-cell">{{this.ai_model}}</div>
-      <div class="user-cell">{{this.daily_message_limit}}</div>
-      <div class="user-cell">{{this.chat_count}}</div>
-      <div class="user-cell">{{this.total_messages}}</div>
-      <div class="user-cell">{{formatDate this.settings_created}}</div>
-      <div class="user-cell actions">
-        <button class="edit-btn" data-username="{{this.username}}" 
-          data-model="{{this.ai_model}}" 
-          data-limit="{{this.daily_message_limit}}"
-          data-temp="{{this.temperature}}">
-          Edit
-        </button>
-        <a href="/admin/chats?username={{this.username}}" class="chats-link">Chats</a>
       </div>
     </div>
-    {{/each}}
   </div>
-  
-  <div class="pagination">
-    {{#if (gt pagination.currentPage 1)}}
-      <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
-        class="page-link">Previous</a>
-    {{/if}}
-    
-    {{#each (range 1 pagination.totalPages)}}
-      <a href="?page={{this}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
-        class="page-link {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
-    {{/each}}
-    
-    {{#if (lt pagination.currentPage pagination.totalPages)}}
-      <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
-        class="page-link">Next</a>
-    {{/if}}
+
+  <!-- Quick Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{pagination.totalCount}}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="activeUsers">-</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="uniqueModels">-</div>
+        <div class="stat-label">AI Models</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="selectedUsers">0</div>
+        <div class="stat-label">Selected</div>
+      </div>
+    </div>
   </div>
-  
-  <!-- Edit User Modal -->
-  <div id="editUserModal" class="modal">
-    <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <h2>Edit User Settings</h2>
-      <form id="editUserForm">
-        <input type="hidden" id="editUsername" name="username">
-        
-        <div class="form-group">
-          <label for="dailyLimit">Daily Message Limit</label>
-          <input type="number" id="dailyLimit" name="dailyLimit" min="1" class="form-control">
+
+  <!-- Search and Filter Section -->
+  <div class="control-panel">
+    <div class="control-section filters">
+      <h3><i class="fas fa-search"></i> Search & Filter</h3>
+      <form class="search-form" method="GET" action="/admin/users">
+        <div class="search-grid">
+          <div class="search-field">
+            <label for="searchInput">Search Users</label>
+            <div class="input-group">
+              <input type="text" id="searchInput" name="search" placeholder="Username, email, or ID..." value="{{searchQuery}}" class="form-control">
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+          
+          <div class="search-field">
+            <label for="modelFilter">AI Model</label>
+            <select id="modelFilter" name="model" class="form-control">
+              <option value="">All Models</option>
+              {{#each availableModels}}
+              <option value="{{this}}" {{#if (eq this ../selectedModel)}}selected{{/if}}>{{this}}</option>
+              {{/each}}
+            </select>
+          </div>
+          
+          <div class="search-field">
+            <label for="sortBy">Sort By</label>
+            <select id="sortBy" name="sort" class="form-control">
+              <option value="u.created_at" {{#if (eq sortField 'u.created_at')}}selected{{/if}}>Join Date</option>
+              <option value="u.username" {{#if (eq sortField 'u.username')}}selected{{/if}}>Username</option>
+              <option value="total_messages" {{#if (eq sortField 'total_messages')}}selected{{/if}}>Total Messages</option>
+              <option value="chat_count" {{#if (eq sortField 'chat_count')}}selected{{/if}}>Chat Count</option>
+              <option value="u.daily_message_limit" {{#if (eq sortField 'u.daily_message_limit')}}selected{{/if}}>Daily Limit</option>
+            </select>
+          </div>
+          
+          <div class="search-field">
+            <label for="orderBy">Order</label>
+            <select id="orderBy" name="order" class="form-control">
+              <option value="desc" {{#if (eq sortOrder 'DESC')}}selected{{/if}}>Descending</option>
+              <option value="asc" {{#if (eq sortOrder 'ASC')}}selected{{/if}}>Ascending</option>
+            </select>
+          </div>
         </div>
         
-        <div class="form-group">
-          <label for="aiModel">AI Model</label>
-          <select id="aiModel" name="aiModel" class="form-control">
-            {{#each availableModels}}
-            <option value="{{this}}">{{this}}</option>
-            {{/each}}
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="temperature">Temperature (0-2)</label>
-          <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" class="form-control">
-        </div>
-        
-        <div class="form-actions">
-          <button type="submit" class="submit-btn">Save Changes</button>
-          <button type="button" class="cancel-btn">Cancel</button>
+        <div class="search-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Apply Filters
+          </button>
+          <a href="/admin/users" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Clear
+          </a>
         </div>
       </form>
     </div>
+    
+    <!-- Bulk Actions -->
+    <div class="control-section actions">
+      <h3><i class="fas fa-tasks"></i> Bulk Actions</h3>
+      <div class="bulk-controls">
+        <button class="btn btn-outline" id="bulkEditBtn" disabled>
+          <i class="fas fa-edit"></i> Edit Selected
+        </button>
+        <button class="btn btn-outline" id="exportUsersBtn">
+          <i class="fas fa-download"></i> Export Data
+        </button>
+        <button class="btn btn-danger" id="bulkDeleteBtn" disabled>
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="data-table-container">
+    <div class="table-header">
+      <h3><i class="fas fa-list"></i> Users Overview</h3>
+      <div class="table-controls">
+        <select id="pageSizeSelect" onchange="changePageSize(this.value)">
+          <option value="10" {{#if (eq pagination.pageSize 10)}}selected{{/if}}>10 per page</option>
+          <option value="20" {{#if (eq pagination.pageSize 20)}}selected{{/if}}>20 per page</option>
+          <option value="50" {{#if (eq pagination.pageSize 50)}}selected{{/if}}>50 per page</option>
+          <option value="100" {{#if (eq pagination.pageSize 100)}}selected{{/if}}>100 per page</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="select-col">
+              <label class="checkbox-container">
+                <input type="checkbox" id="selectAllUsers">
+                <span class="checkmark"></span>
+              </label>
+            </th>
+            <th class="sortable {{#if (eq sortField 'u.username')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.username&order={{#if (and (eq sortField 'u.username') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+                Username
+                {{#if (eq sortField 'u.username')}}
+                  <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
+                {{else}}
+                  <i class="fas fa-sort"></i>
+                {{/if}}
+              </a>
+            </th>
+            <th>Model</th>
+            <th class="sortable {{#if (eq sortField 'u.daily_message_limit')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.daily_message_limit&order={{#if (and (eq sortField 'u.daily_message_limit') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+                Daily Limit
+                {{#if (eq sortField 'u.daily_message_limit')}}
+                  <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
+                {{else}}
+                  <i class="fas fa-sort"></i>
+                {{/if}}
+              </a>
+            </th>
+            <th>Temp</th>
+            <th class="sortable {{#if (eq sortField 'chat_count')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=chat_count&order={{#if (and (eq sortField 'chat_count') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+                Chats
+                {{#if (eq sortField 'chat_count')}}
+                  <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
+                {{else}}
+                  <i class="fas fa-sort"></i>
+                {{/if}}
+              </a>
+            </th>
+            <th class="sortable {{#if (eq sortField 'total_messages')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=total_messages&order={{#if (and (eq sortField 'total_messages') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+                Messages
+                {{#if (eq sortField 'total_messages')}}
+                  <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
+                {{else}}
+                  <i class="fas fa-sort"></i>
+                {{/if}}
+              </a>
+            </th>
+            <th class="sortable {{#if (eq sortField 'u.created_at')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.created_at&order={{#if (and (eq sortField 'u.created_at') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+                Joined
+                {{#if (eq sortField 'u.created_at')}}
+                  <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
+                {{else}}
+                  <i class="fas fa-sort"></i>
+                {{/if}}
+              </a>
+            </th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each users}}
+          <tr class="user-row" data-username="{{this.username}}">
+            <td class="select-col">
+              <label class="checkbox-container">
+                <input type="checkbox" class="user-checkbox" value="{{this.username}}">
+                <span class="checkmark"></span>
+              </label>
+            </td>
+            <td class="user-cell">
+              <div class="user-info">
+                <div class="user-name">{{this.username}}</div>
+                <div class="user-status">
+                  <span class="status-badge {{#if (gt this.total_messages 0)}}active{{else}}inactive{{/if}}">
+                    {{#if (gt this.total_messages 0)}}Active{{else}}Inactive{{/if}}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="model-badge">{{this.ai_model}}</span>
+            </td>
+            <td>
+              <span class="limit-badge">{{this.daily_message_limit}}</span>
+            </td>
+            <td>
+              <span class="temp-badge">{{this.temperature}}°</span>
+            </td>
+            <td>
+              <span class="count-badge">{{this.chat_count}}</span>
+            </td>
+            <td>
+              <span class="count-badge">{{this.total_messages}}</span>
+            </td>
+            <td>
+              <span class="date-text">{{formatDate this.settings_created}}</span>
+            </td>
+            <td class="actions-col">
+              <div class="action-buttons">
+                <button class="action-btn edit" onclick="editUser('{{this.username}}', '{{this.ai_model}}', {{this.daily_message_limit}}, {{this.temperature}})" title="Edit User">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <a href="/admin/chats?username={{this.username}}" class="action-btn view" title="View Chats">
+                  <i class="fas fa-comments"></i>
+                </a>
+                <button class="action-btn delete" onclick="deleteUser('{{this.username}}')" title="Delete User">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-wrapper">
+    <div class="pagination-info">
+      Showing {{add (multiply (subtract pagination.currentPage 1) pagination.pageSize) 1}} to 
+      {{#if (lt (multiply pagination.currentPage pagination.pageSize) pagination.totalCount)}}
+        {{multiply pagination.currentPage pagination.pageSize}}
+      {{else}}
+        {{pagination.totalCount}}
+      {{/if}}
+      of {{pagination.totalCount}} users
+    </div>
+    <div class="pagination">
+      {{#if (gt pagination.currentPage 1)}}
+        <a href="?page=1&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+          class="page-btn">
+          <i class="fas fa-angle-double-left"></i>
+        </a>
+        <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+          class="page-btn">
+          <i class="fas fa-angle-left"></i>
+        </a>
+      {{/if}}
+      
+      {{#each (range 1 pagination.totalPages)}}
+        {{#if (and (gte this (subtract ../pagination.currentPage 2)) (lte this (add ../pagination.currentPage 2)))}}
+          <a href="?page={{this}}&pageSize={{../pagination.pageSize}}&search={{../searchQuery}}&model={{../selectedModel}}&sort={{../sortField}}&order={{../sortOrder}}" 
+            class="page-btn {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
+        {{/if}}
+      {{/each}}
+      
+      {{#if (lt pagination.currentPage pagination.totalPages)}}
+        <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+          class="page-btn">
+          <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{pagination.totalPages}}&pageSize={{pagination.pageSize}}&search={{searchQuery}}&model={{selectedModel}}&sort={{sortField}}&order={{sortOrder}}" 
+          class="page-btn">
+          <i class="fas fa-angle-double-right"></i>
+        </a>
+      {{/if}}
+    </div>
   </div>
 </div>
+  
+  <!-- Edit User Modal -->
+  <div class="modal" id="editUserModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-edit"></i> Edit User Settings</h3>
+        <button class="close-btn" onclick="closeModal('editUserModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editUserForm">
+          <input type="hidden" id="editUsername" name="username">
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="dailyLimit">Daily Message Limit</label>
+              <input type="number" id="dailyLimit" name="dailyLimit" min="1" max="1000" class="form-control">
+              <small class="form-help">Maximum messages per day (1-1000)</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="temperature">Temperature</label>
+              <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" class="form-control">
+              <small class="form-help">AI creativity level (0-2)</small>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="aiModel">AI Model</label>
+            <select id="aiModel" name="aiModel" class="form-control">
+              {{#each availableModels}}
+              <option value="{{this}}">{{this}}</option>
+              {{/each}}
+            </select>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Save Changes
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-<script>
-  // Handle edit button clicks
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const username = this.getAttribute('data-username');
-      const model = this.getAttribute('data-model');
-      const limit = this.getAttribute('data-limit');
-      const temp = this.getAttribute('data-temp');
-      
-      document.getElementById('editUsername').value = username;
-      document.getElementById('aiModel').value = model;
-      document.getElementById('dailyLimit').value = limit;
-      document.getElementById('temperature').value = temp;
-      
-      document.getElementById('editUserModal').style.display = 'block';
-    });
-  });
-  
-  // Close modal
-  document.querySelector('.close-modal').addEventListener('click', function() {
-    document.getElementById('editUserModal').style.display = 'none';
-  });
-  
-  document.querySelector('.cancel-btn').addEventListener('click', function() {
-    document.getElementById('editUserModal').style.display = 'none';
-  });
-  
-  // Handle form submission
-  document.getElementById('editUserForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = {
-      username: document.getElementById('editUsername').value,
-      dailyLimit: document.getElementById('dailyLimit').value,
-      aiModel: document.getElementById('aiModel').value,
-      temperature: document.getElementById('temperature').value
-    };
-    
-    fetch('/admin/settings/update', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert('User updated successfully');
-        document.getElementById('editUserModal').style.display = 'none';
-        location.reload(); // Refresh to see changes
+  <!-- Bulk Edit Modal -->
+  <div class="modal" id="bulkEditModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-users-cog"></i> Bulk Edit Users</h3>
+        <button class="close-btn" onclick="closeModal('bulkEditModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="selected-users-preview" id="selectedUsersPreview"></div>
+        
+        <form id="bulkEditForm">
+          <div class="bulk-options">
+            <div class="option-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="updateLimitBulk">
+                <span>Update Daily Limit</span>
+              </label>
+              <input type="number" id="bulkDailyLimit" min="1" max="1000" class="form-control" disabled>
+            </div>
+            
+            <div class="option-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="updateModelBulk">
+                <span>Change AI Model</span>
+              </label>
+              <select id="bulkAiModel" class="form-control" disabled>
+                {{#each availableModels}}
+                <option value="{{this}}">{{this}}</option>
+                {{/each}}
+              </select>
+            </div>
+            
+            <div class="option-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="updateTempBulk">
+                <span>Update Temperature</span>
+              </label>
+              <input type="number" id="bulkTemperature" min="0" max="2" step="0.1" class="form-control" disabled>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Apply to Selected Users
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('bulkEditModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+        <button class="close-btn" onclick="closeModal('deleteModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="deleteContent"></div>
+        <div class="form-actions">
+          <button class="btn btn-danger" id="confirmDelete">
+            <i class="fas fa-trash"></i> Confirm Delete
+          </button>
+          <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-download"></i> Export Users</h3>
+        <button class="close-btn" onclick="closeModal('exportModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="export-options">
+          <div class="form-group">
+            <label>Export Format</label>
+            <select id="exportFormat" class="form-control">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Include Data</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="includeSettings" checked>
+                <span>User Settings</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="includeStats" checked>
+                <span>Usage Statistics</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="includeActivity">
+                <span>Activity Data</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button class="btn btn-primary" id="downloadUsers">
+              <i class="fas fa-download"></i> Download
+            </button>
+            <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  class UserManager {
+    constructor() {
+      this.selectedUsers = new Set();
+      this.currentEditUser = null;
+      this.init();
+    }
+
+    init() {
+      this.setupEventListeners();
+      this.calculateStats();
+      this.updateBulkActions();
+    }
+
+    setupEventListeners() {
+      // Select all checkbox
+      document.getElementById('selectAllUsers').addEventListener('change', (e) => {
+        this.selectAll(e.target.checked);
+      });
+
+      // Individual checkboxes
+      document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          this.toggleUser(e.target.value, e.target.checked);
+        });
+      });
+
+      // Bulk action buttons
+      document.getElementById('bulkEditBtn').addEventListener('click', () => {
+        this.openBulkEditModal();
+      });
+
+      document.getElementById('exportUsersBtn').addEventListener('click', () => {
+        this.openExportModal();
+      });
+
+      document.getElementById('bulkDeleteBtn').addEventListener('click', () => {
+        this.confirmBulkDelete();
+      });
+
+      // Form submissions
+      document.getElementById('editUserForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveUserEdit();
+      });
+
+      document.getElementById('bulkEditForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveBulkEdit();
+      });
+
+      document.getElementById('confirmDelete').addEventListener('click', () => {
+        this.executeDelete();
+      });
+
+      document.getElementById('downloadUsers').addEventListener('click', () => {
+        this.downloadExport();
+      });
+
+      // Bulk edit checkboxes
+      document.getElementById('updateLimitBulk').addEventListener('change', (e) => {
+        document.getElementById('bulkDailyLimit').disabled = !e.target.checked;
+      });
+
+      document.getElementById('updateModelBulk').addEventListener('change', (e) => {
+        document.getElementById('bulkAiModel').disabled = !e.target.checked;
+      });
+
+      document.getElementById('updateTempBulk').addEventListener('change', (e) => {
+        document.getElementById('bulkTemperature').disabled = !e.target.checked;
+      });
+    }
+
+    calculateStats() {
+      const users = document.querySelectorAll('.user-row');
+      let activeUsers = 0;
+      const models = new Set();
+
+      users.forEach(row => {
+        const statusBadge = row.querySelector('.status-badge');
+        if (statusBadge && statusBadge.classList.contains('active')) {
+          activeUsers++;
+        }
+        
+        const modelBadge = row.querySelector('.model-badge');
+        if (modelBadge) {
+          models.add(modelBadge.textContent.trim());
+        }
+      });
+
+      document.getElementById('activeUsers').textContent = activeUsers;
+      document.getElementById('uniqueModels').textContent = models.size;
+    }
+
+    selectAll(checked) {
+      document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+        checkbox.checked = checked;
+        this.toggleUser(checkbox.value, checked);
+      });
+    }
+
+    toggleUser(username, selected) {
+      if (selected) {
+        this.selectedUsers.add(username);
       } else {
-        alert('Error updating user: ' + data.message);
+        this.selectedUsers.delete(username);
       }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Failed to update user');
-    });
+      this.updateBulkActions();
+    }
+
+    updateBulkActions() {
+      const count = this.selectedUsers.size;
+      document.getElementById('selectedUsers').textContent = count;
+      
+      const bulkEditBtn = document.getElementById('bulkEditBtn');
+      const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+      
+      bulkEditBtn.disabled = count === 0;
+      bulkDeleteBtn.disabled = count === 0;
+    }
+
+    openBulkEditModal() {
+      if (this.selectedUsers.size === 0) {
+        alert('Please select users to edit');
+        return;
+      }
+
+      const preview = document.getElementById('selectedUsersPreview');
+      preview.innerHTML = `
+        <div class="selected-preview">
+          <h4>Selected Users (${this.selectedUsers.size}):</h4>
+          <div class="user-tags">
+            ${Array.from(this.selectedUsers).map(username => 
+              `<span class="user-tag">${username}</span>`
+            ).join('')}
+          </div>
+        </div>
+      `;
+
+      openModal('bulkEditModal');
+    }
+
+    openExportModal() {
+      openModal('exportModal');
+    }
+
+    confirmBulkDelete() {
+      if (this.selectedUsers.size === 0) {
+        alert('Please select users to delete');
+        return;
+      }
+
+      const content = document.getElementById('deleteContent');
+      content.innerHTML = `
+        <div class="delete-warning">
+          <p><strong>Warning:</strong> You are about to delete ${this.selectedUsers.size} user(s) and all their data.</p>
+          <p>This action cannot be undone.</p>
+          <div class="delete-list">
+            ${Array.from(this.selectedUsers).map(username => 
+              `<div class="delete-item">${username}</div>`
+            ).join('')}
+          </div>
+        </div>
+      `;
+
+      openModal('deleteModal');
+    }
+
+    async saveUserEdit() {
+      const form = document.getElementById('editUserForm');
+      const formData = new FormData(form);
+      const data = {
+        dailyLimit: parseInt(formData.get('dailyLimit')),
+        aiModel: formData.get('aiModel'),
+        temperature: parseFloat(formData.get('temperature'))
+      };
+
+      try {
+        const response = await fetch(`/admin/users/${this.currentEditUser}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification('User updated successfully', 'success');
+          closeModal('editUserModal');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (error) {
+        showNotification('Failed to update user', 'error');
+        console.error('Save failed:', error);
+      }
+    }
+
+    async saveBulkEdit() {
+      const updateLimit = document.getElementById('updateLimitBulk').checked;
+      const updateModel = document.getElementById('updateModelBulk').checked;
+      const updateTemp = document.getElementById('updateTempBulk').checked;
+
+      if (!updateLimit && !updateModel && !updateTemp) {
+        alert('Please select at least one option to update');
+        return;
+      }
+
+      const updates = {};
+      if (updateLimit) updates.dailyLimit = document.getElementById('bulkDailyLimit').value;
+      if (updateModel) updates.aiModel = document.getElementById('bulkAiModel').value;
+      if (updateTemp) updates.temperature = document.getElementById('bulkTemperature').value;
+
+      try {
+        const promises = Array.from(this.selectedUsers).map(username => 
+          fetch(`/admin/users/${username}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+          })
+        );
+
+        const results = await Promise.all(promises);
+        const failures = results.filter(r => !r.ok);
+
+        if (failures.length === 0) {
+          showNotification(`Successfully updated ${this.selectedUsers.size} users`, 'success');
+          closeModal('bulkEditModal');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showNotification(`Updated ${results.length - failures.length} users. ${failures.length} failed.`, 'warning');
+        }
+      } catch (error) {
+        showNotification('Bulk edit failed', 'error');
+        console.error('Bulk edit failed:', error);
+      }
+    }
+
+    async executeDelete() {
+      // This would implement the actual delete functionality
+      showNotification('Delete functionality would be implemented here', 'info');
+      closeModal('deleteModal');
+    }
+
+    async downloadExport() {
+      const format = document.getElementById('exportFormat').value;
+      const includeSettings = document.getElementById('includeSettings').checked;
+      const includeStats = document.getElementById('includeStats').checked;
+      const includeActivity = document.getElementById('includeActivity').checked;
+
+      const params = new URLSearchParams({
+        format,
+        includeSettings,
+        includeStats,
+        includeActivity
+      });
+
+      try {
+        const response = await fetch(`/admin/export/users?${params}`);
+        
+        if (!response.ok) {
+          throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_export.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        showNotification('Export completed successfully', 'success');
+        closeModal('exportModal');
+      } catch (error) {
+        showNotification('Export failed', 'error');
+        console.error('Export failed:', error);
+      }
+    }
+  }
+
+  // Global functions
+  function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+  }
+
+  function showNotification(message, type = 'info') {
+    // Simple notification system
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      opacity: 0;
+      transform: translateX(100px);
+      transition: all 0.3s ease;
+    `;
+
+    const colors = {
+      success: '#10b981',
+      error: '#ef4444',
+      warning: '#f59e0b',
+      info: '#3b82f6'
+    };
+
+    notification.style.backgroundColor = colors[type] || colors.info;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(100px)';
+      setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+  }
+
+  function editUser(username, model, limit, temperature) {
+    window.userManager.currentEditUser = username;
+    
+    document.getElementById('editUsername').value = username;
+    document.getElementById('dailyLimit').value = limit;
+    document.getElementById('aiModel').value = model;
+    document.getElementById('temperature').value = temperature;
+    
+    openModal('editUserModal');
+  }
+
+  function deleteUser(username) {
+    window.userManager.selectedUsers.clear();
+    window.userManager.selectedUsers.add(username);
+    window.userManager.confirmBulkDelete();
+  }
+
+  function changePageSize(pageSize) {
+    const url = new URL(window.location);
+    url.searchParams.set('pageSize', pageSize);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  }
+
+  // Initialize when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    window.userManager = new UserManager();
   });
-</script>
+  </script>
+
+  <style>
+  /* Enhanced User Management Styles */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-item {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    flex-shrink: 0;
+  }
+
+  .stat-content {
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .control-panel {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .control-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+  }
+
+  .control-section:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .control-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f3f4f6;
+  }
+
+  .control-section h3 i {
+    color: #4f46e5;
+    font-size: 1.2rem;
+  }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .search-field label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .form-control:hover {
+    border-color: #d1d5db;
+  }
+
+  .input-group {
+    position: relative;
+  }
+
+  .input-group i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .search-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+  }
+
+  .btn-primary:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f8fafc;
+    color: #374151;
+    border-color: #e5e7eb;
+  }
+
+  .btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #d1d5db;
+  }
+
+  .btn-outline {
+    background: white;
+    color: #4f46e5;
+    border-color: #4f46e5;
+  }
+
+  .btn-outline:hover {
+    background: #4f46e5;
+    color: white;
+  }
+
+  .btn-outline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-danger {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+  }
+
+  .btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .bulk-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .data-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .table-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .table-header h3 i {
+    color: #4f46e5;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .data-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .data-table th.sortable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .data-table th.sortable:hover {
+    background: #f3f4f6;
+  }
+
+  .data-table th.sortable a {
+    color: #374151;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .data-table th.sortable.active a {
+    color: #4f46e5;
+  }
+
+  .data-table tbody tr {
+    transition: all 0.2s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .select-col {
+    width: 50px;
+    text-align: center;
+  }
+
+  .checkbox-container {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .checkbox-container input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+  }
+
+  .checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .checkbox-container input[type="checkbox"]:checked + .checkmark {
+    background: #4f46e5;
+    border-color: #4f46e5;
+  }
+
+  .checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .user-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1rem;
+  }
+
+  .user-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .status-badge.active {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #10b981;
+  }
+
+  .status-badge.inactive {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+  }
+
+  .model-badge {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  }
+
+  .limit-badge {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #f59e0b;
+  }
+
+  .temp-badge {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+    color: #9a3412;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #f97316;
+  }
+
+  .count-badge {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #22c55e;
+  }
+
+  .date-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .actions-col {
+    width: 140px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    text-decoration: none;
+  }
+
+  .action-btn:hover {
+    background: #f3f4f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .action-btn.edit:hover {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+  }
+
+  .action-btn.view:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+  }
+
+  .action-btn.delete:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+
+  .pagination-info {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .pagination {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .page-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 6px;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .page-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+  }
+
+  .page-btn.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  .modal-header h3 i {
+    color: #4f46e5;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .form-help {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .selected-preview h4 {
+    margin: 0 0 1rem 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .user-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .user-tag {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .delete-warning p {
+    margin: 0 0 1rem 0;
+    color: #374151;
+  }
+
+  .delete-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem;
+    background: #f8fafc;
+  }
+
+  .delete-item {
+    padding: 0.5rem;
+    color: #ef4444;
+    font-weight: 500;
+    border-bottom: 1px solid #fecaca;
+  }
+
+  .delete-item:last-child {
+    border-bottom: none;
+  }
+
+  .export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .option-group label {
+    font-weight: 500;
+    color: #1f2937;
+  }
+
+  .bulk-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+  }
+
+  .notification.success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  }
+
+  .notification.error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  }
+
+  .notification.warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  }
+
+  .notification.info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  }
+
+  @media (max-width: 1024px) {
+    .control-panel {
+      grid-template-columns: 1fr;
+    }
+    
+    .stats-bar {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .control-section {
+      padding: 1.5rem;
+    }
+    
+    .search-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .search-actions {
+      flex-direction: column;
+    }
+    
+    .bulk-controls {
+      flex-direction: row;
+      gap: 0.5rem;
+    }
+    
+    .pagination-wrapper {
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .stats-bar {
+      grid-template-columns: 1fr;
+    }
+    
+    .stat-item {
+      padding: 1.5rem;
+    }
+  }
+  </style>
