@@ -1632,7 +1632,7 @@
                     <div class="settings-group">
                         <label>Account Information</label>
                         <div class="account-info">
-                            <p>User: <span id="headerProfileUserName">{{UserName}}</span></p>
+                            <p>User: <span id="headerProfileusername">{{username}}</span></p>
                         </div>
                     </div>
                     <div class="settings-group">
@@ -2261,7 +2261,7 @@
 
             // Add welcome message with animation
             setTimeout(() => {
-                addMessage("👋 Hello {{UserName}}! Welcome to your AI Assistant. I'm here to help you with anything you need. How can I assist you today?", 'ai', 'welcome');
+                addMessage("👋 Hello {{username}}! Welcome to your AI Assistant. I'm here to help you with anything you need. How can I assist you today?", 'ai', 'welcome');
             }, 500);
         }
 

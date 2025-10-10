@@ -93,7 +93,7 @@
             <label for="sortBy">Sort By</label>
             <select id="sortBy" name="sort" class="form-control">
               <option value="u.created_at" {{#if (eq sortField 'u.created_at')}}selected{{/if}}>Join Date</option>
-              <option value="u.UserName" {{#if (eq sortField 'u.UserName')}}selected{{/if}}>Username</option>
+              <option value="u.username" {{#if (eq sortField 'u.username')}}selected{{/if}}>Username</option>
               <option value="total_messages" {{#if (eq sortField 'total_messages')}}selected{{/if}}>Total Messages</option>
               <option value="chat_count" {{#if (eq sortField 'chat_count')}}selected{{/if}}>Chat Count</option>
               <option value="u.daily_message_limit" {{#if (eq sortField 'u.daily_message_limit')}}selected{{/if}}>Daily Limit</option>
@@ -161,10 +161,10 @@
                 <span class="checkmark"></span>
               </label>
             </th>
-            <th class="sortable {{#if (eq sortField 'u.UserName')}}active{{/if}}">
-              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.UserName&order={{#if (and (eq sortField 'u.UserName') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
+            <th class="sortable {{#if (eq sortField 'u.username')}}active{{/if}}">
+              <a href="?search={{searchQuery}}&model={{selectedModel}}&sort=u.username&order={{#if (and (eq sortField 'u.username') (eq sortOrder 'DESC'))}}asc{{else}}desc{{/if}}&pageSize={{pagination.pageSize}}">
                 Username
-                {{#if (eq sortField 'u.UserName')}}
+                {{#if (eq sortField 'u.username')}}
                   <i class="fas fa-sort-{{#if (eq sortOrder 'DESC')}}down{{else}}up{{/if}}"></i>
                 {{else}}
                   <i class="fas fa-sort"></i>
@@ -218,16 +218,16 @@
         </thead>
         <tbody>
           {{#each users}}
-          <tr class="user-row" data-UserName="{{this.UserName}}">
+          <tr class="user-row" data-username="{{this.username}}">
             <td class="select-col">
               <label class="checkbox-container">
-                <input type="checkbox" class="user-checkbox" value="{{this.UserName}}">
+                <input type="checkbox" class="user-checkbox" value="{{this.username}}">
                 <span class="checkmark"></span>
               </label>
             </td>
             <td class="user-cell">
               <div class="user-info">
-                <div class="user-name">{{this.UserName}}</div>
+                <div class="user-name">{{this.username}}</div>
                 <div class="user-status">
                   <span class="status-badge {{#if (gt this.total_messages 0)}}active{{else}}inactive{{/if}}">
                     {{#if (gt this.total_messages 0)}}Active{{else}}Inactive{{/if}}
@@ -255,13 +255,13 @@
             </td>
             <td class="actions-col">
               <div class="action-buttons">
-                <button class="action-btn edit" onclick="editUser('{{this.UserName}}', '{{this.ai_model}}', {{this.daily_message_limit}}, {{this.temperature}})" title="Edit User">
+                <button class="action-btn edit" onclick="editUser('{{this.username}}', '{{this.ai_model}}', {{this.daily_message_limit}}, {{this.temperature}})" title="Edit User">
                   <i class="fas fa-edit"></i>
                 </button>
-                <a href="/admin/chats?UserName={{this.UserName}}" class="action-btn view" title="View Chats">
+                <a href="/admin/chats?username={{this.username}}" class="action-btn view" title="View Chats">
                   <i class="fas fa-comments"></i>
                 </a>
-                <button class="action-btn delete" onclick="deleteUser('{{this.UserName}}')" title="Delete User">
+                <button class="action-btn delete" onclick="deleteUser('{{this.username}}')" title="Delete User">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -328,7 +328,7 @@
       </div>
       <div class="modal-body">
         <form id="editUserForm">
-          <input type="hidden" id="editUsername" name="UserName">
+          <input type="hidden" id="editUsername" name="username">
           
           <div class="form-grid">
             <div class="form-group">
@@ -588,11 +588,11 @@
       });
     }
 
-    toggleUser(UserName, selected) {
+    toggleUser(username, selected) {
       if (selected) {
-        this.selectedUsers.add(UserName);
+        this.selectedUsers.add(username);
       } else {
-        this.selectedUsers.delete(UserName);
+        this.selectedUsers.delete(username);
       }
       this.updateBulkActions();
     }
@@ -619,8 +619,8 @@
         <div class="selected-preview">
           <h4>Selected Users (${this.selectedUsers.size}):</h4>
           <div class="user-tags">
-            ${Array.from(this.selectedUsers).map(UserName => 
-              `<span class="user-tag">${UserName}</span>`
+            ${Array.from(this.selectedUsers).map(username => 
+              `<span class="user-tag">${username}</span>`
             ).join('')}
           </div>
         </div>
@@ -645,8 +645,8 @@
           <p><strong>Warning:</strong> You are about to delete ${this.selectedUsers.size} user(s) and all their data.</p>
           <p>This action cannot be undone.</p>
           <div class="delete-list">
-            ${Array.from(this.selectedUsers).map(UserName => 
-              `<div class="delete-item">${UserName}</div>`
+            ${Array.from(this.selectedUsers).map(username => 
+              `<div class="delete-item">${username}</div>`
             ).join('')}
           </div>
         </div>
@@ -701,8 +701,8 @@
       if (updateTemp) updates.temperature = document.getElementById('bulkTemperature').value;
 
       try {
-        const promises = Array.from(this.selectedUsers).map(UserName => 
-          fetch(`/admin/users/${UserName}`, {
+        const promises = Array.from(this.selectedUsers).map(username => 
+          fetch(`/admin/users/${username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
@@ -820,10 +820,10 @@
     }, 3000);
   }
 
-  function editUser(UserName, model, limit, temperature) {
-    window.userManager.currentEditUser = UserName;
+  function editUser(username, model, limit, temperature) {
+    window.userManager.currentEditUser = username;
     
-    document.getElementById('editUsername').value = UserName;
+    document.getElementById('editUsername').value = username;
     document.getElementById('dailyLimit').value = limit;
     document.getElementById('aiModel').value = model;
     document.getElementById('temperature').value = temperature;
@@ -831,9 +831,9 @@
     openModal('editUserModal');
   }
 
-  function deleteUser(UserName) {
+  function deleteUser(username) {
     window.userManager.selectedUsers.clear();
-    window.userManager.selectedUsers.add(UserName);
+    window.userManager.selectedUsers.add(username);
     window.userManager.confirmBulkDelete();
   }
 

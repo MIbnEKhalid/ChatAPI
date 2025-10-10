@@ -72,8 +72,8 @@
       <form class="search-form" method="GET" action="/admin/chats">
         <div class="search-grid">
           <div class="search-field">
-            <label for="UserNameFilter">Username</label>
-            <input type="text" id="UserNameFilter" name="UserName" placeholder="Filter by UserName" value="{{UserNameFilter}}" class="form-control">
+            <label for="usernameFilter">Username</label>
+            <input type="text" id="usernameFilter" name="username" placeholder="Filter by username" value="{{usernameFilter}}" class="form-control">
           </div>
 
           <div class="search-field">
@@ -210,7 +210,7 @@
             </td>
             <td>
               <div class="user-info">
-                <span class="user-name">{{this.UserName}}</span>
+                <span class="user-name">{{this.username}}</span>
               </div>
             </td>
             <td>
@@ -267,7 +267,7 @@
           <div class="chat-card-body">
             <div class="chat-card-user">
               <i class="fas fa-user"></i>
-              <span>{{this.UserName}}</span>
+              <span>{{this.username}}</span>
             </div>
             <div class="chat-card-meta">
               <span class="model-badge">{{this.ai_model}}</span>
@@ -310,11 +310,11 @@
     </div>
     <div class="pagination">
       {{#if (gt pagination.currentPage 1)}}
-        <a href="?page=1&pageSize={{pagination.pageSize}}&UserName={{UserNameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
+        <a href="?page=1&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
           class="page-btn">
           <i class="fas fa-angle-double-left"></i>
         </a>
-        <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&UserName={{UserNameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
+        <a href="?page={{subtract pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
           class="page-btn">
           <i class="fas fa-angle-left"></i>
         </a>
@@ -322,17 +322,17 @@
       
       {{#each (range 1 pagination.totalPages)}}
         {{#if (and (gte this (subtract ../pagination.currentPage 2)) (lte this (add ../pagination.currentPage 2)))}}
-          <a href="?page={{this}}&pageSize={{../pagination.pageSize}}&UserName={{../UserNameFilter}}&model={{../selectedModel}}&dateRange={{../selectedDateRange}}&startDate={{../startDate}}&endDate={{../endDate}}&search={{../searchQuery}}" 
+          <a href="?page={{this}}&pageSize={{../pagination.pageSize}}&username={{../usernameFilter}}&model={{../selectedModel}}&dateRange={{../selectedDateRange}}&startDate={{../startDate}}&endDate={{../endDate}}&search={{../searchQuery}}" 
             class="page-btn {{#if (eq this ../pagination.currentPage)}}active{{/if}}">{{this}}</a>
         {{/if}}
       {{/each}}
       
       {{#if (lt pagination.currentPage pagination.totalPages)}}
-        <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&UserName={{UserNameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
+        <a href="?page={{add pagination.currentPage 1}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
           class="page-btn">
           <i class="fas fa-angle-right"></i>
         </a>
-        <a href="?page={{pagination.totalPages}}&pageSize={{pagination.pageSize}}&UserName={{UserNameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
+        <a href="?page={{pagination.totalPages}}&pageSize={{pagination.pageSize}}&username={{usernameFilter}}&model={{selectedModel}}&dateRange={{selectedDateRange}}&startDate={{startDate}}&endDate={{endDate}}&search={{searchQuery}}" 
           class="page-btn">
           <i class="fas fa-angle-double-right"></i>
         </a>
@@ -537,7 +537,7 @@ class ChatManager {
 
     const totalMessages = this.chatData.reduce((sum, chat) => sum + (chat.message_count || 0), 0);
     const avgMessages = Math.round(totalMessages / this.chatData.length);
-    const uniqueUsers = new Set(this.chatData.map(chat => chat.UserName)).size;
+    const uniqueUsers = new Set(this.chatData.map(chat => chat.username)).size;
 
     document.getElementById('avgMessages').textContent = avgMessages;
     document.getElementById('uniqueUsers').textContent = uniqueUsers;

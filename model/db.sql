@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS ai_history_chatapi (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
     temperature FLOAT DEFAULT 1.0,
-    "UserName" VARCHAR(50) REFERENCES "Users"("UserName") ON DELETE CASCADE
+    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_username ON ai_history_chatapi("UserName");
+CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_username ON ai_history_chatapi(username);
 CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_id ON ai_history_chatapi(id);
 CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_created_at ON ai_history_chatapi(created_at);
 CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_conversation_id ON ai_history_chatapi(conversation_id);
@@ -21,7 +21,7 @@ WHERE updated_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS user_settings_chatapi (
     id SERIAL PRIMARY KEY,
-    "UserName" VARCHAR(50) REFERENCES "Users"("UserName") ON DELETE CASCADE,
+    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE,
     theme VARCHAR(20) DEFAULT 'dark',
     font_size INTEGER DEFAULT 16,
     ai_model VARCHAR(50) DEFAULT 'default',
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS user_settings_chatapi (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_settings_chatapi_username ON user_settings_chatapi("UserName");
+CREATE INDEX IF NOT EXISTS idx_user_settings_chatapi_username ON user_settings_chatapi(username);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -58,9 +58,9 @@ $$;
 
 CREATE TABLE IF NOT EXISTS user_message_logs_chatapi (
     id SERIAL PRIMARY KEY,
-    "UserName" VARCHAR(50) REFERENCES "Users"("UserName") ON DELETE CASCADE,
+    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE,
     message_count INTEGER DEFAULT 0,
     date DATE DEFAULT CURRENT_DATE,
-    CONSTRAINT unique_user_date UNIQUE ("UserName", date)
+    CONSTRAINT unique_user_date UNIQUE (username, date)
 );
-CREATE INDEX IF NOT EXISTS idx_user_message_logs_chatapi_username_date ON user_message_logs_chatapi("UserName", date);
+CREATE INDEX IF NOT EXISTS idx_user_message_logs_chatapi_username_date ON user_message_logs_chatapi(username, date);

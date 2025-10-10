@@ -14,16 +14,16 @@ export const checkMessageLimit = async (req, res, next) => {
   const startTime = process.hrtime();
 
   try {
-    const { username: UserName, role } = req.session.user;
+    const { username: username, role } = req.session.user;
 
-    if (!UserName || !role) {
-      console.warn('[checkMessageLimit] Missing UserName or role in session');
+    if (!username || !role) {
+      console.warn('[checkMessageLimit] Missing username or role in session');
       return res.status(401).json({ message: "Unauthorized - missing user information" });
     }
 
     // SuperAdmin bypass
     if (role === "SuperAdmin") {
-      console.log(`[checkMessageLimit] SuperAdmin ${UserName} bypassed message limit check`);
+      console.log(`[checkMessageLimit] SuperAdmin ${username} bypassed message limit check`);
       return next();
     }
 
@@ -34,13 +34,13 @@ export const checkMessageLimit = async (req, res, next) => {
     const dateString = today.toISOString().split('T')[0];
 
     // Try to get settings from cache first
-    let userSettings = userSettingsCache.get(UserName);
+    let userSettings = userSettingsCache.get(username);
 
     if (!userSettings) {
-      console.log(`[checkMessageLimit] Fetching settings for user: ${UserName}`);
+      console.log(`[checkMessageLimit] Fetching settings for user: ${username}`);
       const settingsQuery = await pool.query(
-        `SELECT daily_message_limit FROM user_settings_chatapi WHERE "UserName" = $1`,
-        [UserName]
+        `SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1`,
+        [username]
       );
 
       userSettings = {
@@ -48,32 +48,32 @@ export const checkMessageLimit = async (req, res, next) => {
         lastUpdated: Date.now()
       };
 
-      userSettingsCache.set(UserName, userSettings);
+      userSettingsCache.set(username, userSettings);
     }
 
     const { dailyLimit } = userSettings;
 
     // Check message count with a single query using upsert approach
     const messageCountResult = await pool.query(
-      `INSERT INTO user_message_logs_chatapi ("UserName", date, message_count)
+      `INSERT INTO user_message_logs_chatapi (username, date, message_count)
        VALUES ($1, $2, 1)
-       ON CONFLICT ("UserName", date)
+       ON CONFLICT (username, date)
        DO UPDATE SET message_count = user_message_logs_chatapi.message_count + 1
        RETURNING message_count`,
-      [UserName, dateString]
+      [username, dateString]
     );
 
     const currentCount = messageCountResult.rows[0]?.message_count || 1;
 
     if (currentCount > dailyLimit) {
-      console.warn(`[checkMessageLimit] User ${UserName} exceeded daily limit (${currentCount}/${dailyLimit})`);
+      console.warn(`[checkMessageLimit] User ${username} exceeded daily limit (${currentCount}/${dailyLimit})`);
 
       // Rollback the increment since they're over limit
       await pool.query(
         `UPDATE user_message_logs_chatapi 
          SET message_count = message_count - 1 
-         WHERE "UserName" = $1 AND date = $2`,
-        [UserName, dateString]
+         WHERE username = $1 AND date = $2`,
+        [username, dateString]
       );
 
       return res.status(429).json({
@@ -87,7 +87,7 @@ export const checkMessageLimit = async (req, res, next) => {
     // Log performance
     const [seconds, nanoseconds] = process.hrtime(startTime);
     const duration = (seconds * 1000 + nanoseconds / 1e6).toFixed(2);
-    console.log(`[checkMessageLimit] Processed in ${duration}ms for ${UserName}`);
+    console.log(`[checkMessageLimit] Processed in ${duration}ms for ${username}`);
 
     next();
   } catch (error) {

@@ -491,7 +491,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.UserName {
+.username {
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -587,7 +587,7 @@ body {
   flex: 1;
 }
 
-.user-info .UserName {
+.user-info .username {
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 0.25rem;

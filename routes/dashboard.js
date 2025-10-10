@@ -26,7 +26,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     const statsQuery = `
       SELECT 
         (SELECT COUNT(*) FROM ai_history_chatapi) as total_chats,
-        (SELECT COUNT(DISTINCT "UserName") FROM ai_history_chatapi) as unique_users,
+        (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users,
         (SELECT COUNT(*) FROM user_settings_chatapi) as user_settings_count,
         (SELECT COUNT(*) FROM user_message_logs_chatapi WHERE date = CURRENT_DATE) as active_users_today,
         (SELECT SUM(message_count) FROM user_message_logs_chatapi WHERE date = CURRENT_DATE) as messages_today,
@@ -37,7 +37,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     const recentChatsQuery = `
       SELECT 
         a.id, 
-        a."UserName", 
+        a.username, 
         a.created_at, 
         a.temperature, 
         u.daily_message_limit, 
@@ -45,8 +45,8 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
         u.ai_model,
         jsonb_array_length(a.conversation_history) as message_count_in_chat
       FROM ai_history_chatapi a
-      LEFT JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
-      LEFT JOIN user_message_logs_chatapi l ON a."UserName" = l."UserName" AND l.date = CURRENT_DATE
+      LEFT JOIN user_settings_chatapi u ON a.username = u.username
+      LEFT JOIN user_message_logs_chatapi l ON a.username = l.username AND l.date = CURRENT_DATE
       ORDER BY a.created_at DESC
       LIMIT 10
     `;
@@ -54,12 +54,12 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     // Get top users with more metrics
     const topUsersQuery = `
       SELECT 
-        "UserName", 
+        username, 
         SUM(message_count) as total_messages,
         COUNT(DISTINCT date) as active_days,
         MAX(message_count) as peak_messages_in_day
       FROM user_message_logs_chatapi
-      GROUP BY "UserName"
+      GROUP BY username
       ORDER BY total_messages DESC
       LIMIT 5
     `;
@@ -149,15 +149,15 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     let baseQuery = `
       FROM user_settings_chatapi u
       LEFT JOIN (
-        SELECT "UserName", COUNT(*) as chat_count
+        SELECT username, COUNT(*) as chat_count
         FROM ai_history_chatapi 
-        GROUP BY "UserName"
-      ) a ON u."UserName" = a."UserName"
+        GROUP BY username
+      ) a ON u.username = a.username
       LEFT JOIN (
-        SELECT "UserName", SUM(message_count) as total_messages
+        SELECT username, SUM(message_count) as total_messages
         FROM user_message_logs_chatapi
-        GROUP BY "UserName"
-      ) l ON u."UserName" = l."UserName"
+        GROUP BY username
+      ) l ON u.username = l.username
     `;
 
     let whereClause = "";
@@ -165,7 +165,7 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
 
     // Add filters
     if (search) {
-      whereClause += ` WHERE u."UserName" ILIKE $${queryParams.length + 1}`;
+      whereClause += ` WHERE u.username ILIKE $${queryParams.length + 1}`;
       queryParams.push(`%${search}%`);
     }
 
@@ -187,14 +187,14 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     // Get paginated users with more metrics
     const usersQuery = `
       SELECT 
-        u."UserName", 
+        u.username, 
         u.ai_model, 
         u.daily_message_limit,
         u.created_at as settings_created,
         u.temperature,
         COALESCE(a.chat_count, 0) as chat_count,
         COALESCE(l.total_messages, 0) as total_messages,
-        (SELECT COUNT(*) FROM user_message_logs_chatapi WHERE "UserName" = u."UserName") as active_days
+        (SELECT COUNT(*) FROM user_message_logs_chatapi WHERE username = u.username) as active_days
       ${baseQuery}
       ${whereClause}
       ORDER BY ${sortField} ${sortOrder}
@@ -246,20 +246,20 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || DEFAULT_PAGE_SIZE_s;
     const offset = (page - 1) * pageSize;
-    const { UserName, model, dateRange, startDate, endDate, search } = req.query;
+    const { username, model, dateRange, startDate, endDate, search } = req.query;
 
     let baseQuery = `
       FROM ai_history_chatapi a
-      LEFT JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
+      LEFT JOIN user_settings_chatapi u ON a.username = u.username
     `;
 
     let whereClause = "";
     const queryParams = [];
 
-    // Add UserName filter
-    if (UserName) {
-      whereClause += ` WHERE a."UserName" = $1`;
-      queryParams.push(UserName);
+    // Add username filter
+    if (username) {
+      whereClause += ` WHERE a.username = $1`;
+      queryParams.push(username);
     }
 
     // Add model filter
@@ -315,7 +315,7 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     const chatsQuery = `
       SELECT 
         a.id,
-        a."UserName",
+        a.username,
         a.created_at,
         a.temperature,
         u.ai_model,
@@ -343,7 +343,7 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     res.render("admin/chats.handlebars", {
       page: "ChatManagement",
       chats,
-      UserNameFilter: UserName || "",
+      usernameFilter: username || "",
       selectedModel: model || "",
       dateRangeOptions: DATE_RANGE_OPTIONS,
       selectedDateRange: dateRange || "",
@@ -408,7 +408,7 @@ router.get("/admin/users/export", validateSessionAndRole("SuperAdmin"), async (r
 
     const usersQuery = `
       SELECT 
-        u."UserName", 
+        u.username, 
         u.ai_model, 
         u.daily_message_limit,
         u.created_at as settings_created,
@@ -416,9 +416,9 @@ router.get("/admin/users/export", validateSessionAndRole("SuperAdmin"), async (r
         COALESCE(COUNT(a.id), 0) as chat_count,
         COALESCE(SUM(l.message_count), 0) as total_messages
       FROM user_settings_chatapi u
-      LEFT JOIN ai_history_chatapi a ON u."UserName" = a."UserName"
-      LEFT JOIN user_message_logs_chatapi l ON u."UserName" = l."UserName"
-      GROUP BY u."UserName", u.ai_model, u.daily_message_limit, u.created_at, u.temperature
+      LEFT JOIN ai_history_chatapi a ON u.username = a.username
+      LEFT JOIN user_message_logs_chatapi l ON u.username = l.username
+      GROUP BY u.username, u.ai_model, u.daily_message_limit, u.created_at, u.temperature
       ORDER BY u.created_at DESC
     `;
 
@@ -426,7 +426,7 @@ router.get("/admin/users/export", validateSessionAndRole("SuperAdmin"), async (r
     const users = usersResult.rows;
 
     if (format === 'csv') {
-      const fields = ['UserName', 'ai_model', 'daily_message_limit', 'settings_created', 'temperature', 'chat_count', 'total_messages'];
+      const fields = ['username', 'ai_model', 'daily_message_limit', 'settings_created', 'temperature', 'chat_count', 'total_messages'];
       const csv = [
         fields.join(','), // header
         ...users.map(user => fields.map(field => {
@@ -493,13 +493,13 @@ router.post("/admin/chats/export", validateSessionAndRole("SuperAdmin"), async (
     const chatsQuery = `
       SELECT 
         a.id,
-        a."UserName",
+        a.username,
         a.conversation_history,
         a.created_at,
         a.temperature,
         u.ai_model
       FROM ai_history_chatapi a
-      LEFT JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
+      LEFT JOIN user_settings_chatapi u ON a.username = u.username
       WHERE a.id = ANY($1::int[])
       ORDER BY a.created_at DESC
     `;
@@ -509,7 +509,7 @@ router.post("/admin/chats/export", validateSessionAndRole("SuperAdmin"), async (
 
     if (format === 'csv') {
       // Generate CSV
-      const fields = ['id', 'UserName', 'created_at', 'temperature', 'ai_model', 'message_count', 'conversation'];
+      const fields = ['id', 'username', 'created_at', 'temperature', 'ai_model', 'message_count', 'conversation'];
       const csvRows = chats.map(chat => {
         const conversationText = typeof chat.conversation_history === 'string'
           ? JSON.parse(chat.conversation_history)
@@ -521,7 +521,7 @@ router.post("/admin/chats/export", validateSessionAndRole("SuperAdmin"), async (
 
         return {
           id: chat.id,
-          UserName: chat.UserName,
+          username: chat.username,
           created_at: chat.created_at,
           temperature: chat.temperature,
           ai_model: chat.ai_model,
@@ -549,7 +549,7 @@ router.post("/admin/chats/export", validateSessionAndRole("SuperAdmin"), async (
     // Default to JSON
     const formattedChats = chats.map(chat => ({
       id: chat.id,
-      UserName: chat.UserName,
+      username: chat.username,
       created_at: chat.created_at,
       temperature: chat.temperature,
       ai_model: chat.ai_model,
@@ -617,7 +617,7 @@ router.get("/admin/analytics", validateSessionAndRole("SuperAdmin"), async (req,
         SELECT 
           DATE(created_at) as date,
           COUNT(*) as message_count,
-          COUNT(DISTINCT "UserName") as unique_users
+          COUNT(DISTINCT username) as unique_users
         FROM ai_history_chatapi ${dateFilter}
         GROUP BY DATE(created_at)
         ORDER BY date
@@ -625,13 +625,13 @@ router.get("/admin/analytics", validateSessionAndRole("SuperAdmin"), async (req,
       
       userActivity: `
         SELECT 
-          "UserName",
+          username,
           COUNT(*) as total_messages,
           MIN(created_at) as first_message,
           MAX(created_at) as last_message,
           COUNT(DISTINCT DATE(created_at)) as active_days
         FROM ai_history_chatapi ${dateFilter}
-        GROUP BY "UserName"
+        GROUP BY username
         ORDER BY total_messages DESC
         LIMIT 20
       `,
@@ -641,9 +641,9 @@ router.get("/admin/analytics", validateSessionAndRole("SuperAdmin"), async (req,
           u.ai_model,
           COUNT(a.id) as usage_count,
           AVG(a.temperature) as avg_temperature,
-          COUNT(DISTINCT a."UserName") as unique_users
+          COUNT(DISTINCT a.username) as unique_users
         FROM ai_history_chatapi a
-        JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
+        JOIN user_settings_chatapi u ON a.username = u.username
         ${dateFilter}
         GROUP BY u.ai_model
         ORDER BY usage_count DESC
@@ -653,7 +653,7 @@ router.get("/admin/analytics", validateSessionAndRole("SuperAdmin"), async (req,
         SELECT 
           EXTRACT(HOUR FROM created_at) as hour,
           COUNT(*) as message_count,
-          COUNT(DISTINCT "UserName") as unique_users
+          COUNT(DISTINCT username) as unique_users
         FROM ai_history_chatapi ${dateFilter}
         GROUP BY hour
         ORDER BY hour
@@ -710,7 +710,7 @@ router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (r
       case 'users':
         query = `
           SELECT 
-            u."UserName",
+            u.username,
             u.ai_model,
             u.daily_message_limit,
             u.temperature,
@@ -719,11 +719,11 @@ router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (r
             COALESCE(l.total_messages, 0) as total_messages
           FROM user_settings_chatapi u
           LEFT JOIN (
-            SELECT "UserName", COUNT(*) as chat_count FROM ai_history_chatapi GROUP BY "UserName"
-          ) a ON u."UserName" = a."UserName"
+            SELECT username, COUNT(*) as chat_count FROM ai_history_chatapi GROUP BY username
+          ) a ON u.username = a.username
           LEFT JOIN (
-            SELECT "UserName", SUM(message_count) as total_messages FROM user_message_logs_chatapi GROUP BY "UserName"
-          ) l ON u."UserName" = l."UserName"
+            SELECT username, SUM(message_count) as total_messages FROM user_message_logs_chatapi GROUP BY username
+          ) l ON u.username = l.username
           ORDER BY u.created_at DESC
         `;
         filename = `users_export_${new Date().toISOString().split('T')[0]}`;
@@ -733,14 +733,14 @@ router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (r
         query = `
           SELECT 
             a.id,
-            a."UserName",
+            a.username,
             a.created_at,
             a.temperature,
             u.ai_model,
             jsonb_array_length(a.conversation_history) as message_count,
             (a.conversation_history->0->'parts'->0->>'text') as first_message
           FROM ai_history_chatapi a
-          LEFT JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
+          LEFT JOIN user_settings_chatapi u ON a.username = u.username
           ORDER BY a.created_at DESC
         `;
         filename = `chats_export_${new Date().toISOString().split('T')[0]}`;
@@ -751,7 +751,7 @@ router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (r
           SELECT 
             DATE(created_at) as date,
             COUNT(*) as total_messages,
-            COUNT(DISTINCT u."UserName") as unique_users,
+            COUNT(DISTINCT u.username) as unique_users,
             AVG(temperature) as avg_temperature
           FROM ai_history_chatapi
           WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
@@ -799,9 +799,9 @@ router.get("/admin/export/:type", validateSessionAndRole("SuperAdmin"), async (r
 });
 
 // User settings update endpoint
-router.put("/admin/users/:UserName", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.put("/admin/users/:username", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
-    const { UserName } = req.params;
+    const { username } = req.params;
     const { dailyLimit, aiModel, temperature } = req.body;
 
     // Validate inputs
@@ -827,7 +827,7 @@ router.put("/admin/users/:UserName", validateSessionAndRole("SuperAdmin"), async
         ai_model = COALESCE($2, ai_model),
         temperature = COALESCE($3, temperature),
         updated_at = CURRENT_TIMESTAMP
-      WHERE "UserName" = $4
+      WHERE username = $4
       RETURNING *
     `;
 
@@ -835,7 +835,7 @@ router.put("/admin/users/:UserName", validateSessionAndRole("SuperAdmin"), async
       dailyLimit || null,
       aiModel || null,
       temperature || null,
-      UserName
+      username
     ]);
 
     if (result.rows.length === 0) {
@@ -887,7 +887,7 @@ router.get("/admin/system-stats", validateSessionAndRole("SuperAdmin"), async (r
     const activityQuery = `
       SELECT 
         COUNT(*) as messages_last_hour,
-        COUNT(DISTINCT "UserName") as active_users_last_hour
+        COUNT(DISTINCT username) as active_users_last_hour
       FROM ai_history_chatapi 
       WHERE created_at >= NOW() - INTERVAL '1 hour'
     `;
@@ -922,8 +922,8 @@ router.get("/admin/chats/:chatId", validateSessionAndRole("SuperAdmin"), async (
         u.daily_message_limit,
         l.message_count as daily_messages
       FROM ai_history_chatapi a
-      LEFT JOIN user_settings_chatapi u ON a."UserName" = u."UserName"
-      LEFT JOIN user_message_logs_chatapi l ON a."UserName" = l."UserName" AND l.date = DATE(a.created_at)
+      LEFT JOIN user_settings_chatapi u ON a.username = u.username
+      LEFT JOIN user_message_logs_chatapi l ON a.username = l.username AND l.date = DATE(a.created_at)
       WHERE a.id = $1
     `;
 
