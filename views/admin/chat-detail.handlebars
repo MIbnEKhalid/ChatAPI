@@ -41,8 +41,8 @@
           <value>{{chat.id}}</value>
         </div>
         <div class="info-item">
-          <label>Username:</label>
-          <value class="username-value">{{chat.username}}</value>
+          <label>UserName:</label>
+          <value class="UserName-value">{{chat.UserName}}</value>
         </div>
         <div class="info-item">
           <label>Created:</label>
@@ -359,7 +359,7 @@ class ChatDetailView {
       case 'json':
         content = JSON.stringify({
           chatId: this.chatData.id,
-          username: this.chatData.username,
+          UserName: this.chatData.UserName,
           createdAt: this.chatData.created_at,
           aiModel: this.chatData.ai_model,
           temperature: this.chatData.temperature,
@@ -373,7 +373,7 @@ class ChatDetailView {
 
       case 'txt':
         content = includeMetadata ? 
-          `Chat ID: ${this.chatData.id}\nUsername: ${this.chatData.username}\nCreated: ${this.chatData.created_at}\nAI Model: ${this.chatData.ai_model}\nTemperature: ${this.chatData.temperature}\n\n` : '';
+          `Chat ID: ${this.chatData.id}\nUserName: ${this.chatData.UserName}\nCreated: ${this.chatData.created_at}\nAI Model: ${this.chatData.ai_model}\nTemperature: ${this.chatData.temperature}\n\n` : '';
         
         conversation.forEach((message, index) => {
           if (includeMetadata) {
@@ -412,7 +412,7 @@ class ChatDetailView {
             <div class="metadata">
               <h2>Chat Information</h2>
               <p><strong>Chat ID:</strong> ${this.chatData.id}</p>
-              <p><strong>Username:</strong> ${this.chatData.username}</p>
+              <p><strong>UserName:</strong> ${this.chatData.UserName}</p>
               <p><strong>Created:</strong> ${this.chatData.created_at}</p>
               <p><strong>AI Model:</strong> ${this.chatData.ai_model}</p>
               <p><strong>Temperature:</strong> ${this.chatData.temperature}</p>
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
   color: var(--text-primary);
 }
 
-.username-value {
+.UserName-value {
   color: var(--primary-color);
   font-weight: 600;
 }

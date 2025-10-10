@@ -136,7 +136,7 @@
             <div class="timeline-marker"></div>
             <div class="timeline-content">
               <div class="timeline-header">
-                <span class="username">{{this.username}}</span>
+                <span class="UserName">{{this.UserName}}</span>
                 <span class="timestamp">{{formatDate this.created_at}}</span>
               </div>
               <div class="timeline-details">
@@ -173,7 +173,7 @@
           <div class="leaderboard-item">
             <div class="rank">{{add @index 1}}</div>
             <div class="user-info">
-              <div class="username">{{this.username}}</div>
+              <div class="UserName">{{this.UserName}}</div>
               <div class="user-stats">
                 <span class="stat">{{this.active_days}} days active</span>
                 <span class="stat">Peak: {{this.peak_messages_in_day}}/day</span>
@@ -646,7 +646,7 @@ class AdminDashboard {
           <div class="user-activity-list">
             ${data.userActivity.map(user => `
               <div class="user-activity-item">
-                <span class="username">${user.username}</span>
+                <span class="UserName">${user.UserName}</span>
                 <span class="activity-count">${user.total_messages} messages</span>
               </div>
             `).join('')}

@@ -44,11 +44,11 @@ const handleApiError = (res, error, context) => {
 
 // Database Operations
 const db = {
-  fetchChatHistories: async (username) => {
+  fetchChatHistories: async (UserName) => {
     try {
       const { rows } = await pool.query(
-        'SELECT id, created_at, temperature FROM ai_history_chatapi WHERE username = $1 ORDER BY created_at DESC',
-        [username]
+        'SELECT id, created_at, temperature FROM ai_history_chatapi WHERE "UserName" = $1 ORDER BY created_at DESC',
+        [UserName]
       );
 
       // Group chats by time period
@@ -152,11 +152,11 @@ const db = {
     }
   },
 
-  saveChatHistory: async ({ chatId, history, username, temperature }) => {
+  saveChatHistory: async ({ chatId, history, UserName, temperature }) => {
     try {
       // Validate inputs
-      if (!username || typeof username !== 'string') {
-        throw new Error('Invalid username');
+      if (!UserName || typeof UserName !== 'string') {
+        throw new Error('Invalid UserName');
       }
 
       if (!history || !Array.isArray(history)) {
@@ -175,8 +175,8 @@ const db = {
         return chatId;
       } else {
         const { rows } = await pool.query(
-          'INSERT INTO ai_history_chatapi (conversation_history, username, temperature) VALUES ($1, $2, $3) RETURNING id',
-          [JSON.stringify(history), username, temperature]
+          'INSERT INTO ai_history_chatapi (conversation_history, "UserName", temperature) VALUES ($1, $2, $3) RETURNING id',
+          [JSON.stringify(history), UserName, temperature]
         );
         return rows[0].id;
       }
@@ -186,17 +186,17 @@ const db = {
     }
   },
 
-  fetchUserSettings: async (username) => {
+  fetchUserSettings: async (UserName) => {
     try {
       const today = new Date().toISOString().split("T")[0];
       const [settingsResult, messageLog] = await Promise.all([
         pool.query(
-          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE username = $1',
-          [username]
+          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE "UserName" = $1',
+          [UserName]
         ),
         pool.query(
-          'SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2',
-          [username, today]
+          'SELECT message_count FROM user_message_logs_chatapi WHERE "UserName" = $1 AND date = $2',
+          [UserName, today]
         )
       ]);
 
@@ -230,19 +230,19 @@ const db = {
     }
   },
 
-  saveUserSettings: async (username, settings) => {
+  saveUserSettings: async (UserName, settings) => {
     try {
       await pool.query(
-        `INSERT INTO user_settings_chatapi (username, theme, font_size, ai_model, temperature)
+        `INSERT INTO user_settings_chatapi ("UserName", theme, font_size, ai_model, temperature)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (username)
+         ON CONFLICT ("UserName")
          DO UPDATE SET
             theme = $2,
             font_size = $3,
             ai_model = $4,
             temperature = $5,
             updated_at = CURRENT_TIMESTAMP`,
-        [username, settings.theme, settings.fontSize, settings.model, settings.temperature]
+        [UserName, settings.theme, settings.fontSize, settings.model, settings.temperature]
       );
       return true;
     } catch (error) {
@@ -410,8 +410,8 @@ router.get(["/login", "/signin"], (req, res) => {
 router.get(["/chatbot/:chatId?", "/chat/:chatId?"], validateSessionAndRole("Any"), async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { username, role } = req.session.user;
-    const userSettings = await db.fetchUserSettings(username);
+    const { UserName, role } = req.session.user;
+    const userSettings = await db.fetchUserSettings(UserName);
 
     res.render('mainPages/chatbot.handlebars', {
       layout: false,
@@ -420,7 +420,7 @@ router.get(["/chatbot/:chatId?", "/chat/:chatId?"], validateSessionAndRole("Any"
         ...userSettings,
         temperature_value: (userSettings.temperature || DEFAULT_TEMPERATURE).toFixed(1)
       },
-      UserName: username,
+      UserName: UserName,
       role
     });
   } catch (error) {
@@ -563,7 +563,7 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
 
 router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
   const { message, chatId } = req.body;
-  const { username } = req.session.user;
+  const { UserName } = req.session.user;
 
   // Input validation
   if (!message || typeof message !== 'string') {
@@ -584,7 +584,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
 
   try {
     // Get user settings
-    const userSettings = await db.fetchUserSettings(username);
+    const userSettings = await db.fetchUserSettings(UserName);
     const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
 
     // Validate temperature
@@ -653,7 +653,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
       newChatId = await db.saveChatHistory({
         chatId,
         history: conversationHistory,
-        username,
+        UserName,
         temperature
       });
     }
