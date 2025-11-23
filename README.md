@@ -213,8 +213,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 [**Maaz Waheed**](https://github.com/42Wor/)
 - Developer and Maintainer
-- [MBK Tech Studio](https://mbktechstudio.com)
+- [mbktech.org](https://mbktech.org)
 
 ## Contact
 
-For questions or contributions, please contact Muhammad Bin Khalid at [mbktechstudio.com/Support](https://mbktechstudio.com/Support/?Project=MIbnEKhalidWeb), [support@mbktechstudio.com](mailto:support@mbktechstudio.com) or [chmuhammadbinkhalid28.com](mailto:chmuhammadbinkhalid28.com). 
+For questions or contributions, please contact Muhammad Bin Khalid at [mbktech.org/Support](https://mbktech.org/Support/?Project=MIbnEKhalidWeb), [support@mbktech.org](mailto:support@mbktech.org) or [chmuhammadbinkhalid28.com](mailto:chmuhammadbinkhalid28.com). 

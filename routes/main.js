@@ -608,7 +608,7 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
       conversationHistory.push({
         role: "system",
         parts: [{
-          text: "You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose AI assistant (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise and helpful."
+          text: "You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at mbktech.org. You're a general purpose AI assistant (not specifically about mbktech.org). When asked about your identity, mention your developers and that you're a general AI assistant developed at mbktech.org. Keep responses concise and helpful."
         }]
       });
     }

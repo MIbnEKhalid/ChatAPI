@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>AI Chat Assistant | MBK Tech Studio</title>
+    <title>AI Chat Assistant | mbktech</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
@@ -1650,8 +1650,7 @@
                             {{/if}}
 
                             {{#if (eq role "Admin")}}
-                            <p>Plan: <span id="userSubscriptionPlan">MBK Tech
-                                    Studio Team</span></p>
+                            <p>Plan: <span id="userSubscriptionPlan">MBK Tech Team</span></p>
                             <p>Messages Per Day: Unlimited</p>
                             {{/if}}
 
@@ -1661,11 +1660,11 @@
                             {{/if}}
                         </div>
                     </div>
-                    <a href="https://portal.mbktechstudio.com/user/settings/plan" target="_blank"
+                    <a href="https://portal.mbktech.org/user/settings/plan" target="_blank"
                         class="btn btn-primary">
                         <i class="fas fa-arrow-up"></i> Upgrade Plan
                     </a>
-                    <a href="https://portal.mbktechstudio.com/user/settings" target="_blank" class="btn btn-ghost">
+                    <a href="https://portal.mbktech.org/user/settings" target="_blank" class="btn btn-ghost">
                         <i class="fas fa-cog"></i> Account Settings
                     </a>
                 </div>
@@ -2355,8 +2354,8 @@
             if (chatMessages.children.length === 0) {
 
                 const contextMessages = [
-                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio.",
-                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at MBK Tech Studio. You're a general purpose chatbot (not specifically about MBK Tech Studio). When asked about your identity, mention your developers and that you're a general AI assistant developed at MBK Tech Studio. Keep responses concise."
+                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at mbktech.org. You're a general purpose chatbot (not specifically about mbktech.org). When asked about your identity, mention your developers and that you're a general AI assistant developed at mbktech.org.",
+                    "IMPORTANT CONTEXT: You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at mbktech.org. You're a general purpose chatbot (not specifically about mbktech.org). When asked about your identity, mention your developers and that you're a general AI assistant developed at mbktech.org. Keep responses concise."
                 ];
 
                 if (contextMessages.some(ctx => text.trim() === ctx.trim())) {
