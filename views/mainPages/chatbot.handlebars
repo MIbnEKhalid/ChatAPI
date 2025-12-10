@@ -755,11 +755,6 @@
                                 <input type="checkbox" id="setting-matrix-bg" checked> Enable Matrix Rain Background
                             </label>
                         </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="setting-tts"> Enable Text-to-Speech (Read responses)
-                            </label>
-                        </div>
                     </div>
 
                     <!-- ACCOUNT TAB -->
@@ -814,10 +809,24 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-            const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            const nums = '0123456789';
-            const alphabet = katakana + latin + nums;
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const nums = '0123456789';
+
+        // 1. Lowercase Latin alphabet
+        const latinLow = 'abcdefghijklmnopqrstuvwxyz';
+
+        // 2. Hiragana (The other Japanese script)
+        const hiragana = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん';
+
+        // 3. Special Characters & Punctuation
+        const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+
+        // 4. Greek Uppercase Alphabet
+        const greek = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ';
+
+        // Combine everything into one string
+        const alphabet = katakana + latin + nums + latinLow + hiragana + symbols + greek ;
 
             const fontSize = 16;
             const columns = canvas.width / fontSize;
@@ -869,7 +878,6 @@
                 theme: 'cyberpunk',
                 fontSize: 14,
                 matrixEnabled: true,
-                ttsEnabled: false
             }
         };
 
@@ -943,7 +951,7 @@
                 document.getElementById('setting-theme').value = s.theme;
                 document.getElementById('setting-font').value = s.fontSize;
                 document.getElementById('setting-matrix-bg').checked = s.matrixEnabled;
-                document.getElementById('setting-tts').checked = s.ttsEnabled;
+
             },
 
             saveSettings: () => {
@@ -953,7 +961,6 @@
                     theme: document.getElementById('setting-theme').value,
                     fontSize: document.getElementById('setting-font').value,
                     matrixEnabled: document.getElementById('setting-matrix-bg').checked,
-                    ttsEnabled: document.getElementById('setting-tts').checked
                 };
                 AppState.settings = newSettings;
                 localStorage.setItem('mbk_chat_settings', JSON.stringify(newSettings));
@@ -1183,7 +1190,7 @@
                             UI.updateLimitBar();
                         }
 
-                        if(AppState.settings.ttsEnabled) Chat.speak(data.aiResponse);
+                        
 
                     } else {
                         throw new Error(data.message || 'Unknown Error');
