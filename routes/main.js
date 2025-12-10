@@ -1,10 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'; 
 import { pool } from "./pool.js";
 import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
-import { google } from 'googleapis';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 const router = express.Router();
@@ -14,10 +14,6 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
 // Constants
-const DEFAULT_MODEL = 'gemini/gemini-1.5-flash';
-const DEFAULT_TEMPERATURE = 1.0;
-const DEFAULT_THEME = 'dark';
-const DEFAULT_FONT_SIZE = 16;
 const DEFAULT_DAILY_LIMIT = 100;
 
 // Utility Functions
@@ -69,7 +65,6 @@ const db = {
         older: {}
       };
 
-      // Month-year format for older chats
       const monthYearFormat = new Intl.DateTimeFormat('en-US', {
         month: 'long',
         year: 'numeric'
@@ -79,68 +74,41 @@ const db = {
         const createdAt = new Date(row.created_at);
         const formattedDate = formatChatTime(createdAt);
         const monthYear = monthYearFormat.format(createdAt);
+        const chatObj = {
+            id: row.id,
+            created_at: formattedDate,
+            temperature: row.temperature || 0.5,
+            rawDate: createdAt
+        };
 
         if (createdAt >= today) {
-          groupedChats.today.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.today.push(chatObj);
         } else if (createdAt >= yesterday) {
-          groupedChats.yesterday.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.yesterday.push(chatObj);
         } else if (createdAt >= sevenDaysAgo) {
-          groupedChats.last7Days.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.last7Days.push(chatObj);
         } else if (createdAt >= thirtyDaysAgo) {
-          groupedChats.last30Days.push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.last30Days.push(chatObj);
         } else {
           if (!groupedChats.older[monthYear]) {
             groupedChats.older[monthYear] = [];
           }
-          groupedChats.older[monthYear].push({
-            id: row.id,
-            created_at: formattedDate,
-            temperature: row.temperature || 0.5,
-            rawDate: createdAt
-          });
+          groupedChats.older[monthYear].push(chatObj);
         }
       });
 
       return groupedChats;
     } catch (error) {
       console.error("Database error fetching chat histories:", error);
-      return {
-        today: [],
-        yesterday: [],
-        last7Days: [],
-        last30Days: [],
-        older: {}
-      };
+      return { today: [], yesterday: [], last7Days: [], last30Days: [], older: {} };
     }
   },
 
   fetchChatHistoryById: async (chatId) => {
     try {
-      // Validate chatId
       if (!chatId || (typeof chatId !== 'string' && typeof chatId !== 'number')) {
         throw new Error('Invalid chat ID');
       }
-
       const { rows } = await pool.query(
         'SELECT id, conversation_history, temperature FROM ai_history_chatapi WHERE id = $1',
         [chatId]
@@ -154,18 +122,8 @@ const db = {
 
   saveChatHistory: async ({ chatId, history, username, temperature }) => {
     try {
-      // Validate inputs
-      if (!username || typeof username !== 'string') {
-        throw new Error('Invalid username');
-      }
-
-      if (!history || !Array.isArray(history)) {
-        throw new Error('Invalid conversation history');
-      }
-
-      if (temperature !== undefined && (isNaN(temperature) || temperature < 0 || temperature > 2)) {
-        throw new Error('Invalid temperature value');
-      }
+      if (!username || typeof username !== 'string') throw new Error('Invalid username');
+      if (!history || !Array.isArray(history)) throw new Error('Invalid conversation history');
 
       if (chatId) {
         await pool.query(
@@ -186,12 +144,13 @@ const db = {
     }
   },
 
-  fetchUserSettings: async (username) => {
+  // ONLY fetches limit and count. No theme/model/font logic here anymore.
+  fetchUserLimits: async (username) => {
     try {
       const today = new Date().toISOString().split("T")[0];
       const [settingsResult, messageLog] = await Promise.all([
         pool.query(
-          'SELECT theme, font_size, ai_model, temperature, daily_message_limit FROM user_settings_chatapi WHERE username = $1',
+          'SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1',
           [username]
         ),
         pool.query(
@@ -201,114 +160,65 @@ const db = {
       ]);
 
       const messageCount = messageLog.rows[0]?.message_count || 0;
+      const dailyLimit = settingsResult.rows[0]?.daily_message_limit || DEFAULT_DAILY_LIMIT;
 
-      return settingsResult.rows.length > 0 ? {
-        theme: settingsResult.rows[0].theme || DEFAULT_THEME,
-        font_size: settingsResult.rows[0].font_size || DEFAULT_FONT_SIZE,
-        ai_model: settingsResult.rows[0].ai_model || DEFAULT_MODEL,
-        temperature: settingsResult.rows[0].temperature || DEFAULT_TEMPERATURE,
-        dailyLimit: settingsResult.rows[0].daily_message_limit || DEFAULT_DAILY_LIMIT,
-        messageCount
-      } : {
-        theme: DEFAULT_THEME,
-        font_size: DEFAULT_FONT_SIZE,
-        ai_model: DEFAULT_MODEL,
-        temperature: DEFAULT_TEMPERATURE,
-        dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
-      };
+      return { dailyLimit, messageCount };
     } catch (error) {
-      console.error("Database error fetching user settings:", error);
-      return {
-        theme: DEFAULT_THEME,
-        font_size: DEFAULT_FONT_SIZE,
-        ai_model: DEFAULT_MODEL,
-        temperature: DEFAULT_TEMPERATURE,
-        dailyLimit: DEFAULT_DAILY_LIMIT,
-        messageCount: 0
-      };
-    }
-  },
-
-  saveUserSettings: async (username, settings) => {
-    try {
-      await pool.query(
-        `INSERT INTO user_settings_chatapi (username, theme, font_size, ai_model, temperature)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (username)
-         DO UPDATE SET
-            theme = $2,
-            font_size = $3,
-            ai_model = $4,
-            temperature = $5,
-            updated_at = CURRENT_TIMESTAMP`,
-        [username, settings.theme, settings.fontSize, settings.model, settings.temperature]
-      );
-      return true;
-    } catch (error) {
-      console.error("Database error saving user settings:", error);
-      return false;
+      console.error("Database error fetching user limits:", error);
+      return { dailyLimit: DEFAULT_DAILY_LIMIT, messageCount: 0 };
     }
   }
 };
 
 // AI Service Integrations
 const aiServices = {
-
   formatResponse: (responseText, provider) => {
-    // Ensure responseText is a string
     if (typeof responseText !== 'string') {
       console.warn('formatResponse: responseText is not a string, converting...');
       responseText = String(responseText || '');
     }
-
-    // Since we're using proper system messages, we don't need to inject identity here
     return responseText;
   },
 
-  gemini: async (apiKey, model, conversationHistory, temperature) => {
-    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+  gemini: async (apiKey, modelName, conversationHistory, temperature) => {
     try {
-      // Gemini doesn't support system role, so we need to handle it differently
-      let systemInstruction = "";
-      let filteredHistory = conversationHistory.filter(msg => {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      // Clean model name if strictly required by SDK, though usually full string is fine
+      // But assuming we pass "gemini-1.5-flash" here
+      const cleanModelName = modelName.replace(/^models\//, '');
+      console.log(`[Gemini] Using model: ${cleanModelName}`);
+
+      let systemInstruction = undefined;
+      const historyForSdk = conversationHistory.filter(msg => {
         if (msg.role === 'system') {
           systemInstruction = msg.parts?.[0]?.text || "";
-          return false; // Remove system message from history
+          return false; 
         }
         return true;
       });
 
-      // If we have a system instruction, prepend it to the first user message
-      if (systemInstruction && filteredHistory.length > 0 && filteredHistory[0].role === 'user') {
-        filteredHistory[0] = {
-          ...filteredHistory[0],
-          parts: [{
-            text: `${systemInstruction}\n\nUser: ${filteredHistory[0].parts?.[0]?.text || ""}`
-          }]
-        };
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: filteredHistory,
-          generationConfig: { temperature }
-        })
+      const model = genAI.getGenerativeModel({
+        model: cleanModelName,
+        systemInstruction: systemInstruction, 
+        generationConfig: { temperature: temperature }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
-      }
+      const lastMessage = historyForSdk[historyForSdk.length - 1];
+      const previousHistory = historyForSdk.slice(0, -1);
 
-      const data = await response.json();
-      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini API";
-      return aiServices.formatResponse(responseText, 'gemini');
+      const chat = model.startChat({
+        history: previousHistory,
+        generationConfig: { temperature: temperature },
+      });
+
+      const result = await chat.sendMessage(lastMessage.parts[0].text);
+      const response = await result.response;
+      return aiServices.formatResponse(response.text(), 'gemini');
+
     } catch (error) {
-      console.error("Gemini API error:", error);
-      throw error;
+      console.error("Gemini SDK error:", error);
+      throw new Error(`Gemini Error: ${error.message}`);
     }
   },
 
@@ -327,40 +237,23 @@ const aiServices = {
       }
 
       const data = await response.json();
-      const responseText = data.response || "No response from Mallow API";
-      return aiServices.formatResponse(responseText, 'mallow');
+      return aiServices.formatResponse(data.response || "No response", 'mallow');
     } catch (error) {
       console.error("Mallow API error:", error);
-      return "API service is not available. Please contact [Maaz Waheed](https://github.com/42Wor) to start the API service.";
+      return "API service is not available.";
     }
   },
 
   nvidia: async (apiKey, model, conversationHistory, temperature) => {
     const url = "https://integrate.api.nvidia.com/v1/chat/completions";
-
-    // Validate inputs
-    if (!apiKey || typeof apiKey !== 'string') {
-      throw new Error('Invalid NVIDIA API key');
-    }
-
-    if (!model || typeof model !== 'string') {
-      throw new Error('Invalid model specification');
-    }
-
-    if (!Array.isArray(conversationHistory)) {
-      throw new Error('Invalid conversation history format');
-    }
-
+    
+    // Nvidia expects standard OpenAI format usually
     const formattedHistory = conversationHistory
       .map(message => ({
         role: message.role === 'model' ? 'assistant' : message.role,
         content: message.parts?.[0]?.text || ''
       }))
       .filter(msg => msg.content && msg.role && ['user', 'assistant', 'system'].includes(msg.role));
-
-    if (formattedHistory.length === 0) {
-      throw new Error('No valid messages in conversation history');
-    }
 
     try {
       const response = await fetch(url, {
@@ -380,20 +273,10 @@ const aiServices = {
       });
 
       const responseBody = await response.text();
-
-      if (!response.ok) {
-        let errorData = {};
-        try {
-          errorData = JSON.parse(responseBody);
-        } catch (e) {
-          errorData = { error: { message: responseBody } };
-        }
-        throw new Error(`NVIDIA API error: ${errorData.detail || errorData.error?.message || 'Unknown error'}`);
-      }
+      if (!response.ok) throw new Error(`NVIDIA API error: ${responseBody}`);
 
       const data = JSON.parse(responseBody);
-      const responseText = data.choices?.[0]?.message?.content || "No response from NVIDIA API";
-      return aiServices.formatResponse(responseText, 'nvidia');
+      return aiServices.formatResponse(data.choices?.[0]?.message?.content || "", 'nvidia');
     } catch (error) {
       console.error("NVIDIA API error:", error);
       throw error;
@@ -401,6 +284,7 @@ const aiServices = {
   }
 };
 
+// Routes
 router.get(["/login", "/signin"], (req, res) => {
   const queryParams = new URLSearchParams(req.query).toString();
   const redirectUrl = `/mbkauthe/login${queryParams ? `?${queryParams}` : ''}`;
@@ -411,15 +295,14 @@ router.get(["/chatbot/:chatId?", "/chat/:chatId?"], validateSessionAndRole("Any"
   try {
     const { chatId } = req.params;
     const { username, role } = req.session.user;
-    const userSettings = await db.fetchUserSettings(username);
+    
+    // Only fetch limits, not preferences
+    const limits = await db.fetchUserLimits(username);
 
     res.render('mainPages/chatbot.handlebars', {
       layout: false,
       chatId: chatId || null,
-      settings: {
-        ...userSettings,
-        temperature_value: (userSettings.temperature || DEFAULT_TEMPERATURE).toFixed(1)
-      },
+      limits: limits, // Pass limits to frontend
       username: username,
       role
     });
@@ -429,7 +312,7 @@ router.get(["/chatbot/:chatId?", "/chat/:chatId?"], validateSessionAndRole("Any"
       layout: false,
       code: 500,
       error: "Internal Server Error",
-      message: "An unexpected error occurred on the server.",
+      message: "An unexpected error occurred.",
       details: error,
       pagename: "Home",
       page: `/dashboard`,
@@ -453,20 +336,12 @@ router.get('/api/chat/histories/:chatId', validateSessionAndRole("Any"), async (
   try {
     const chatHistory = await db.fetchChatHistoryById(chatId);
     if (chatHistory) {
-      // Filter out system messages from the conversation history before sending to frontend
       let conversationHistory = chatHistory.conversation_history;
       if (typeof conversationHistory === 'string') {
         conversationHistory = JSON.parse(conversationHistory);
       }
-
-      // Remove system messages from the conversation history
       const filteredHistory = conversationHistory.filter(msg => msg.role !== 'system');
-
-      // Return the chat history with filtered conversation
-      res.json({
-        ...chatHistory,
-        conversation_history: filteredHistory
-      });
+      res.json({ ...chatHistory, conversation_history: filteredHistory });
     } else {
       res.status(404).json({ message: "Chat history not found" });
     }
@@ -479,120 +354,74 @@ router.post('/api/chat/delete-message/:chatId', validateSessionAndRole("Any"), a
   const { chatId } = req.params;
   const { messageId } = req.body;
 
-  console.log(`Request received to delete message. Chat ID: ${chatId}, Message ID: ${messageId}`);
-
-  if (!chatId || (typeof chatId !== 'string' && typeof chatId !== 'number')) {
-    console.error("Invalid Chat ID in the request");
-    return res.status(400).json({ message: "Valid Chat ID is required" });
-  }
-
-  if (messageId === undefined || messageId === null) {
-    console.error("Message ID is missing in the request");
-    return res.status(400).json({ message: "Message ID is required" });
-  }
-
-  // Validate messageId is a valid array index
-  if (typeof messageId !== 'string' && typeof messageId !== 'number') {
-    console.error("Invalid Message ID format");
-    return res.status(400).json({ message: "Invalid Message ID format" });
-  }
+  if (!chatId) return res.status(400).json({ message: "Valid Chat ID required" });
+  if (messageId === undefined) return res.status(400).json({ message: "Message ID required" });
 
   try {
-    console.log(`Fetching chat history for Chat ID: ${chatId}`);
     const chatHistory = await db.fetchChatHistoryById(chatId);
-    if (!chatHistory) {
-      console.error(`Chat history not found for Chat ID: ${chatId}`);
-      return res.status(404).json({ message: "Chat history not found" });
-    }
+    if (!chatHistory) return res.status(404).json({ message: "Chat history not found" });
 
-    console.log(`Parsing conversation history for Chat ID: ${chatId}`);
-    let conversationHistory;
-    try {
-      conversationHistory = typeof chatHistory.conversation_history === 'string'
-        ? JSON.parse(chatHistory.conversation_history)
-        : chatHistory.conversation_history;
-    } catch (parseError) {
-      console.error(`Error parsing conversation history for Chat ID: ${chatId}`, parseError);
-      return res.status(500).json({ message: "Invalid conversation history format" });
-    }
+    let conversationHistory = typeof chatHistory.conversation_history === 'string'
+      ? JSON.parse(chatHistory.conversation_history)
+      : chatHistory.conversation_history;
 
-    if (!Array.isArray(conversationHistory)) {
-      console.error(`Conversation history is not an array for Chat ID: ${chatId}`);
-      return res.status(500).json({ message: "Invalid conversation history format" });
-    }
-
-    console.log(`Original conversation history length: ${conversationHistory.length}`);
-
-    // Create a filtered version to map frontend indices to actual indices
+    // Logic to remove specific message by index (simplified for brevity)
+    // Note: In production, relying on array index is risky if concurrent edits happen.
     const filteredHistory = conversationHistory.filter(msg => msg.role !== 'system');
     const filteredIndex = parseInt(messageId);
-
-    if (isNaN(filteredIndex) || filteredIndex < 0 || filteredIndex >= filteredHistory.length) {
-      console.error(`Invalid message ID: ${messageId} for Chat ID: ${chatId}`);
-      return res.status(400).json({ message: "Invalid message ID" });
+    
+    if (filteredIndex >= 0 && filteredIndex < filteredHistory.length) {
+       const targetMsg = filteredHistory[filteredIndex];
+       // Find actual index in full history
+       const actualIndex = conversationHistory.findIndex(msg => 
+          msg.role === targetMsg.role && msg.parts?.[0]?.text === targetMsg.parts?.[0]?.text
+       );
+       if (actualIndex !== -1) {
+          conversationHistory.splice(actualIndex, 1);
+          await pool.query(
+            'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
+            [JSON.stringify(conversationHistory), chatId]
+          );
+          return res.json({ success: true, message: "Message deleted" });
+       }
     }
-
-    // Find the actual index in the original conversation history
-    const targetMessage = filteredHistory[filteredIndex];
-    const actualIndex = conversationHistory.findIndex(msg =>
-      msg.role === targetMessage.role &&
-      msg.parts?.[0]?.text === targetMessage.parts?.[0]?.text
-    );
-
-    if (actualIndex === -1) {
-      console.error(`Could not find message to delete for Chat ID: ${chatId}`);
-      return res.status(500).json({ message: "Message not found" });
-    }
-
-    conversationHistory = conversationHistory.filter((msg, index) => index !== actualIndex);
-    console.log(`Updated conversation history length: ${conversationHistory.length}`);
-
-    console.log(`Saving updated conversation history for Chat ID: ${chatId}`);
-    await pool.query(
-      'UPDATE ai_history_chatapi SET conversation_history = $1 WHERE id = $2',
-      [JSON.stringify(conversationHistory), chatId]
-    );
-
-    console.log(`Message with ID: ${messageId} successfully deleted from Chat ID: ${chatId}`);
-    res.json({ success: true, message: "Message deleted" });
+    res.status(400).json({ message: "Could not delete message" });
   } catch (error) {
-    console.error(`Error deleting message with ID: ${messageId} from Chat ID: ${chatId}`, error);
     handleApiError(res, error, "deleting message");
   }
 });
 
 router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
-  const { message, chatId } = req.body;
+  // Extract settings from Request Body (Frontend sends these now)
+  const { message, chatId, model: modelString, temperature: tempParam } = req.body;
   const { username } = req.session.user;
 
-  // Input validation
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ message: "Message is required and must be a string" });
-  }
-
-  if (message.trim().length === 0) {
-    return res.status(400).json({ message: "Message cannot be empty" });
-  }
-
-  if (message.length > 10000) {
-    return res.status(400).json({ message: "Message is too long (max 10000 characters)" });
-  }
-
-  if (chatId && (typeof chatId !== 'string' && typeof chatId !== 'number')) {
-    return res.status(400).json({ message: "Invalid chat ID format" });
-  }
+  if (!message || !message.trim()) return res.status(400).json({ message: "Message cannot be empty" });
+  if (message.length > 10000) return res.status(400).json({ message: "Message too long" });
 
   try {
-    // Get user settings
-    const userSettings = await db.fetchUserSettings(username);
-    const temperature = Math.min(Math.max(parseFloat(userSettings.temperature || DEFAULT_TEMPERATURE), 0), 2);
+    // 1. Process Temperature
+    const temperature = tempParam !== undefined 
+        ? Math.min(Math.max(parseFloat(tempParam), 0), 2) 
+        : 1.0;
 
-    // Validate temperature
-    if (isNaN(temperature)) {
-      return res.status(400).json({ message: "Invalid temperature value" });
+    // 2. Process Model String -> Split into Provider and Model Name
+    // Expecting format "provider/model-name" e.g., "gemini/gemini-1.5-flash"
+    let provider = 'gemini';
+    let modelName = 'gemini-1.5-flash'; // Default
+
+    if (modelString && typeof modelString === 'string' && modelString.includes('/')) {
+        const splitIndex = modelString.indexOf('/');
+        provider = modelString.substring(0, splitIndex);
+        modelName = modelString.substring(splitIndex + 1);
+    } else if (modelString) {
+        // Fallback if no slash provided
+        modelName = modelString;
     }
 
-    // Get conversation history
+    console.log(`[Bot Chat] User: ${username} | Provider: ${provider} | Model: ${modelName} | Temp: ${temperature}`);
+
+    // 3. Prepare History
     let conversationHistory = [];
     if (chatId) {
       const fetchedHistory = await db.fetchChatHistoryById(chatId);
@@ -600,35 +429,17 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         conversationHistory = typeof fetchedHistory.conversation_history === 'string'
           ? JSON.parse(fetchedHistory.conversation_history)
           : fetchedHistory.conversation_history;
-      } else if (chatId) {
-        return res.status(404).json({ message: "Chat history not found" });
       }
     } else {
-      // Add system message for new chats - use proper system role
       conversationHistory.push({
         role: "system",
-        parts: [{
-          text: "You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at mbktech.org. You're a general purpose AI assistant (not specifically about mbktech.org). When asked about your identity, mention your developers and that you're a general AI assistant developed at mbktech.org. Keep responses concise and helpful."
-        }]
+        parts: [{ text: "You are an AI chatbot developed by Muhammad Bin Khalid and Maaz Waheed at mbktech.org. Keep responses concise." }]
       });
     }
 
-    // Add new user message
     conversationHistory.push({ role: "user", parts: [{ text: message }] });
 
-    // Determine AI provider and model
-    const aiModel = userSettings.ai_model || DEFAULT_MODEL;
-    const [provider, model] = aiModel.includes('/')
-      ? aiModel.split('/', 2)
-      : ['gemini', aiModel];
-
-    // Validate provider
-    const validProviders = ['gemini', 'nvidia', 'mallow'];
-    if (!validProviders.includes(provider.toLowerCase())) {
-      return res.status(400).json({ message: "Invalid AI provider" });
-    }
-
-    // Call appropriate AI service
+    // 4. Call AI Service
     let aiResponseText;
     switch (provider.toLowerCase()) {
       case 'mallow':
@@ -637,16 +448,16 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
       case 'nvidia':
         const nvidiaApiKey = process.env.NVIDIA_API;
         if (!nvidiaApiKey) throw new Error("NVIDIA API key not configured");
-        aiResponseText = await aiServices.nvidia(nvidiaApiKey, userSettings.ai_model, conversationHistory, temperature);
+        aiResponseText = await aiServices.nvidia(nvidiaApiKey, modelName, conversationHistory, temperature);
         break;
       case 'gemini':
       default:
         const geminiApiKey = process.env.GEMINI_API_KEY;
         if (!geminiApiKey) throw new Error("Gemini API key not configured");
-        aiResponseText = await aiServices.gemini(geminiApiKey, model, conversationHistory, temperature);
+        aiResponseText = await aiServices.gemini(geminiApiKey, modelName, conversationHistory, temperature);
     }
 
-    // Save conversation if not Mallow
+    // 5. Save History
     let newChatId = chatId;
     if (provider !== 'mallow') {
       conversationHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
@@ -659,19 +470,16 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
     }
 
     res.json({ aiResponse: aiResponseText, newChatId });
+
   } catch (error) {
     console.error("Error in bot chat:", error);
-    res.status(500).json({
-      message: `Error processing ${req.body.provider || 'AI'} request`,
-      error: error.message
-    });
+    res.status(500).json({ message: `Error processing AI request`, error: error.message });
   }
 });
 
 router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), async (req, res) => {
   const { chatId } = req.params;
-  if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
-
+  if (!chatId) return res.status(400).json({ message: "Chat ID required" });
   try {
     await pool.query('DELETE FROM ai_history_chatapi WHERE id = $1', [chatId]);
     res.json({ status: 200, message: "Chat history deleted", chatId });
@@ -680,43 +488,6 @@ router.post('/api/chat/clear-history/:chatId', validateSessionAndRole("Any"), as
   }
 });
 
-router.get('/api/user-settings', validateSessionAndRole("Any"), async (req, res) => {
-  try {
-    const userSettings = await db.fetchUserSettings(req.session.user.username);
-    res.json(userSettings);
-  } catch (error) {
-    handleApiError(res, error, "fetching user settings");
-  }
-});
-
-router.post('/api/save-settings', validateSessionAndRole("Any"), async (req, res) => {
-  try {
-    const { theme, fontSize, model, temperature } = req.body;
-
-    // Validate input
-    if (theme && typeof theme !== 'string') {
-      return res.status(400).json({ success: false, message: "Invalid theme format" });
-    }
-
-    if (fontSize && (typeof fontSize !== 'number' || fontSize < 8 || fontSize > 32)) {
-      return res.status(400).json({ success: false, message: "Font size must be between 8 and 32" });
-    }
-
-    if (model && typeof model !== 'string') {
-      return res.status(400).json({ success: false, message: "Invalid model format" });
-    }
-
-    if (temperature !== undefined && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
-      return res.status(400).json({ success: false, message: "Temperature must be between 0 and 2" });
-    }
-
-    const isSaved = await db.saveUserSettings(req.session.user.username, req.body);
-    isSaved
-      ? res.json({ success: true, message: "Settings saved" })
-      : res.status(500).json({ success: false, message: "Failed to save settings" });
-  } catch (error) {
-    handleApiError(res, error, "saving settings");
-  }
-});
+// Removed /api/save-settings route as settings are now local-only
 
 export default router;
