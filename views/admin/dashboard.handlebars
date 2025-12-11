@@ -1,793 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="/Assets/css/admin.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | MBK_AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #050505; --panel: #0a0a0a; --border: #333;
+            --primary: #00ff41; --text: #e0e0e0; --dim: #666;
+            --danger: #ff003c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
+        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+        
+        /* Layout */
+        .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* Sidebar */
+        .brand { color: var(--primary); font-size: 1.2rem; font-weight: bold; margin-bottom: 40px; }
+        .nav-link { display: block; padding: 12px; color: var(--dim); text-decoration: none; border-radius: 4px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(0, 255, 65, 0.1); color: var(--primary); }
+        .nav-link i { width: 24px; }
+        
+        /* Stats Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .card { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 6px; }
+        .stat-value { font-size: 2rem; color: #fff; font-weight: bold; margin: 10px 0; }
+        .stat-label { color: var(--dim); font-size: 0.9rem; text-transform: uppercase; }
+        
+        /* Tables */
+        .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 30px; }
+        .table-header { padding: 15px 20px; border-bottom: 1px solid var(--border); font-weight: bold; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--dim); font-size: 0.8rem; text-transform: uppercase; font-weight: normal; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; background: #222; color: #fff; }
+        
+        /* Chart Placeholder */
+        .chart-box { height: 200px; display: flex; align-items: flex-end; gap: 5px; padding: 20px 0; }
+        .bar { flex: 1; background: var(--primary); opacity: 0.5; min-width: 5px; transition: height 0.3s; }
+        .bar:hover { opacity: 1; }
+    </style>
 </head>
+<body>
 
-<div class="admin-container">
-  <!-- Header with real-time status -->
-  <div class="admin-header">
-    <div class="header-content">
-      <h1 class="admin-title">
-        <i class="fas fa-tachometer-alt"></i>
-        Admin Dashboard
-      </h1>
-      <div class="header-actions">
-        <div class="real-time-status">
-          <span class="status-indicator" id="statusIndicator"></span>
-          <span id="lastUpdated">Last updated: {{formatDate "now"}}</span>
-        </div>
-        <button class="refresh-btn" id="refreshBtn" title="Refresh Data">
-          <i class="fas fa-sync-alt"></i>
-        </button>
-        <div class="user-menu">
-          <span class="welcome-text">Welcome, <strong>{{currentUser}}</strong></span>
-          <a href="/logout" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Enhanced Stats Overview with animations -->
-  <div class="stats-section">
-    <div class="stats-grid">
-      <div class="stat-card primary fade-in" style="animation-delay: 0.1s">
-        <div class="stat-icon">
-          <i class="fas fa-comments"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value" id="totalChats">{{stats.total_chats}}</div>
-          <div class="stat-label">Total Chats</div>
-          <div class="stat-trend {{#if (gt stats.active_chats_last_hour 10)}}trend-up{{else}}trend-down{{/if}}">
-            <i class="fas fa-arrow-{{#if (gt stats.active_chats_last_hour 10)}}up{{else}}down{{/if}}"></i>
-            <span id="activeChatsLastHour">{{stats.active_chats_last_hour}}</span> in last hour
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card success fade-in" style="animation-delay: 0.2s">
-        <div class="stat-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value" id="uniqueUsers">{{stats.unique_users}}</div>
-          <div class="stat-label">Unique Users</div>
-          <div class="stat-trend">
-            <i class="fas fa-user-clock"></i>
-            <span id="activeUsersToday">{{stats.active_users_today}}</span> active today
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card warning fade-in" style="animation-delay: 0.3s">
-        <div class="stat-icon">
-          <i class="fas fa-paper-plane"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value" id="messagesToday">{{stats.messages_today}}</div>
-          <div class="stat-label">Messages Today</div>
-          <div class="stat-trend">
-            <div class="mini-chart" id="hourlyChartContainer"></div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card info fade-in" style="animation-delay: 0.4s">
-        <div class="stat-icon">
-          <i class="fas fa-robot"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">
-            {{#if modelDistribution.0.avg_temp}}
-              {{modelDistribution.0.avg_temp}}°
-            {{else}}
-              -
-            {{/if}}
-          </div>
-          <div class="stat-label">Avg Temperature</div>
-          <div class="stat-trend">
-            <i class="fas fa-crown"></i>
-            Top: {{modelDistribution.0.ai_model}}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <nav class="sidebar">
+        <div class="brand">MBK_ADMIN</div>
+        <a href="/admin/dashboard" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="/admin/users" class="nav-link"><i class="fas fa-users"></i> Users</a>
+        <a href="/admin/chats" class="nav-link"><i class="fas fa-comments"></i> Chat Logs</a>
+        <div style="flex:1"></div>
+        <a href="/dashboard" class="nav-link"><i class="fas fa-sign-out-alt"></i> Exit Admin</a>
+    </nav>
 
-  <!-- System Health Section -->
-  <div class="health-section">
-    <div class="section-header">
-      <h2><i class="fas fa-heartbeat"></i> System Health</h2>
-      <div class="health-indicators">
-        <div class="health-indicator" id="dbHealth">
-          <i class="fas fa-database"></i>
-          <span>Database</span>
-        </div>
-        <div class="health-indicator" id="serverHealth">
-          <i class="fas fa-server"></i>
-          <span>Server</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Content Grid -->
-  <div class="dashboard-grid">
-    <!-- Recent Activity Card -->
-    <div class="dashboard-card recent-activity fade-in" style="animation-delay: 0.5s">
-      <div class="card-header">
-        <h3><i class="fas fa-clock"></i> Recent Activity</h3>
-        <div class="card-actions">
-          <button class="icon-btn" id="refreshActivity" title="Refresh">
-            <i class="fas fa-sync-alt"></i>
-          </button>
-          <a href="/admin/chats" class="view-all-btn">
-            View All <i class="fas fa-arrow-right"></i>
-          </a>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="activity-timeline" id="activityTimeline">
-          {{#each recentChats}}
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <span class="username">{{this.username}}</span>
-                <span class="timestamp">{{formatDate this.created_at}}</span>
-              </div>
-              <div class="timeline-details">
-                <div class="detail-tags">
-                  <span class="tag model-tag">{{this.ai_model}}</span>
-                  <span class="tag temp-tag">{{this.temperature}}°</span>
-                  <span class="tag count-tag">{{this.message_count_in_chat}} msgs</span>
-                </div>
-                <div class="usage-bar">
-                  <div class="usage-fill" style="width: {{divide this.message_count this.daily_message_limit 100}}%"></div>
-                </div>
-                <div class="usage-text">
-                  {{this.message_count}}/{{this.daily_message_limit}} daily messages
-                </div>
-              </div>
+    <main class="main">
+        <h2 style="margin-bottom: 20px;">SYSTEM_OVERVIEW</h2>
+        
+        <!-- Stats Cards -->
+        <div class="grid">
+            <div class="card">
+                <div class="stat-label">Total Chats</div>
+                <div class="stat-value">{{stats.total_chats}}</div>
             </div>
-          </div>
-          {{/each}}
-        </div>
-      </div>
-    </div>
-
-    <!-- Top Users Card -->
-    <div class="dashboard-card top-users fade-in" style="animation-delay: 0.6s">
-      <div class="card-header">
-        <h3><i class="fas fa-trophy"></i> Top Users</h3>
-        <a href="/admin/users" class="view-all-btn">
-          View All <i class="fas fa-arrow-right"></i>
-        </a>
-      </div>
-      <div class="card-content">
-        <div class="leaderboard">
-          {{#each topUsers}}
-          <div class="leaderboard-item">
-            <div class="rank">{{add @index 1}}</div>
-            <div class="user-info">
-              <div class="username">{{this.username}}</div>
-              <div class="user-stats">
-                <span class="stat">{{this.active_days}} days active</span>
-                <span class="stat">Peak: {{this.peak_messages_in_day}}/day</span>
-              </div>
+            <div class="card">
+                <div class="stat-label">Unique Users</div>
+                <div class="stat-value">{{stats.unique_users}}</div>
             </div>
-            <div class="message-count">{{this.total_messages}}</div>
-          </div>
-          {{/each}}
-        </div>
-      </div>
-    </div>
-
-    <!-- Model Distribution Card -->
-    <div class="dashboard-card model-distribution fade-in" style="animation-delay: 0.7s">
-      <div class="card-header">
-        <h3><i class="fas fa-chart-pie"></i> Model Usage</h3>
-        <div class="chart-toggle">
-          <button class="toggle-btn active" data-view="table">Table</button>
-          <button class="toggle-btn" data-view="chart">Chart</button>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="model-table" id="modelTable">
-          {{#each modelDistribution}}
-          <div class="model-row">
-            <div class="model-info">
-              <span class="model-name">{{this.ai_model}}</span>
-              <span class="model-users">{{this.count}} users</span>
+            <div class="card">
+                <div class="stat-label">Messages Today</div>
+                <div class="stat-value">{{stats.messages_today}}</div>
             </div>
-            <div class="model-stats">
-              <span class="temp-stat">{{this.avg_temp}}° avg</span>
-              <span class="limit-stat">{{this.avg_limit}} limit</span>
+            <div class="card">
+                <div class="stat-label">Active Users</div>
+                <div class="stat-value">{{stats.active_users_today}}</div>
             </div>
-          </div>
-          {{/each}}
         </div>
-        <div class="model-chart hidden" id="modelChart">
-          <canvas id="modelChartCanvas"></canvas>
-        </div>
-      </div>
-    </div>
 
-    <!-- Quick Actions Card -->
-    <div class="dashboard-card quick-actions fade-in" style="animation-delay: 0.8s">
-      <div class="card-header">
-        <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
-      </div>
-      <div class="card-content">
-        <div class="action-grid">
-          <a href="/admin/users" class="action-item">
-            <div class="action-icon">
-              <i class="fas fa-users"></i>
+        <!-- Hourly Chart (Simple CSS) -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="stat-label">Traffic Volume (24h)</div>
+            <div class="chart-box" id="chart">
+                <!-- JS will inject bars here -->
             </div>
-            <div class="action-text">
-              <span class="action-title">Manage Users</span>
-              <span class="action-desc">View and edit user settings</span>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 2fr 1fr;">
+            <!-- Recent Chats Table -->
+            <div class="table-container">
+                <div class="table-header">RECENT ACTIVITY</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Time</th>
+                            <th>Msgs</th>
+                            <th>ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each recentChats}}
+                        <tr>
+                            <td>{{this.username}}</td>
+                            <td>{{this.created_at}}</td>
+                            <td><span class="badge">{{this.message_count}}</span></td>
+                            <td style="font-size:0.8rem; color:#666;">{{this.id}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
             </div>
-          </a>
-          
-          <a href="/admin/chats" class="action-item">
-            <div class="action-icon">
-              <i class="fas fa-comments"></i>
+
+            <!-- Top Users Table -->
+            <div class="table-container">
+                <div class="table-header">TOP USERS</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Msgs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each topUsers}}
+                        <tr>
+                            <td>{{this.username}}</td>
+                            <td style="text-align:right;">{{this.total_messages}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
             </div>
-            <div class="action-text">
-              <span class="action-title">Chat Management</span>
-              <span class="action-desc">Browse and manage conversations</span>
-            </div>
-          </a>
-          
-          <button class="action-item" id="exportBtn">
-            <div class="action-icon">
-              <i class="fas fa-download"></i>
-            </div>
-            <div class="action-text">
-              <span class="action-title">Export Data</span>
-              <span class="action-desc">Download system data</span>
-            </div>
-          </button>
-          
-          <button class="action-item" id="analyticsBtn">
-            <div class="action-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="action-text">
-              <span class="action-title">Analytics</span>
-              <span class="action-desc">View detailed insights</span>
-            </div>
-          </button>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Enhanced Analytics Modal -->
-<div class="modal" id="analyticsModal">
-  <div class="modal-content large">
-    <div class="modal-header">
-      <h3><i class="fas fa-chart-line"></i> Advanced Analytics</h3>
-      <button class="close-btn" id="closeAnalytics">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="analytics-controls">
-        <select id="analyticsPeriod">
-          <option value="today">Today</option>
-          <option value="week" selected>This Week</option>
-          <option value="month">This Month</option>
-          <option value="custom">Custom Range</option>
-        </select>
-        <div class="custom-range hidden" id="customRange">
-          <input type="date" id="startDate">
-          <input type="date" id="endDate">
-        </div>
-        <button class="btn-primary" id="loadAnalytics">Load Analytics</button>
-      </div>
-      <div class="analytics-content" id="analyticsContent">
-        <div class="loading-spinner">
-          <i class="fas fa-spinner fa-spin"></i>
-          <span>Loading analytics...</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </main>
 
-<!-- Export Modal -->
-<div class="modal" id="exportModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-download"></i> Export Data</h3>
-      <button class="close-btn" id="closeExport">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="export-options">
-        <div class="option-group">
-          <label>Data Type:</label>
-          <select id="exportType">
-            <option value="users">Users</option>
-            <option value="chats">Chats</option>
-            <option value="analytics">Analytics</option>
-          </select>
-        </div>
-        <div class="option-group">
-          <label>Format:</label>
-          <select id="exportFormat">
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-          </select>
-        </div>
-        <button class="btn-primary" id="downloadExport">
-          <i class="fas fa-download"></i> Download
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Chart.js and Enhanced JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-class AdminDashboard {
-  constructor() {
-    this.charts = {};
-    this.updateInterval = null;
-    this.init();
-  }
-
-  init() {
-    this.initializeCharts();
-    this.setupEventListeners();
-    this.startRealTimeUpdates();
-    this.checkSystemHealth();
-  }
-
-  initializeCharts() {
-    // Initialize hourly chart
-    this.initHourlyChart();
-    
-    // Initialize model distribution chart
-    this.initModelChart();
-  }
-
-  initHourlyChart() {
-    const hourlyData = JSON.parse('{{{hourlyData}}}');
-    const ctx = document.createElement('canvas');
-    ctx.height = 40;
-    document.getElementById('hourlyChartContainer').appendChild(ctx);
-    
-    this.charts.hourly = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array(24).fill().map((_, i) => i + ':00'),
-        datasets: [{
-          data: hourlyData,
-          borderColor: '#4F46E5',
-          backgroundColor: 'rgba(79, 70, 229, 0.1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (context) => `${context.parsed.y} messages at ${context.label}`
-            }
-          }
-        },
-        scales: {
-          x: { display: false },
-          y: { display: false }
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index'
-        }
-      }
-    });
-  }
-
-  initModelChart() {
-    const modelData = {{{jsonStringify modelDistribution}}};
-    const ctx = document.getElementById('modelChartCanvas');
-    
-    this.charts.model = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: modelData.map(m => m.ai_model),
-        datasets: [{
-          data: modelData.map(m => m.count),
-          backgroundColor: [
-            '#4F46E5', '#7C3AED', '#EC4899', '#F59E0B',
-            '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'
-          ],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              padding: 20,
-              usePointStyle: true
-            }
-          }
-        }
-      }
-    });
-  }
-
-  setupEventListeners() {
-    // Refresh button
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-      this.refreshData();
-    });
-
-    // Chart toggle buttons
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const view = e.target.dataset.view;
-        this.toggleModelView(view);
-      });
-    });
-
-    // Modal controls
-    document.getElementById('analyticsBtn').addEventListener('click', () => {
-      this.openAnalyticsModal();
-    });
-
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      this.openExportModal();
-    });
-
-    document.getElementById('closeAnalytics').addEventListener('click', () => {
-      this.closeModal('analyticsModal');
-    });
-
-    document.getElementById('closeExport').addEventListener('click', () => {
-      this.closeModal('exportModal');
-    });
-
-    // Analytics period change
-    document.getElementById('analyticsPeriod').addEventListener('change', (e) => {
-      const customRange = document.getElementById('customRange');
-      if (e.target.value === 'custom') {
-        customRange.classList.remove('hidden');
-      } else {
-        customRange.classList.add('hidden');
-      }
-    });
-
-    // Load analytics
-    document.getElementById('loadAnalytics').addEventListener('click', () => {
-      this.loadAnalytics();
-    });
-
-    // Download export
-    document.getElementById('downloadExport').addEventListener('click', () => {
-      this.downloadExport();
-    });
-
-    // Activity refresh
-    document.getElementById('refreshActivity').addEventListener('click', () => {
-      this.refreshActivity();
-    });
-  }
-
-  toggleModelView(view) {
-    const buttons = document.querySelectorAll('.toggle-btn');
-    const table = document.getElementById('modelTable');
-    const chart = document.getElementById('modelChart');
-
-    buttons.forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
-
-    if (view === 'chart') {
-      table.classList.add('hidden');
-      chart.classList.remove('hidden');
-    } else {
-      table.classList.remove('hidden');
-      chart.classList.add('hidden');
-    }
-  }
-
-  startRealTimeUpdates() {
-    this.updateInterval = setInterval(() => {
-      this.updateSystemStats();
-    }, 30000); // Update every 30 seconds
-  }
-
-  async updateSystemStats() {
-    try {
-      const response = await fetch('/admin/system-stats');
-      const data = await response.json();
-      
-      if (data.success) {
-        this.updateHealthIndicators(data.stats);
-        this.updateLastUpdated();
-      }
-    } catch (error) {
-      console.error('Failed to update system stats:', error);
-      this.setStatusIndicator('error');
-    }
-  }
-
-  updateHealthIndicators(stats) {
-    const dbHealth = document.getElementById('dbHealth');
-    const serverHealth = document.getElementById('serverHealth');
-    
-    // Update database health
-    const dbStatus = stats.database.waitingCount > 10 ? 'warning' : 'healthy';
-    dbHealth.className = `health-indicator ${dbStatus}`;
-    
-    // Update server health
-    const memoryUsage = stats.server.memory.heapUsed / stats.server.memory.heapTotal;
-    const serverStatus = memoryUsage > 0.8 ? 'warning' : 'healthy';
-    serverHealth.className = `health-indicator ${serverStatus}`;
-  }
-
-  updateLastUpdated() {
-    const now = new Date();
-    document.getElementById('lastUpdated').textContent = 
-      `Last updated: ${now.toLocaleTimeString()}`;
-  }
-
-  setStatusIndicator(status) {
-    const indicator = document.getElementById('statusIndicator');
-    indicator.className = `status-indicator ${status}`;
-  }
-
-  async refreshData() {
-    this.setStatusIndicator('loading');
-    
-    try {
-      // Refresh the page to get latest data
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to refresh data:', error);
-      this.setStatusIndicator('error');
-    }
-  }
-
-  async refreshActivity() {
-    const refreshBtn = document.getElementById('refreshActivity');
-    const originalIcon = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    
-    try {
-      // Simulate refresh - in real implementation, fetch new activity data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Add a visual indicator that data was refreshed
-      const timeline = document.getElementById('activityTimeline');
-      timeline.style.opacity = '0.6';
-      setTimeout(() => {
-        timeline.style.opacity = '1';
-      }, 300);
-      
-    } catch (error) {
-      console.error('Failed to refresh activity:', error);
-    } finally {
-      refreshBtn.innerHTML = originalIcon;
-    }
-  }
-
-  openAnalyticsModal() {
-    document.getElementById('analyticsModal').classList.add('active');
-  }
-
-  openExportModal() {
-    document.getElementById('exportModal').classList.add('active');
-  }
-
-  closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-  }
-
-  async loadAnalytics() {
-    const period = document.getElementById('analyticsPeriod').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    const content = document.getElementById('analyticsContent');
-    content.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><span>Loading analytics...</span></div>';
-    
-    try {
-      const params = new URLSearchParams({ period });
-      if (period === 'custom' && startDate && endDate) {
-        params.append('startDate', startDate);
-        params.append('endDate', endDate);
-      }
-      
-      const response = await fetch(`/admin/analytics?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        this.renderAnalytics(data.data);
-      } else {
-        throw new Error(data.message);
-      }
-    } catch (error) {
-      content.innerHTML = `<div class="error-message">Failed to load analytics: ${error.message}</div>`;
-    }
-  }
-
-  renderAnalytics(data) {
-    const content = document.getElementById('analyticsContent');
-    
-    const html = `
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <h4>Messages by Day</h4>
-          <canvas id="messagesByDayChart"></canvas>
-        </div>
-        <div class="analytics-card">
-          <h4>User Activity</h4>
-          <div class="user-activity-list">
-            ${data.userActivity.map(user => `
-              <div class="user-activity-item">
-                <span class="username">${user.username}</span>
-                <span class="activity-count">${user.total_messages} messages</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        <div class="analytics-card">
-          <h4>Model Usage</h4>
-          <canvas id="modelUsageChart"></canvas>
-        </div>
-        <div class="analytics-card">
-          <h4>Peak Hours</h4>
-          <canvas id="peakHoursChart"></canvas>
-        </div>
-      </div>
-    `;
-    
-    content.innerHTML = html;
-    
-    // Initialize analytics charts
-    this.initAnalyticsCharts(data);
-  }
-
-  initAnalyticsCharts(data) {
-    // Messages by day chart
-    const msgCtx = document.getElementById('messagesByDayChart');
-    new Chart(msgCtx, {
-      type: 'line',
-      data: {
-        labels: data.messagesByDay.map(d => d.date),
-        datasets: [{
-          label: 'Messages',
-          data: data.messagesByDay.map(d => d.message_count),
-          borderColor: '#4F46E5',
-          backgroundColor: 'rgba(79, 70, 229, 0.1)',
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        }
-      }
-    });
-
-    // Peak hours chart
-    const peakCtx = document.getElementById('peakHoursChart');
-    new Chart(peakCtx, {
-      type: 'bar',
-      data: {
-        labels: data.peakHours.map(h => h.hour + ':00'),
-        datasets: [{
-          label: 'Messages',
-          data: data.peakHours.map(h => h.message_count),
-          backgroundColor: '#10B981'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        }
-      }
-    });
-  }
-
-  async downloadExport() {
-    const type = document.getElementById('exportType').value;
-    const format = document.getElementById('exportFormat').value;
-    
-    const downloadBtn = document.getElementById('downloadExport');
-    const originalContent = downloadBtn.innerHTML;
-    
-    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-    downloadBtn.disabled = true;
-    
-    try {
-      const response = await fetch(`/admin/export/${type}?format=${format}`);
-      
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${type}_export.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      this.closeModal('exportModal');
-      
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
-    } finally {
-      downloadBtn.innerHTML = originalContent;
-      downloadBtn.disabled = false;
-    }
-  }
-
-  async checkSystemHealth() {
-    try {
-      const response = await fetch('/admin/system-stats');
-      const data = await response.json();
-      
-      if (data.success) {
-        this.updateHealthIndicators(data.stats);
-        this.setStatusIndicator('healthy');
-      } else {
-        this.setStatusIndicator('warning');
-      }
-    } catch (error) {
-      console.error('Health check failed:', error);
-      this.setStatusIndicator('error');
-    }
-  }
-
-  destroy() {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-    }
-    
-    Object.values(this.charts).forEach(chart => {
-      if (chart) chart.destroy();
-    });
-  }
-}
-
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  window.adminDashboard = new AdminDashboard();
-});
-
-// Clean up on page unload
-window.addEventListener('beforeunload', () => {
-  if (window.adminDashboard) {
-    window.adminDashboard.destroy();
-  }
-});
-</script>
+    <script>
+        // Simple visualization for hourly data
+        const data = JSON.parse('{{hourlyData}}');
+        const max = Math.max(...data, 1);
+        const chart = document.getElementById('chart');
+        
+        data.forEach((val, hour) => {
+            const h = (val / max) * 100;
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = h + '%';
+            bar.title = `Hour ${hour}: ${val} msgs`;
+            chart.appendChild(bar);
+        });
+    </script>
+</body>
+</html>

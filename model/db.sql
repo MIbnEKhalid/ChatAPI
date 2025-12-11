@@ -1,39 +1,40 @@
+-- =========================================================
+-- SAFE INITIALIZATION SCRIPT (Runs on every startup)
+-- =========================================================
+
+-- 1. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- 2. Create Chat History Table (Only if missing)
 CREATE TABLE IF NOT EXISTS ai_history_chatapi (
     id SERIAL PRIMARY KEY,
     conversation_id UUID NOT NULL DEFAULT uuid_generate_v4(),
-    conversation_history JSONB,
+    conversation_history JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ,
-    temperature FLOAT DEFAULT 1.0,
-    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    username VARCHAR(100) NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE
 );
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_username ON ai_history_chatapi(username);
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_id ON ai_history_chatapi(id);
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_created_at ON ai_history_chatapi(created_at);
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_conversation_id ON ai_history_chatapi(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_ai_history_chatapi_conversation_history ON ai_history_chatapi USING gin (conversation_history);
 
-UPDATE ai_history_chatapi
-SET updated_at = created_at
-WHERE updated_at IS NULL;
+-- Indexes (Safe creation)
+CREATE INDEX IF NOT EXISTS idx_chat_username ON ai_history_chatapi(username);
+CREATE INDEX IF NOT EXISTS idx_chat_deleted ON ai_history_chatapi(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_chat_history_gin ON ai_history_chatapi USING gin (conversation_history);
 
-CREATE TABLE IF NOT EXISTS user_settings_chatapi (
+-- 3. Create User Message Logs (Only if missing)
+CREATE TABLE IF NOT EXISTS user_message_logs_chatapi (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE,
-    theme VARCHAR(20) DEFAULT 'dark',
-    font_size INTEGER DEFAULT 16,
-    ai_model VARCHAR(50) DEFAULT 'default',
-    temperature FLOAT DEFAULT 1.0,
-    daily_message_limit INTEGER DEFAULT 100,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    username VARCHAR(100) NOT NULL,
+    message_count INTEGER DEFAULT 0,
+    date DATE DEFAULT CURRENT_DATE,
+    CONSTRAINT unique_user_date UNIQUE (username, date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_settings_chatapi_username ON user_settings_chatapi(username);
+CREATE INDEX IF NOT EXISTS idx_message_logs_lookup ON user_message_logs_chatapi(username, date);
 
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- 4. Triggers (PostgreSQL doesn't support "CREATE TRIGGER IF NOT EXISTS" easily, 
+-- so we wrap it in a DO block to prevent errors)
+CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -43,24 +44,11 @@ $$ LANGUAGE plpgsql;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_trigger
-        WHERE tgname = 'update_user_settings_chatapi_updated_at'
-    ) THEN
-        CREATE TRIGGER update_user_settings_chatapi_updated_at
-        BEFORE UPDATE ON user_settings_chatapi
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_update_chat_timestamp') THEN
+        CREATE TRIGGER trigger_update_chat_timestamp
+        BEFORE UPDATE ON ai_history_chatapi
         FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column();
+        EXECUTE FUNCTION update_timestamp();
     END IF;
 END;
 $$;
-
-CREATE TABLE IF NOT EXISTS user_message_logs_chatapi (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) REFERENCES "Users"(username) ON DELETE CASCADE,
-    message_count INTEGER DEFAULT 0,
-    date DATE DEFAULT CURRENT_DATE,
-    CONSTRAINT unique_user_date UNIQUE (username, date)
-);
-CREATE INDEX IF NOT EXISTS idx_user_message_logs_chatapi_username_date ON user_message_logs_chatapi(username, date);
