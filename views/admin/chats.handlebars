@@ -7,39 +7,109 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg: #050505; --panel: #0a0a0a; --border: #333; --primary: #00ff41; --text: #e0e0e0; --dim: #666; --danger: #ff003c; }
+        :root { 
+            --bg: #050505; 
+            --panel: #0a0a0a; 
+            --border: #333; 
+            --primary: #00ff41; 
+            --text: #e0e0e0; 
+            --dim: #666; 
+            --danger: #ff003c; 
+            --glass-red: rgba(255, 0, 60, 0.15);
+            --glass-red-border: rgba(255, 0, 60, 0.4);
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
         body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: hidden; }
         
+        /* Sidebar */
         .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
-        .main { flex: 1; padding: 20px; overflow-y: auto; width: 100%; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; width: 100%; position: relative; }
         
         .brand { color: var(--primary); font-size: 1.2rem; font-weight: bold; margin-bottom: 40px; }
-        .nav-link { display: block; padding: 12px; color: var(--dim); text-decoration: none; border-radius: 4px; margin-bottom: 5px; }
+        .nav-link { display: block; padding: 12px; color: var(--dim); text-decoration: none; border-radius: 4px; margin-bottom: 5px; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: rgba(0, 255, 65, 0.1); color: var(--primary); }
         .nav-link i { width: 24px; }
 
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
-        .search-input { background: #111; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; width: 300px; }
-        .btn { background: #222; color: #fff; border: 1px solid var(--border); padding: 10px 20px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .btn:hover { background: #333; }
+        /* Toolbar & Forms */
+        .toolbar { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            align-items: center; 
+            background: #0f0f0f;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .input-group { position: relative; display: flex; align-items: center; }
+        .input-icon { position: absolute; left: 10px; color: var(--dim); }
+        
+        .form-control { 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            color: #fff; 
+            padding: 10px 10px 10px 35px; 
+            border-radius: 4px; 
+            outline: none; 
+            transition: 0.2s;
+        }
+        .form-control:focus { border-color: var(--primary); }
+        
+        select.form-control { padding-left: 10px; cursor: pointer; min-width: 150px; }
+
+        .btn { background: #222; color: #fff; border: 1px solid var(--border); padding: 9px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 0.85rem; font-weight: bold; }
+        .btn:hover:not(:disabled) { background: #333; border-color: #555; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-primary { background: rgba(0, 255, 65, 0.1); color: var(--primary); border-color: var(--primary); }
+        .btn-primary:hover { background: var(--primary); color: #000; }
+        
         .btn-danger { background: rgba(255, 0, 60, 0.1); color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover { background: var(--danger); color: #fff; }
 
-        .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; width: 100%; overflow-x: auto; }
+        /* Table Styles */
+        .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; width: 100%; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        th { color: var(--dim); font-size: 0.8rem; text-transform: uppercase; font-weight: normal; }
-        tr:hover { background: rgba(255,255,255,0.02); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+        th { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; background: #111; position: sticky; top: 0; z-index: 10; }
         
-        /* Sparkline / Chart */
-        .sparkline { display: flex; align-items: flex-end; height: 30px; gap: 2px; width: 100px; opacity: 0.7; }
-        .spark-bar { flex: 1; background: var(--primary); min-height: 2px; }
+        tr { transition: background 0.2s; border-left: 3px solid transparent; }
+        tr:hover { background: rgba(255,255,255,0.03); }
 
-        .action-link { color: var(--primary); text-decoration: none; font-size: 0.9rem; margin-right: 15px; }
-        .action-link:hover { text-decoration: underline; }
+        /* === GLASSY RED DELETED ROW === */
+        .row-deleted {
+            background: var(--glass-red) !important;
+            border-left: 3px solid var(--danger) !important;
+            backdrop-filter: blur(2px); /* Glass effect */
+        }
+        .row-deleted:hover {
+            background: rgba(255, 0, 60, 0.2) !important;
+        }
+        .row-deleted td {
+            color: #ffcccc; /* Slight red tint to text */
+            border-bottom: 1px solid var(--glass-red-border);
+        }
         
-        input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-deleted { background: var(--danger); color: white; }
+        .status-active { background: #111; color: var(--dim); border: 1px solid #333; }
+
+        /* Sparkline */
+        .sparkline { display: flex; align-items: flex-end; height: 24px; gap: 3px; width: 80px; opacity: 0.8; }
+        .spark-bar { flex: 1; background: var(--primary); min-height: 2px; border-radius: 1px 1px 0 0; }
+        .row-deleted .spark-bar { background: var(--danger); opacity: 0.6; }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 15px; color: var(--dim); font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -50,15 +120,40 @@
         <a href="/admin/users" class="nav-link"><i class="fas fa-users"></i> Users</a>
         <a href="/admin/chats" class="nav-link active"><i class="fas fa-comments"></i> Chat Logs</a>
         <div style="flex:1"></div>
+        <div style="padding: 10px; font-size: 0.8rem; color: #444;">Logged in as: <br><strong style="color: #666">{{currentUser}}</strong></div>
         <a href="/dashboard" class="nav-link"><i class="fas fa-sign-out-alt"></i> Exit</a>
     </nav>
 
     <main class="main">
-        <h2 style="margin-bottom: 20px;">CHAT_LOGS</h2>
+        <h2 style="margin-bottom: 20px; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-database" style="color:var(--dim); font-size:1rem;"></i> CHAT_LOGS
+        </h2>
 
-        <form class="toolbar" method="GET">
-            <input type="text" name="username" class="search-input" placeholder="Filter User..." value="{{usernameFilter}}">
-            <button type="submit" class="btn"><i class="fas fa-search"></i> FILTER</button>
+        <!-- FILTRATION FORM -->
+        <form class="toolbar" method="GET" action="/admin/chats" id="filterForm">
+            
+            <!-- Search User -->
+            <div class="input-group">
+                <i class="fas fa-search input-icon"></i>
+                <input type="text" name="username" class="form-control" placeholder="Search User..." value="{{filters.username}}" style="width: 250px;">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="input-group">
+                <select name="status" class="form-control" id="statusFilter" onchange="document.getElementById('filterForm').submit()">
+                    <option value="all">All States</option>
+                    <option value="active">Active Only</option>
+                    <option value="deleted">Deleted Only</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> APPLY</button>
+            
+            {{#if (or filters.username (neq filters.status 'all'))}} 
+            <!-- Note: If you don't have Handlebars helpers like 'or'/'neq', remove the logic above and just show the clear button always or use client JS -->
+            <a href="/admin/chats" class="btn" style="padding: 9px 12px;" title="Clear Filters"><i class="fas fa-times"></i></a>
+            {{/if}}
+
             <div style="flex:1"></div>
             <button type="button" class="btn btn-danger" onclick="bulkDelete()"><i class="fas fa-trash"></i> DELETE SELECTED</button>
         </form>
@@ -67,40 +162,63 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 40px;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th style="width: 40px; text-align:center;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th>Status</th>
                         <th>User</th>
-                        <th>Created</th>
-                        <th>Messages</th>
-                        <th>Activity Graph</th> <!-- New Tracking Chart Column -->
+                        <th>Date Created</th>
+                        <th>Msgs</th>
+                        <th>Activity Graph</th>
                         <th>Chat ID</th>
                         <th style="text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{#each chats}}
-                    <tr>
-                        <td><input type="checkbox" class="chat-check" value="{{this.id}}"></td>
-                        <td><strong>{{this.username}}</strong></td>
-                        <td>{{this.created_at}}</td>
-                        <td><span style="background:#222; padding:2px 6px; border-radius:4px;">{{this.message_count}}</span></td>
+                    <!-- Conditional Class for Glassy Red Effect -->
+                    <tr class="{{#if this.is_deleted}}row-deleted{{/if}}">
+                        <td style="text-align:center;"><input type="checkbox" class="chat-check" value="{{this.id}}"></td>
                         
-                        <!-- Tracking Chart / Sparkline -->
                         <td>
-                            <div class="sparkline" title="Message Density">
-                                <!-- Generate random bars based on message count for visual effect -->
-                                <div class="spark-bar" style="height: 40%"></div>
-                                <div class="spark-bar" style="height: 80%"></div>
-                                <div class="spark-bar" style="height: 60%"></div>
-                                <div class="spark-bar" style="height: 100%"></div>
-                                <div class="spark-bar" style="height: 30%"></div>
+                            {{#if this.is_deleted}}
+                                <span class="status-badge status-deleted">DELETED</span>
+                            {{else}}
+                                <span class="status-badge status-active">ACTIVE</span>
+                            {{/if}}
+                        </td>
+
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-user-circle" style="opacity: 0.5;"></i> 
+                                <strong>{{this.username}}</strong>
+                            </div>
+                        </td>
+                        
+                        <td style="opacity: 0.8; font-size: 0.9rem;">{{this.created_at}}</td>
+                        
+                        <td><span style="background:rgba(0,0,0,0.3); padding: 2px 6px; border-radius:4px;">{{this.message_count}}</span></td>
+                        
+                        <!-- Visual representation -->
+                        <td>
+                            <div class="sparkline">
+                                <div class="spark-bar" style="height: 30%; opacity: 0.5;"></div>
+                                <div class="spark-bar" style="height: 60%; opacity: 0.7;"></div>
+                                <div class="spark-bar" style="height: 100%;"></div>
+                                <div class="spark-bar" style="height: 45%; opacity: 0.6;"></div>
+                                <div class="spark-bar" style="height: 80%; opacity: 0.9;"></div>
                             </div>
                         </td>
 
-                        <td style="font-family: monospace; color:#666;">{{this.id}}</td>
+                        <td style="font-family: monospace; opacity: 0.6; font-size: 0.85rem;">{{this.id}}</td>
                         
                         <td style="text-align: right;">
-                            <a href="/admin/chats/{{this.id}}" class="action-link"><i class="fas fa-eye"></i> View</a>
-                            <a href="#" onclick="downloadChat('{{this.id}}')" class="action-link"><i class="fas fa-download"></i> DL</a>
+                            <a href="/admin/chats/{{this.id}}" class="action-link" title="Inspect" style="color: inherit; margin-right: 10px;"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding: 40px; color: var(--dim);">
+                            <i class="fas fa-ghost" style="font-size: 2rem; margin-bottom: 10px; display:block;"></i>
+                            No logs found matching criteria.
                         </td>
                     </tr>
                     {{/each}}
@@ -108,13 +226,38 @@
             </table>
         </div>
         
-        <!-- Pagination -->
-        <div style="margin-top:20px; text-align:right; font-size:0.9rem; color:var(--dim);">
-            Page {{pagination.currentPage}} of {{pagination.totalPages}}
+        <!-- Pagination Controls -->
+        <div class="pagination">
+            <span style="margin-right: 10px;">Page <strong>{{pagination.currentPage}}</strong> of <strong>{{pagination.totalPages}}</strong></span>
+            <button id="prevBtn" class="btn" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></button>
+            <button id="nextBtn" class="btn" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
     </main>
 
     <script>
+        // --- Initialize Filters based on Server Data ---
+        // This ensures the dropdown selects the right option on page reload
+        const currentStatus = "{{filters.status}}" || "all";
+        document.getElementById('statusFilter').value = currentStatus;
+
+        // --- Pagination Logic ---
+        const currentPage = parseInt('{{pagination.currentPage}}') || 1;
+        const totalPages = parseInt('{{pagination.totalPages}}') || 1;
+
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        if (currentPage <= 1) prevBtn.disabled = true;
+        if (currentPage >= totalPages) nextBtn.disabled = true;
+
+        function changePage(step) {
+            const url = new URL(window.location.href);
+            const newPage = currentPage + step;
+            url.searchParams.set('page', newPage);
+            window.location.href = url.toString();
+        }
+
+        // --- Bulk Actions ---
         function toggleAll(source) {
             document.querySelectorAll('.chat-check').forEach(c => c.checked = source.checked);
         }
@@ -122,22 +265,23 @@
         async function bulkDelete() {
             const selected = Array.from(document.querySelectorAll('.chat-check:checked')).map(c => c.value);
             if (selected.length === 0) return alert("Select items first");
-            if (!confirm(`Delete ${selected.length} logs?`)) return;
+            if (!confirm(`Mark ${selected.length} logs as deleted?`)) return;
 
-            const res = await fetch('/admin/chats/bulk-delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatIds: selected })
-            });
+            try {
+                const res = await fetch('/admin/chats/bulk-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatIds: selected })
+                });
 
-            if (res.ok) window.location.reload();
-            else alert("Error deleting");
+                if (res.ok) window.location.reload();
+                else alert("Error processing request");
+            } catch(e) {
+                console.error(e);
+                alert("Network Error");
+            }
         }
 
-        async function downloadChat(id) {
-            // Trigger download by fetching the detail JSON directly
-            window.open(`/api/chat/histories/${id}`, '_blank');
-        }
     </script>
 </body>
 </html>

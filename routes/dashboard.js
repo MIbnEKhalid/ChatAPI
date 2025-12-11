@@ -17,6 +17,7 @@ const countTreeNodes = (history) => {
 // 1. ADMIN DASHBOARD
 router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
+    // 1. Stats Query: removed "Active Today" calculation
     const statsQuery = `
       SELECT 
         (SELECT COUNT(*) FROM ai_history_chatapi) as total_chats,
@@ -24,6 +25,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
         (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users
     `;
     
+    // 2. Recent Chats: Strictly limited to latest 10
     const recentChatsQuery = `
       SELECT id, username, created_at, conversation_history, is_deleted
       FROM ai_history_chatapi
@@ -31,6 +33,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
       LIMIT 10
     `;
 
+    // 3. Hourly Volume for the Chart (Today only)
     const hourlyVolumeQuery = `
       SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count
       FROM ai_history_chatapi
@@ -38,6 +41,7 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
       GROUP BY hour ORDER BY hour
     `;
 
+    // Execute all queries in parallel for performance
     const [statsRes, recentRes, hourlyRes] = await Promise.all([
       pool.query(statsQuery),
       pool.query(recentChatsQuery),
@@ -45,14 +49,20 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
     ]);
 
     const stats = statsRes.rows[0];
+
+    // Process recent chats
     const recentChats = recentRes.rows.map(chat => ({
         ...chat,
-        message_count: countTreeNodes(chat.conversation_history),
+        // Safety check: ensure history exists before counting
+        message_count: chat.conversation_history ? countTreeNodes(chat.conversation_history) : 0,
         created_at: new Date(chat.created_at).toLocaleString()
     }));
 
+    // Process hourly data for the chart (0-23 hours)
     const hourlyData = Array(24).fill(0);
-    hourlyRes.rows.forEach(row => hourlyData[parseInt(row.hour)] = parseInt(row.count));
+    hourlyRes.rows.forEach(row => {
+        hourlyData[parseInt(row.hour)] = parseInt(row.count);
+    });
 
     res.render("admin/dashboard.handlebars", {
       layout: false,
@@ -71,17 +81,23 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
 // 2. USER MANAGEMENT
 router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
+    const DEFAULT_PAGE_SIZE = 20;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * DEFAULT_PAGE_SIZE;
     const search = req.query.search || "";
 
+    // Dynamic Query Construction
     let whereClause = "";
     let params = [];
+    
+    // If searching, add filter
     if (search) {
       whereClause = "WHERE username ILIKE $1";
       params.push(`%${search}%`);
     }
 
+    // Main Data Query
+    // Note: We use string interpolation for LIMIT/OFFSET as they are trusted integers here
     const usersQuery = `
       SELECT username, COUNT(*) as total_chats, MAX(created_at) as last_active
       FROM ai_history_chatapi
@@ -91,24 +107,37 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
       LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}
     `;
 
+    // Count Query for Pagination
     const countQuery = `SELECT COUNT(DISTINCT username) FROM ai_history_chatapi ${whereClause}`;
 
+    // Execute queries
     const [usersRes, countRes] = await Promise.all([
       pool.query(usersQuery, params),
       pool.query(countQuery, params)
     ]);
 
-    const users = usersRes.rows.map(u => ({ ...u, last_active: new Date(u.last_active).toLocaleString() }));
+    // Format Dates
+    const users = usersRes.rows.map(u => ({ 
+        ...u, 
+        last_active: new Date(u.last_active).toLocaleString() 
+    }));
+
+    const totalItems = parseInt(countRes.rows[0].count) || 0;
+    const totalPages = Math.ceil(totalItems / DEFAULT_PAGE_SIZE) || 1;
 
     res.render("admin/users.handlebars", {
       layout: false,
       users,
       searchQuery: search,
+      currentUser: req.session.user.username,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE) || 1
-      },
-      currentUser: req.session.user.username
+        totalPages: totalPages,
+        hasPrev: page > 1,
+        hasNext: page < totalPages,
+        prevPage: page - 1,
+        nextPage: page + 1
+      }
     });
 
   } catch (error) {
@@ -116,21 +145,31 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     res.status(500).send("Error loading users");
   }
 });
-
 // 3. CHAT MANAGEMENT (Shows Deleted Too)
 router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * DEFAULT_PAGE_SIZE;
-    const { username } = req.query;
+    
+    // Extract filters
+    const { username, status } = req.query; // status can be 'all', 'active', 'deleted'
 
     let conditions = [];
     let params = [];
     
+    // 1. Username Filter
     if (username) {
         conditions.push(`username ILIKE $${params.length + 1}`);
         params.push(`%${username}%`);
     }
+
+    // 2. Status Filter (New)
+    if (status === 'deleted') {
+        conditions.push(`is_deleted = TRUE`);
+    } else if (status === 'active') {
+        conditions.push(`is_deleted = FALSE`);
+    }
+    // If status is 'all' or undefined, we don't add a condition, so it returns both.
     
     const whereSQL = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
 
@@ -158,7 +197,11 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     res.render("admin/chats.handlebars", {
         layout: false,
         chats,
-        usernameFilter: username,
+        // Pass filters back to view to keep inputs filled
+        filters: {
+            username: username || "",
+            status: status || "all"
+        },
         pagination: {
             currentPage: page,
             totalPages: Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE) || 1
