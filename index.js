@@ -501,31 +501,7 @@ router.get('/simulate-error', (req, res, next) => {
   next(new Error('Simulated router error'));
 });
 
-router.use((req, res) => {
-  console.log(`Path not found: ${req.url}`);
-  return res.status(404).render("Error/dError.handlebars", {
-    layout: false,
-    code: 404,
-    error: "Not Found",
-    message: "The requested page was not found.",
-    pagename: "Home",
-    page: `/dashboard`,
-  });
-});
 
-router.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500);
-  return res.status(500).render("Error/dError.handlebars", {
-    layout: false,
-    code: 500,
-    error: "Internal Server Error",
-    message: "An unexpected error occurred on the server.",
-    details: err,
-    pagename: "Home",
-    page: `/dashboard`,
-  });
-});
 
 const port = 3030;
 

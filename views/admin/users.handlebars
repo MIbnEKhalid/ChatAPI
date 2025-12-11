@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management | MBK_AI</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,23 +12,27 @@
         
         .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
         .main { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* Nav */
         .brand { color: var(--primary); font-size: 1.2rem; font-weight: bold; margin-bottom: 40px; }
         .nav-link { display: block; padding: 12px; color: var(--dim); text-decoration: none; border-radius: 4px; margin-bottom: 5px; }
         .nav-link:hover, .nav-link.active { background: rgba(0, 255, 65, 0.1); color: var(--primary); }
         .nav-link i { width: 24px; }
 
-        /* Search Bar */
+        /* Search */
         .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
         .search-input { background: #111; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; width: 300px; }
         .btn { background: #222; color: #fff; border: 1px solid var(--border); padding: 10px 20px; border-radius: 4px; cursor: pointer; }
         .btn-primary { background: var(--primary); color: #000; border: none; font-weight: bold; }
 
+        /* Table */
         .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
         th { color: var(--dim); font-size: 0.8rem; text-transform: uppercase; font-weight: normal; }
         tr:hover { background: rgba(255,255,255,0.02); }
 
+        /* Pagination */
         .pagination { margin-top: 20px; display: flex; gap: 5px; justify-content: flex-end; }
         .page-link { padding: 8px 12px; border: 1px solid var(--border); color: var(--dim); text-decoration: none; border-radius: 4px; }
         .page-link:hover { color: #fff; border-color: #fff; }
@@ -42,6 +45,8 @@
         <a href="/admin/dashboard" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
         <a href="/admin/users" class="nav-link active"><i class="fas fa-users"></i> Users</a>
         <a href="/admin/chats" class="nav-link"><i class="fas fa-comments"></i> Chat Logs</a>
+        <div style="flex:1"></div>
+        <a href="/dashboard" class="nav-link"><i class="fas fa-sign-out-alt"></i> Exit</a>
     </nav>
 
     <main class="main">
@@ -57,7 +62,7 @@
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Total Msgs</th>
+                        <th>Total Chats</th>
                         <th>Last Active</th>
                         <th>Status</th>
                     </tr>
@@ -66,7 +71,7 @@
                     {{#each users}}
                     <tr>
                         <td><strong>{{this.username}}</strong></td>
-                        <td>{{this.total_messages}}</td>
+                        <td>{{this.total_chats}}</td>
                         <td>{{this.last_active}}</td>
                         <td><span style="color:var(--primary)">ACTIVE</span></td>
                     </tr>
@@ -76,6 +81,9 @@
         </div>
 
         <div class="pagination">
-            <a href="?page={{pagination.currentPage}}&search={{searchQuery}}" class="page-link">Prev</a>
+            <a href="?page=1&search={{searchQuery}}" class="page-link">First</a>
             <span class="page-link" style="border:none; color:#fff;">Page {{pagination.currentPage}} / {{pagination.totalPages}}</span>
-            <a href="?page={{pagination.currentPage}}&search={{searchQuery}}" class="page-lin
+        </div>
+    </main>
+</body>
+</html>

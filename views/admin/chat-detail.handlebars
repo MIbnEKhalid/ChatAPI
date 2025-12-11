@@ -1,702 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="/Assets/css/admin.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspect Chat Tree | MBK_AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: #0a0a0a;
+            --border: #333;
+            --primary: #00ff41;
+            --secondary: #bc13fe;
+            --text: #e0e0e0;
+            --dim: #666;
+            --danger: #ff003c;
+            --warning: #ffcc00;
+            --success: #00ff88;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        
+        .meta {
+            font-size: 0.9rem;
+            color: var(--dim);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta span {
+            color: #fff;
+            font-weight: 400;
+        }
+        
+        .deleted-badge {
+            background: var(--danger);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* CONTROL PANEL */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: var(--panel);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            border-right: 1px solid var(--border);
+        }
+        
+        .control-group:last-child {
+            border-right: none;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 200px;
+        }
+        
+        /* TREE CONTAINER */
+        .chart-wrapper {
+            flex: 1;
+            overflow: hidden;
+            background: #080808;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        #tree-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 50px;
+            background-image: 
+                radial-gradient(#222 1px, transparent 1px),
+                linear-gradient(90deg, transparent 99px, #111 99px, #111 100px, transparent 100px),
+                linear-gradient(transparent 99px, #111 99px, #111 100px, transparent 100px);
+            background-size: 20px 20px, 100px 100px, 100px 100px;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        /* NODE STYLES */
+        .tree-node {
+            position: absolute;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--dim);
+            width: 220px;
+            min-height: 80px;
+            padding: 12px;
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            z-index: 10;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .tree-node:hover {
+            z-index: 1000;
+            width: 400px;
+            min-height: 200px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            background: #111;
+            border-color: var(--primary);
+        }
+        
+        .tree-node.user {
+            border-left-color: var(--secondary);
+            background: linear-gradient(90deg, rgba(188,19,254,0.05) 0%, rgba(188,19,254,0) 100%);
+        }
+        
+        .tree-node.model {
+            border-left-color: var(--primary);
+            background: linear-gradient(90deg, rgba(0,255,65,0.05) 0%, rgba(0,255,65,0) 100%);
+        }
+        
+        .tree-node.system {
+            border-left-color: var(--warning);
+            background: linear-gradient(90deg, rgba(255,204,0,0.05) 0%, rgba(255,204,0,0) 100%);
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .node-role {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--dim);
+            letter-spacing: 1px;
+        }
+        
+        .node-id {
+            font-size: 0.7rem;
+            color: var(--dim);
+            font-family: monospace;
+            background: rgba(255,255,255,0.05);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        
+        .node-text {
+            font-size: 0.8rem;
+            color: #ccc;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+        
+        .tree-node:hover .node-text {
+            -webkit-line-clamp: unset;
+            overflow-y: auto;
+            max-height: 150px;
+            color: #fff;
+        }
+        
+        .node-timestamp {
+            font-size: 0.7rem;
+            color: var(--dim);
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        /* CONNECTORS */
+        .connector {
+            position: absolute;
+            background: var(--border);
+            height: 2px;
+            z-index: 1;
+            transform-origin: 0 50%;
+            pointer-events: none;
+        }
+        
+        .connector:hover {
+            background: var(--primary);
+            height: 3px;
+        }
+        
+        /* BUTTONS */
+        .btn {
+            background: #222;
+            color: #fff;
+            border: 1px solid var(--border);
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn:hover {
+            background: #333;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background: #00cc33;
+            border-color: #00cc33;
+            color: #000;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            border-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #cc0029;
+            border-color: #cc0029;
+        }
+        
+        /* LEGEND */
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .legend h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        
+        .legend-user { background: var(--secondary); }
+        .legend-model { background: var(--primary); }
+        .legend-system { background: var(--warning); }
+
+        /* LOADING */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--primary);
+        }
+        
+        .spinner {
+            border: 3px solid rgba(0, 255, 65, 0.3);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .chart-wrapper {
+                padding: 30px;
+            }
+            
+            .tree-node {
+                width: 200px;
+            }
+            
+            .tree-node:hover {
+                width: 350px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            .chart-wrapper {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
+<body>
 
-<div class="admin-container">
-  <div class="admin-header">
-    <div class="header-content">
-      <h1 class="admin-title">
-        <i class="fas fa-comment-dots"></i>
-        Chat Details
-      </h1>
-      <div class="header-actions">
-        <a href="/admin/chats" class="back-link">
-          <i class="fas fa-arrow-left"></i>
-          Back to Chats
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chat Information Card -->
-  <div class="dashboard-card chat-info fade-in">
-    <div class="card-header">
-      <h3><i class="fas fa-info-circle"></i> Chat Information</h3>
-      <div class="card-actions">
-        <button class="icon-btn" id="exportChatBtn" title="Export Chat">
-          <i class="fas fa-download"></i>
-        </button>
-        <button class="icon-btn danger" id="deleteChatBtn" title="Delete Chat">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-    </div>
-    <div class="card-content">
-      <div class="info-grid">
-        <div class="info-item">
-          <label>Chat ID:</label>
-          <value>{{chat.id}}</value>
-        </div>
-        <div class="info-item">
-          <label>username:</label>
-          <value class="username-value">{{chat.username}}</value>
-        </div>
-        <div class="info-item">
-          <label>Created:</label>
-          <value>{{formatDate chat.created_at}}</value>
-        </div>
-        <div class="info-item">
-          <label>AI Model:</label>
-          <value class="model-badge">{{chat.ai_model}}</value>
-        </div>
-        <div class="info-item">
-          <label>Temperature:</label>
-          <value class="temp-value">{{chat.temperature}}°</value>
-        </div>
-        <div class="info-item">
-          <label>Daily Limit:</label>
-          <value>{{chat.daily_message_limit}}</value>
-        </div>
-        <div class="info-item">
-          <label>Today's Messages:</label>
-          <value class="{{#if (gt chat.daily_messages 80)}}warning{{/if}}">
-            {{chat.daily_messages}}/{{chat.daily_message_limit}}
-          </value>
-        </div>
-        <div class="info-item">
-          <label>Total Messages:</label>
-          <value class="message-count">{{jsonb_array_length chat.conversation_history}}</value>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Conversation History Card -->
-  <div class="dashboard-card conversation-history fade-in">
-    <div class="card-header">
-      <h3><i class="fas fa-history"></i> Conversation History</h3>
-      <div class="card-actions">
-        <div class="search-container">
-          <input type="text" id="searchMessages" placeholder="Search messages...">
-          <i class="fas fa-search"></i>
-        </div>
-      </div>
-    </div>
-    <div class="card-content">
-      <div class="conversation-container" id="conversationContainer">
-        {{#each chat.conversation_history}}
-        <div class="message-item {{#if (eq this.role 'user')}}user-message{{else}}assistant-message{{/if}}">
-          <div class="message-header">
-            <div class="message-role">
-              {{#if (eq this.role 'user')}}
-                <i class="fas fa-user"></i>
-                <span>User</span>
-              {{else}}
-                <i class="fas fa-robot"></i>
-                <span>Assistant</span>
-              {{/if}}
+    <div class="header">
+        <div>
+            <h2><i class="fas fa-network-wired"></i> CHAT_INSPECTOR {{#if chat.is_deleted}}<span class="deleted-badge">DELETED</span>{{/if}}</h2>
+            <div class="meta">
+                <div><i class="fas fa-user"></i> User: <span>{{chat.username}}</span></div>
+                <div><i class="fas fa-calendar"></i> Date: <span>{{chat.created_at}}</span></div>
+                <div><i class="fas fa-fingerprint"></i> ID: <span style="font-family:monospace">{{chat.id}}</span></div>
+                <div><i class="fas fa-sitemap"></i> Nodes: <span id="node-count">0</span></div>
             </div>
-            <div class="message-timestamp">
-              Message {{add @index 1}}
+        </div>
+        <div>
+            <button class="btn" onclick="exportData()"><i class="fas fa-download"></i> Export JSON</button>
+            <button class="btn" onclick="toggleLegend()"><i class="fas fa-info-circle"></i> Legend</button>
+            <button class="btn btn-primary" onclick="zoomToFit()"><i class="fas fa-expand"></i> Fit View</button>
+            <a href="/admin/chats" class="btn"><i class="fas fa-times"></i> Close</a>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="zoom">Zoom:</label>
+            <div class="slider-container">
+                <i class="fas fa-search-minus"></i>
+                <input type="range" id="zoom" min="0.5" max="2" step="0.1" value="1" oninput="updateZoom(this.value)">
+                <i class="fas fa-search-plus"></i>
+                <span id="zoom-value">100%</span>
             </div>
-          </div>
-          <div class="message-content">
-            {{#each this.parts}}
-              <div class="message-part">
-                {{#if this.text}}
-                  <div class="message-text">{{this.text}}</div>
-                {{/if}}
-                {{#if this.image}}
-                  <div class="message-image">
-                    <img src="{{this.image}}" alt="User uploaded image" loading="lazy">
-                  </div>
-                {{/if}}
-              </div>
-            {{/each}}
-          </div>
         </div>
-        {{/each}}
-      </div>
-    </div>
-  </div>
-
-  <!-- Statistics Card -->
-  <div class="dashboard-card conversation-stats fade-in">
-    <div class="card-header">
-      <h3><i class="fas fa-chart-bar"></i> Conversation Statistics</h3>
-    </div>
-    <div class="card-content">
-      <div class="stats-grid-mini">
-        <div class="stat-mini">
-          <div class="stat-value" id="totalMessages">{{jsonb_array_length chat.conversation_history}}</div>
-          <div class="stat-label">Total Messages</div>
-        </div>
-        <div class="stat-mini">
-          <div class="stat-value" id="userMessages">0</div>
-          <div class="stat-label">User Messages</div>
-        </div>
-        <div class="stat-mini">
-          <div class="stat-value" id="assistantMessages">0</div>
-          <div class="stat-label">Assistant Messages</div>
-        </div>
-        <div class="stat-mini">
-          <div class="stat-value" id="avgMessageLength">0</div>
-          <div class="stat-label">Avg Length</div>
-        </div>
-      </div>
-      <div class="message-distribution">
-        <canvas id="messageDistributionChart"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal" id="deleteModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
-      <button class="close-btn" id="closeDelete">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p>Are you sure you want to delete this chat? This action cannot be undone.</p>
-      <div class="form-actions">
-        <button class="btn-danger" id="confirmDelete">
-          <i class="fas fa-trash"></i> Delete Chat
-        </button>
-        <button class="cancel-btn" id="cancelDelete">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Export Modal -->
-<div class="modal" id="exportModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-download"></i> Export Chat</h3>
-      <button class="close-btn" id="closeExport">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="export-options">
-        <div class="option-group">
-          <label>Export Format:</label>
-          <select id="exportFormat">
-            <option value="json">JSON</option>
-            <option value="txt">Plain Text</option>
-            <option value="html">HTML</option>
-          </select>
-        </div>
-        <div class="option-group">
-          <label>
-            <input type="checkbox" id="includeMetadata" checked>
-            Include metadata (timestamps, roles, etc.)
-          </label>
-        </div>
-        <button class="btn-primary" id="downloadChat">
-          <i class="fas fa-download"></i> Download
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-class ChatDetailView {
-  constructor() {
-    this.chatData = {{{jsonStringify chat}}};
-    this.init();
-  }
-
-  init() {
-    this.calculateStats();
-    this.initializeChart();
-    this.setupEventListeners();
-  }
-
-  calculateStats() {
-    const conversation = this.chatData.conversation_history;
-    let userMessages = 0;
-    let assistantMessages = 0;
-    let totalLength = 0;
-
-    conversation.forEach(message => {
-      if (message.role === 'user') {
-        userMessages++;
-      } else {
-        assistantMessages++;
-      }
-      
-      message.parts.forEach(part => {
-        if (part.text) {
-          totalLength += part.text.length;
-        }
-      });
-    });
-
-    const avgLength = conversation.length > 0 ? Math.round(totalLength / conversation.length) : 0;
-
-    document.getElementById('userMessages').textContent = userMessages;
-    document.getElementById('assistantMessages').textContent = assistantMessages;
-    document.getElementById('avgMessageLength').textContent = avgLength;
-  }
-
-  initializeChart() {
-    const ctx = document.getElementById('messageDistributionChart');
-    const conversation = this.chatData.conversation_history;
-    
-    const userCount = conversation.filter(m => m.role === 'user').length;
-    const assistantCount = conversation.filter(m => m.role === 'assistant').length;
-
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['User Messages', 'Assistant Messages'],
-        datasets: [{
-          data: [userCount, assistantCount],
-          backgroundColor: ['#4F46E5', '#10B981'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              padding: 20,
-              usePointStyle: true
-            }
-          }
-        }
-      }
-    });
-  }
-
-  setupEventListeners() {
-    // Search functionality
-    document.getElementById('searchMessages').addEventListener('input', (e) => {
-      this.searchMessages(e.target.value);
-    });
-
-    // Export functionality
-    document.getElementById('exportChatBtn').addEventListener('click', () => {
-      this.openExportModal();
-    });
-
-    document.getElementById('downloadChat').addEventListener('click', () => {
-      this.downloadChat();
-    });
-
-    // Delete functionality
-    document.getElementById('deleteChatBtn').addEventListener('click', () => {
-      this.openDeleteModal();
-    });
-
-    document.getElementById('confirmDelete').addEventListener('click', () => {
-      this.deleteChat();
-    });
-
-    // Modal controls
-    document.getElementById('closeExport').addEventListener('click', () => {
-      this.closeModal('exportModal');
-    });
-
-    document.getElementById('closeDelete').addEventListener('click', () => {
-      this.closeModal('deleteModal');
-    });
-
-    document.getElementById('cancelDelete').addEventListener('click', () => {
-      this.closeModal('deleteModal');
-    });
-  }
-
-  searchMessages(query) {
-    const messages = document.querySelectorAll('.message-item');
-    const searchTerm = query.toLowerCase();
-
-    messages.forEach(message => {
-      const text = message.textContent.toLowerCase();
-      if (text.includes(searchTerm)) {
-        message.style.display = 'block';
-        message.classList.add('highlight');
-      } else {
-        message.style.display = searchTerm ? 'none' : 'block';
-        message.classList.remove('highlight');
-      }
-    });
-  }
-
-  openExportModal() {
-    document.getElementById('exportModal').classList.add('active');
-  }
-
-  openDeleteModal() {
-    document.getElementById('deleteModal').classList.add('active');
-  }
-
-  closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-  }
-
-  async downloadChat() {
-    const format = document.getElementById('exportFormat').value;
-    const includeMetadata = document.getElementById('includeMetadata').checked;
-    
-    const conversation = this.chatData.conversation_history;
-    let content = '';
-    let filename = `chat_${this.chatData.id}_${new Date().toISOString().split('T')[0]}`;
-
-    switch (format) {
-      case 'json':
-        content = JSON.stringify({
-          chatId: this.chatData.id,
-          username: this.chatData.username,
-          createdAt: this.chatData.created_at,
-          aiModel: this.chatData.ai_model,
-          temperature: this.chatData.temperature,
-          conversation: includeMetadata ? conversation : conversation.map(m => ({
-            role: m.role,
-            parts: m.parts
-          }))
-        }, null, 2);
-        filename += '.json';
-        break;
-
-      case 'txt':
-        content = includeMetadata ? 
-          `Chat ID: ${this.chatData.id}\nusername: ${this.chatData.username}\nCreated: ${this.chatData.created_at}\nAI Model: ${this.chatData.ai_model}\nTemperature: ${this.chatData.temperature}\n\n` : '';
         
-        conversation.forEach((message, index) => {
-          if (includeMetadata) {
-            content += `[${index + 1}] ${message.role.toUpperCase()}:\n`;
-          }
-          message.parts.forEach(part => {
-            if (part.text) {
-              content += part.text + '\n';
-            }
-          });
-          content += '\n';
+        <div class="control-group">
+            <label for="spacing">Spacing:</label>
+            <div class="slider-container">
+                <i class="fas fa-compress"></i>
+                <input type="range" id="spacing" min="50" max="300" step="10" value="120" oninput="updateSpacing(this.value)">
+                <i class="fas fa-expand"></i>
+                <span id="spacing-value">120px</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <button class="btn" onclick="toggleConnectors()"><i class="fas fa-link"></i> Toggle Links</button>
+            <button class="btn" onclick="resetView()"><i class="fas fa-redo"></i> Reset</button>
+        </div>
+        
+        <div class="control-group">
+            <label for="node-filter">Filter:</label>
+            <select id="node-filter" onchange="filterNodes(this.value)">
+                <option value="all">All Nodes</option>
+                <option value="user">User Only</option>
+                <option value="model">Model Only</option>
+                <option value="system">System Only</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="chart-area" class="chart-wrapper">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading chat tree...</p>
+        </div>
+        <div id="tree-layer"></div>
+    </div>
+
+    <div class="legend" id="legend" style="display: none;">
+        <h4><i class="fas fa-key"></i> Legend</h4>
+        <div class="legend-item">
+            <div class="legend-color legend-user"></div>
+            <span>User Messages</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-model"></div>
+            <span>Model Responses</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-system"></div>
+            <span>System Messages</span>
+        </div>
+        <hr style="border-color: var(--border); margin: 10px 0;">
+        <div style="font-size: 0.7rem; color: var(--dim);">
+            <p><i class="fas fa-mouse-pointer"></i> Click nodes to expand</p>
+            <p><i class="fas fa-arrows-alt"></i> Drag to pan view</p>
+            <p><i class="fas fa-search"></i> Scroll to zoom</p>
+        </div>
+    </div>
+
+    <script>
+        // Sample data structure for testing
+        const historyData = {{{historyJson}}} || {
+            nodes: {
+                "root": {
+                    id: "root",
+                    role: "user",
+                    text: "Hello, how are you today?",
+                    timestamp: "2024-01-15 10:30:00",
+                    children: ["node1"],
+                    parentId: null
+                },
+                "node1": {
+                    id: "node1",
+                    role: "model",
+                    text: "I'm doing great! How can I assist you?",
+                    timestamp: "2024-01-15 10:30:05",
+                    children: ["node2", "node3"],
+                    parentId: "root"
+                },
+                "node2": {
+                    id: "node2",
+                    role: "user",
+                    text: "Tell me about AI",
+                    timestamp: "2024-01-15 10:30:10",
+                    children: ["node4"],
+                    parentId: "node1"
+                },
+                "node3": {
+                    id: "node3",
+                    role: "user",
+                    text: "What's the weather?",
+                    timestamp: "2024-01-15 10:30:12",
+                    children: ["node5"],
+                    parentId: "node1"
+                },
+                "node4": {
+                    id: "node4",
+                    role: "model",
+                    text: "AI is the simulation of human intelligence...",
+                    timestamp: "2024-01-15 10:30:15",
+                    children: [],
+                    parentId: "node2"
+                },
+                "node5": {
+                    id: "node5",
+                    role: "model",
+                    text: "I don't have access to real-time weather data...",
+                    timestamp: "2024-01-15 10:30:18",
+                    children: [],
+                    parentId: "node3"
+                }
+            },
+            rootId: "root"
+        };
+
+        // Global variables
+        const container = document.getElementById('chart-area');
+        const treeLayer = document.getElementById('tree-layer');
+        const loading = document.getElementById('loading');
+        let zoomLevel = 1;
+        let nodeSpacing = 120;
+        let connectorsVisible = true;
+        let panning = false;
+        let startX, startY, translateX = 0, translateY = 0;
+
+        // Layout constants
+        const NODE_W = 220;
+        const NODE_H = 100;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                loading.style.display = 'none';
+                renderTree();
+                setupPanning();
+                setupZoom();
+            }, 500);
         });
-        filename += '.txt';
-        break;
 
-      case 'html':
-        content = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Chat Export - ${this.chatData.id}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              .metadata { background: #f5f5f5; padding: 10px; margin-bottom: 20px; }
-              .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
-              .user { background: #e3f2fd; }
-              .assistant { background: #f3e5f5; }
-              .role { font-weight: bold; margin-bottom: 5px; }
-            </style>
-          </head>
-          <body>
-        `;
-        
-        if (includeMetadata) {
-          content += `
-            <div class="metadata">
-              <h2>Chat Information</h2>
-              <p><strong>Chat ID:</strong> ${this.chatData.id}</p>
-              <p><strong>username:</strong> ${this.chatData.username}</p>
-              <p><strong>Created:</strong> ${this.chatData.created_at}</p>
-              <p><strong>AI Model:</strong> ${this.chatData.ai_model}</p>
-              <p><strong>Temperature:</strong> ${this.chatData.temperature}</p>
-            </div>
-          `;
-        }
-        
-        content += '<div class="conversation">';
-        conversation.forEach((message, index) => {
-          content += `<div class="message ${message.role}">`;
-          if (includeMetadata) {
-            content += `<div class="role">${message.role.toUpperCase()}</div>`;
-          }
-          message.parts.forEach(part => {
-            if (part.text) {
-              content += `<p>${part.text.replace(/\n/g, '<br>')}</p>`;
+        function renderTree() {
+            treeLayer.innerHTML = '';
+            
+            if (!historyData.nodes || !historyData.rootId) {
+                if(Array.isArray(historyData)) {
+                    renderLinearHistory(historyData);
+                    return;
+                }
+                treeLayer.innerHTML = '<div style="color:red; padding:20px;">Invalid Data Structure</div>';
+                return;
             }
-          });
-          content += '</div>';
-        });
-        content += '</div></body></html>';
-        filename += '.html';
-        break;
-    }
 
-    // Create and download file
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
+            const { nodes, rootId } = historyData;
+            
+            // Calculate positions using a breadth-first layout
+            const positions = calculatePositions(nodes, rootId);
+            
+            // Update node count
+            document.getElementById('node-count').textContent = Object.keys(nodes).length;
+            
+            // Render connectors first (so they appear behind nodes)
+            if (connectorsVisible) {
+                renderConnectors(nodes, positions);
+            }
+            
+            // Render nodes
+            Object.keys(positions).forEach(id => {
+                renderNode(positions[id].x, positions[id].y, nodes[id]);
+            });
+            
+            // Apply current transform
+            updateTransform();
+        }
 
-    this.closeModal('exportModal');
-  }
+        function calculatePositions(nodes, rootId) {
+            const positions = {};
+            const depthMap = {};
+            let maxDepth = 0;
+            
+            // First pass: calculate depth and collect nodes by depth
+            function calculateDepth(nodeId, depth) {
+                depthMap[nodeId] = depth;
+                maxDepth = Math.max(maxDepth, depth);
+                
+                const node = nodes[nodeId];
+                if (node.children) {
+                    node.children.forEach(childId => {
+                        calculateDepth(childId, depth + 1);
+                    });
+                }
+            }
+            
+            calculateDepth(rootId, 0);
+            
+            // Second pass: calculate positions
+            const depthCounts = {};
+            
+            function positionNode(nodeId, depth, order) {
+                const x = 50 + (depth * (NODE_W + nodeSpacing));
+                const y = 50 + (order * (NODE_H + nodeSpacing));
+                
+                positions[nodeId] = { x, y, depth, order };
+                
+                const node = nodes[nodeId];
+                if (node.children) {
+                    node.children.forEach((childId, idx) => {
+                        if (!depthCounts[depth + 1]) depthCounts[depth + 1] = 0;
+                        positionNode(childId, depth + 1, depthCounts[depth + 1]++);
+                    });
+                }
+            }
+            
+            positionNode(rootId, 0, 0);
+            
+            return positions;
+        }
 
-  async deleteChat() {
-    const deleteBtn = document.getElementById('confirmDelete');
-    const originalContent = deleteBtn.innerHTML;
-    
-    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-    deleteBtn.disabled = true;
+        function renderLinearHistory(messages) {
+            let y = 50;
+            messages.forEach((msg, i) => {
+                createNode(50, y, msg.role, msg.parts ? msg.parts[0].text : msg.text, i);
+                if(i > 0) {
+                    drawConnector(50 + 100, y - nodeSpacing + 80, 50 + 100, y);
+                }
+                y += nodeSpacing;
+            });
+        }
 
-    try {
-      const response = await fetch(`/admin/chats/bulk-delete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatIds: [this.chatData.id]
-        })
-      });
+        function renderNode(x, y, node) {
+            const div = document.createElement('div');
+            div.className = `tree-node ${node.role}`;
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.dataset.nodeId = node.id;
+            
+            const timestamp = node.timestamp || '';
+            const displayText = node.text || node.content || '';
+            
+            div.innerHTML = `
+                <div class="node-header">
+                    <div class="node-role">${escapeHtml(node.role)}</div>
+                    <div class="node-id">${node.id.substring(0, 8)}...</div>
+                </div>
+                <div class="node-text">${escapeHtml(displayText.substring(0, 200))}</div>
+                ${timestamp ? `<div class="node-timestamp">${timestamp}</div>` : ''}
+            `;
+            
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                highlightBranch(node.id);
+            });
+            
+            treeLayer.appendChild(div);
+        }
 
-      const result = await response.json();
-      
-      if (result.success) {
-        alert('Chat deleted successfully');
-        window.location.href = '/admin/chats';
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error) {
-      console.error('Delete failed:', error);
-      alert('Failed to delete chat. Please try again.');
-    } finally {
-      deleteBtn.innerHTML = originalContent;
-      deleteBtn.disabled = false;
-    }
-  }
-}
+        function renderConnectors(nodes, positions) {
+            Object.keys(positions).forEach(id => {
+                const node = nodes[id];
+                if (node.parentId && positions[node.parentId]) {
+                    const startPos = positions[node.parentId];
+                    const endPos = positions[id];
+                    
+                    drawConnector(
+                        startPos.x + NODE_W,
+                        startPos.y + 40,
+                        endPos.x,
+                        endPos.y + 40
+                    );
+                }
+            });
+        }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new ChatDetailView();
-});
-</script>
+        function drawConnector(x1, y1, x2, y2) {
+            const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            const line = document.createElement('div');
+            line.className = 'connector';
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            treeLayer.appendChild(line);
+        }
 
-<style>
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-}
+        function createNode(x, y, role, text, id) {
+            const div = document.createElement('div');
+            div.className = `tree-node ${role}`;
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.innerHTML = `
+                <div class="node-role">${role}</div>
+                <div class="node-text">${escapeHtml(text)}</div>
+            `;
+            treeLayer.appendChild(div);
+        }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+        function highlightBranch(nodeId) {
+            // Remove previous highlights
+            document.querySelectorAll('.tree-node').forEach(node => {
+                node.style.boxShadow = '';
+                node.style.zIndex = '10';
+            });
+            
+            // Highlight path to root
+            let currentNodeId = nodeId;
+            while (currentNodeId && historyData.nodes[currentNodeId]) {
+                const node = document.querySelector(`[data-node-id="${currentNodeId}"]`);
+                if (node) {
+                    node.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.7)';
+                    node.style.zIndex = '100';
+                }
+                currentNodeId = historyData.nodes[currentNodeId]?.parentId;
+            }
+        }
 
-.info-item label {
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
+        function updateTransform() {
+            treeLayer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
+        }
 
-.info-item value {
-  font-weight: 500;
-  color: var(--text-primary);
-}
+        function setupPanning() {
+            container.addEventListener('mousedown', (e) => {
+                if (e.target === container) {
+                    panning = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
 
-.username-value {
-  color: var(--primary-color);
-  font-weight: 600;
-}
+            document.addEventListener('mousemove', (e) => {
+                if (!panning) return;
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+            });
 
-.model-badge {
-  background: var(--primary-color);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  width: fit-content;
-}
+            document.addEventListener('mouseup', () => {
+                panning = false;
+                container.style.cursor = 'default';
+            });
+        }
 
-.temp-value {
-  color: var(--warning-color);
-  font-weight: 600;
-}
+        function setupZoom() {
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                zoomLevel = Math.max(0.5, Math.min(2, zoomLevel * zoomFactor));
+                document.getElementById('zoom').value = zoomLevel;
+                document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
+                updateTransform();
+            });
+        }
 
-.warning {
-  color: var(--error-color);
-  font-weight: 600;
-}
+        function updateZoom(value) {
+            zoomLevel = parseFloat(value);
+            document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
+            updateTransform();
+        }
 
-.conversation-container {
-  max-height: 600px;
-  overflow-y: auto;
-  padding: 1rem 0;
-}
+        function updateSpacing(value) {
+            nodeSpacing = parseInt(value);
+            document.getElementById('spacing-value').textContent = `${value}px`;
+            renderTree();
+        }
 
-.message-item {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  margin-bottom: 1rem;
-  overflow: hidden;
-  transition: all 0.2s;
-}
+        function toggleConnectors() {
+            connectorsVisible = !connectorsVisible;
+            renderTree();
+        }
 
-.message-item.highlight {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
-}
+        function filterNodes(filter) {
+            document.querySelectorAll('.tree-node').forEach(node => {
+                if (filter === 'all' || node.classList.contains(filter)) {
+                    node.style.display = 'block';
+                } else {
+                    node.style.display = 'none';
+                }
+            });
+        }
 
-.user-message {
-  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
-}
+        function toggleLegend() {
+            const legend = document.getElementById('legend');
+            legend.style.display = legend.style.display === 'none' ? 'block' : 'none';
+        }
 
-.assistant-message {
-  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
-}
+        function zoomToFit() {
+            const nodes = container.querySelectorAll('.tree-node');
+            if (nodes.length === 0) return;
+            
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            nodes.forEach(node => {
+                const x = parseFloat(node.style.left) || 0;
+                const y = parseFloat(node.style.top) || 0;
+                // Store mouse position for cursor-aware zoom
+                let mouseX = 0, mouseY = 0;
 
-.message-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid var(--border-color);
-}
+                container.addEventListener('mousemove', (e) => {
+                  const rect = container.getBoundingClientRect();
+                const oldZoom = zoomLevel;
+                const offsetX = (mouseX - translateX) / oldZoom;
+                const offsetY = (mouseY - translateY) / oldZoom;
+                  mouseX = e.clientX - rect.left;
+                  mouseY = e.clientY - rect.top;
+                });
 
-.message-role {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-}
+                container.addEventListener('wheel', (e) => {
+                  e.preventDefault();
+                  const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                  const oldZoom = zoomLevel;
+                  zoomLevel = Math.max(0.5, Math.min(2, zoomLevel * zoomFactor));
+                  
+                  // Adjust pan to zoom towards cursor
+                  translateX = mouseX - (mouseX - translateX) / oldZoom * zoomLevel;
+                  translateY = mouseY - (mouseY - translateY) / oldZoom * zoomLevel;
+                  
+                  document.getElementById('zoom').value = zoomLevel;
+                  document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
+                  updateTransform();
+                });
+                const width = node.clientWidth || NODE_W;
+                const height = node.clientHeight || NODE_H;
+                
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x + width);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y + height);
+            });
+            
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+            
+            const scaleX = containerWidth / contentWidth;
+            const scaleY = containerHeight / contentHeight;
+            const scale = Math.min(scaleX, scaleY, 1) * 0.9;
+            
+            zoomLevel = scale;
+            document.getElementById('zoom').value = scale;
+            document.getElementById('zoom-value').textContent = `${Math.round(scale * 100)}%`;
+            
+            // Center the content
+            translateX = (containerWidth - contentWidth * scale) / 2 - minX * scale;
+            translateY = (containerHeight - contentHeight * scale) / 2 - minY * scale;
+            
+            updateTransform();
+        }
 
-.message-role i {
-  width: 20px;
-  text-align: center;
-}
+        function resetView() {
+            zoomLevel = 1;
+            translateX = 0;
+            translateY = 0;
+            nodeSpacing = 120;
+            
+            document.getElementById('zoom').value = 1;
+            document.getElementById('zoom-value').textContent = '100%';
+            document.getElementById('spacing').value = 120;
+            document.getElementById('spacing-value').textContent = '120px';
+            document.getElementById('node-filter').value = 'all';
+            
+            updateTransform();
+            renderTree();
+        }
 
-.message-timestamp {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-.message-content {
-  padding: 1rem;
-}
-
-.message-text {
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.message-image {
-  margin-top: 1rem;
-}
-
-.message-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-}
-
-.search-container {
-  position: relative;
-}
-
-.search-container input {
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  width: 200px;
-}
-
-.search-container i {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-}
-
-.stats-grid-mini {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-mini {
-  text-align: center;
-  padding: 1rem;
-  background: var(--light-color);
-  border-radius: var(--radius-md);
-}
-
-.stat-mini .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.stat-mini .stat-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
-}
-
-.message-distribution {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon-btn.danger {
-  color: var(--error-color);
-}
-
-.icon-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.btn-danger {
-  background: var(--error-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-danger:hover {
-  background: #DC2626;
-}
-
-.btn-danger:disabled {
-  background: var(--text-secondary);
-  cursor: not-allowed;
-}
-</style>
+        function exportData() {
+            const blob = new Blob([JSON.stringify(historyData, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chat_${historyData.rootId || 'log'}_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

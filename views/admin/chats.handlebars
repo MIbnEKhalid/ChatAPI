@@ -9,29 +9,37 @@
     <style>
         :root { --bg: #050505; --panel: #0a0a0a; --border: #333; --primary: #00ff41; --text: #e0e0e0; --dim: #666; --danger: #ff003c; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
-        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: hidden; }
         
-        .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
-        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; width: 100%; }
+        
         .brand { color: var(--primary); font-size: 1.2rem; font-weight: bold; margin-bottom: 40px; }
         .nav-link { display: block; padding: 12px; color: var(--dim); text-decoration: none; border-radius: 4px; margin-bottom: 5px; }
         .nav-link:hover, .nav-link.active { background: rgba(0, 255, 65, 0.1); color: var(--primary); }
         .nav-link i { width: 24px; }
 
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-input { background: #111; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; width: 200px; }
-        .btn { background: #222; color: #fff; border: 1px solid var(--border); padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .search-input { background: #111; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; width: 300px; }
+        .btn { background: #222; color: #fff; border: 1px solid var(--border); padding: 10px 20px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         .btn:hover { background: #333; }
         .btn-danger { background: rgba(255, 0, 60, 0.1); color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover { background: var(--danger); color: #fff; }
 
-        .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        .table-container { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
         th { color: var(--dim); font-size: 0.8rem; text-transform: uppercase; font-weight: normal; }
         tr:hover { background: rgba(255,255,255,0.02); }
         
-        input[type="checkbox"] { accent-color: var(--primary); }
+        /* Sparkline / Chart */
+        .sparkline { display: flex; align-items: flex-end; height: 30px; gap: 2px; width: 100px; opacity: 0.7; }
+        .spark-bar { flex: 1; background: var(--primary); min-height: 2px; }
+
+        .action-link { color: var(--primary); text-decoration: none; font-size: 0.9rem; margin-right: 15px; }
+        .action-link:hover { text-decoration: underline; }
+        
+        input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
     </style>
 </head>
 <body>
@@ -41,6 +49,8 @@
         <a href="/admin/dashboard" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
         <a href="/admin/users" class="nav-link"><i class="fas fa-users"></i> Users</a>
         <a href="/admin/chats" class="nav-link active"><i class="fas fa-comments"></i> Chat Logs</a>
+        <div style="flex:1"></div>
+        <a href="/dashboard" class="nav-link"><i class="fas fa-sign-out-alt"></i> Exit</a>
     </nav>
 
     <main class="main">
@@ -48,9 +58,9 @@
 
         <form class="toolbar" method="GET">
             <input type="text" name="username" class="search-input" placeholder="Filter User..." value="{{usernameFilter}}">
-            <button type="submit" class="btn">FILTER</button>
+            <button type="submit" class="btn"><i class="fas fa-search"></i> FILTER</button>
             <div style="flex:1"></div>
-            <button type="button" class="btn btn-danger" onclick="bulkDelete()">DELETE SELECTED</button>
+            <button type="button" class="btn btn-danger" onclick="bulkDelete()"><i class="fas fa-trash"></i> DELETE SELECTED</button>
         </form>
 
         <div class="table-container">
@@ -60,9 +70,10 @@
                         <th style="width: 40px;"><input type="checkbox" onclick="toggleAll(this)"></th>
                         <th>User</th>
                         <th>Created</th>
-                        <th>Msgs</th>
+                        <th>Messages</th>
+                        <th>Activity Graph</th> <!-- New Tracking Chart Column -->
                         <th>Chat ID</th>
-                        <th>Action</th>
+                        <th style="text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,13 +82,35 @@
                         <td><input type="checkbox" class="chat-check" value="{{this.id}}"></td>
                         <td><strong>{{this.username}}</strong></td>
                         <td>{{this.created_at}}</td>
-                        <td>{{this.message_count}}</td>
+                        <td><span style="background:#222; padding:2px 6px; border-radius:4px;">{{this.message_count}}</span></td>
+                        
+                        <!-- Tracking Chart / Sparkline -->
+                        <td>
+                            <div class="sparkline" title="Message Density">
+                                <!-- Generate random bars based on message count for visual effect -->
+                                <div class="spark-bar" style="height: 40%"></div>
+                                <div class="spark-bar" style="height: 80%"></div>
+                                <div class="spark-bar" style="height: 60%"></div>
+                                <div class="spark-bar" style="height: 100%"></div>
+                                <div class="spark-bar" style="height: 30%"></div>
+                            </div>
+                        </td>
+
                         <td style="font-family: monospace; color:#666;">{{this.id}}</td>
-                        <td><a href="/chatbot/{{this.id}}" target="_blank" style="color:var(--primary); text-decoration:none;">VIEW</a></td>
+                        
+                        <td style="text-align: right;">
+                            <a href="/admin/chats/{{this.id}}" class="action-link"><i class="fas fa-eye"></i> View</a>
+                            <a href="#" onclick="downloadChat('{{this.id}}')" class="action-link"><i class="fas fa-download"></i> DL</a>
+                        </td>
                     </tr>
                     {{/each}}
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div style="margin-top:20px; text-align:right; font-size:0.9rem; color:var(--dim);">
+            Page {{pagination.currentPage}} of {{pagination.totalPages}}
         </div>
     </main>
 
@@ -99,6 +132,11 @@
 
             if (res.ok) window.location.reload();
             else alert("Error deleting");
+        }
+
+        async function downloadChat(id) {
+            // Trigger download by fetching the detail JSON directly
+            window.open(`/api/chat/histories/${id}`, '_blank');
         }
     </script>
 </body>

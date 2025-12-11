@@ -8,47 +8,29 @@ const router = express.Router();
 
 const DEFAULT_PAGE_SIZE = 20;
 
-// --- UTILITY FOR TREE PARSING ---
-// Helper to count messages in a tree structure
 const countTreeNodes = (history) => {
     if (!history) return 0;
     const data = typeof history === 'string' ? JSON.parse(history) : history;
     return data.nodes ? Object.keys(data.nodes).length : (Array.isArray(data) ? data.length : 0);
 };
 
-// --- ROUTES ---
-
-// 1. ADMIN DASHBOARD OVERVIEW
+// 1. ADMIN DASHBOARD
 router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
-    // Basic Statistics
     const statsQuery = `
       SELECT 
-        (SELECT COUNT(*) FROM ai_history_chatapi WHERE is_deleted = FALSE) as total_chats,
-        (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users,
-        (SELECT COUNT(*) FROM user_message_logs_chatapi WHERE date = CURRENT_DATE) as active_users_today,
-        (SELECT COALESCE(SUM(message_count), 0) FROM user_message_logs_chatapi WHERE date = CURRENT_DATE) as messages_today
+        (SELECT COUNT(*) FROM ai_history_chatapi) as total_chats,
+        (SELECT COUNT(*) FROM ai_history_chatapi WHERE is_deleted = TRUE) as deleted_chats,
+        (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users
     `;
     
-    // Recent Chats (Compatible with new structure)
     const recentChatsQuery = `
-      SELECT id, username, created_at, conversation_history
+      SELECT id, username, created_at, conversation_history, is_deleted
       FROM ai_history_chatapi
-      WHERE is_deleted = FALSE
       ORDER BY created_at DESC
       LIMIT 10
     `;
 
-    // Top Users (Based on message logs)
-    const topUsersQuery = `
-      SELECT username, SUM(message_count) as total_messages
-      FROM user_message_logs_chatapi
-      GROUP BY username
-      ORDER BY total_messages DESC
-      LIMIT 5
-    `;
-
-    // Hourly Volume
     const hourlyVolumeQuery = `
       SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count
       FROM ai_history_chatapi
@@ -56,39 +38,32 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
       GROUP BY hour ORDER BY hour
     `;
 
-    const [statsRes, recentRes, topRes, hourlyRes] = await Promise.all([
+    const [statsRes, recentRes, hourlyRes] = await Promise.all([
       pool.query(statsQuery),
       pool.query(recentChatsQuery),
-      pool.query(topUsersQuery),
       pool.query(hourlyVolumeQuery)
     ]);
 
-    // Process Data
     const stats = statsRes.rows[0];
-    
-    // Calculate message counts from JSON trees for display
     const recentChats = recentRes.rows.map(chat => ({
         ...chat,
         message_count: countTreeNodes(chat.conversation_history),
         created_at: new Date(chat.created_at).toLocaleString()
     }));
 
-    // Chart Data
     const hourlyData = Array(24).fill(0);
     hourlyRes.rows.forEach(row => hourlyData[parseInt(row.hour)] = parseInt(row.count));
 
     res.render("admin/dashboard.handlebars", {
       layout: false,
-      page: "Dashboard",
       stats,
       recentChats,
-      topUsers: topRes.rows,
       hourlyData: JSON.stringify(hourlyData),
       currentUser: req.session.user.username
     });
 
   } catch (error) {
-    console.error("Admin Dashboard Error:", error);
+    console.error("Dashboard Error:", error);
     res.status(500).send("Server Error");
   }
 });
@@ -101,59 +76,55 @@ router.get("/admin/users", validateSessionAndRole("SuperAdmin"), async (req, res
     const search = req.query.search || "";
 
     let whereClause = "";
-    const params = [];
+    let params = [];
     if (search) {
       whereClause = "WHERE username ILIKE $1";
       params.push(`%${search}%`);
     }
 
-    // Get Users from Message Logs (Active Users)
     const usersQuery = `
-      SELECT 
-        username,
-        SUM(message_count) as total_messages,
-        MAX(date) as last_active
-      FROM user_message_logs_chatapi
-      ${whereClause ? `WHERE username ILIKE $1` : ""}
+      SELECT username, COUNT(*) as total_chats, MAX(created_at) as last_active
+      FROM ai_history_chatapi
+      ${whereClause}
       GROUP BY username
       ORDER BY last_active DESC
       LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}
     `;
 
-    const countQuery = `SELECT COUNT(DISTINCT username) FROM user_message_logs_chatapi ${whereClause ? `WHERE username ILIKE $1` : ""}`;
+    const countQuery = `SELECT COUNT(DISTINCT username) FROM ai_history_chatapi ${whereClause}`;
 
     const [usersRes, countRes] = await Promise.all([
       pool.query(usersQuery, params),
       pool.query(countQuery, params)
     ]);
 
-    const totalCount = parseInt(countRes.rows[0].count);
+    const users = usersRes.rows.map(u => ({ ...u, last_active: new Date(u.last_active).toLocaleString() }));
 
     res.render("admin/users.handlebars", {
       layout: false,
-      users: usersRes.rows,
+      users,
       searchQuery: search,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(totalCount / DEFAULT_PAGE_SIZE)
+        totalPages: Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE) || 1
       },
       currentUser: req.session.user.username
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Users Error:", error);
     res.status(500).send("Error loading users");
   }
 });
 
-// 3. CHAT MANAGEMENT
+// 3. CHAT MANAGEMENT (Shows Deleted Too)
 router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * DEFAULT_PAGE_SIZE;
-    const { username, search } = req.query;
+    const { username } = req.query;
 
-    let conditions = ["is_deleted = FALSE"];
+    let conditions = [];
     let params = [];
     
     if (username) {
@@ -161,16 +132,10 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
         params.push(`%${username}%`);
     }
     
-    // Note: Searching inside JSONB is heavy, use sparingly
-    if (search) {
-        conditions.push(`conversation_history::text ILIKE $${params.length + 1}`);
-        params.push(`%${search}%`);
-    }
-
     const whereSQL = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
 
     const chatsQuery = `
-      SELECT id, username, created_at, conversation_history
+      SELECT id, username, created_at, conversation_history, is_deleted
       FROM ai_history_chatapi
       ${whereSQL}
       ORDER BY created_at DESC
@@ -180,11 +145,10 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
     const countQuery = `SELECT COUNT(*) FROM ai_history_chatapi ${whereSQL}`;
 
     const [chatsRes, countRes] = await Promise.all([
-        pool.query(chatsQuery, params), // Correct: pass 'params' as second argument
-        pool.query(countQuery, params)  // Correct: pass 'params' here too
+        pool.query(chatsQuery, params),
+        pool.query(countQuery, params)
     ]);
 
-    // Format for display
     const chats = chatsRes.rows.map(c => ({
         ...c,
         message_count: countTreeNodes(c.conversation_history),
@@ -195,10 +159,9 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
         layout: false,
         chats,
         usernameFilter: username,
-        searchQuery: search,
         pagination: {
             currentPage: page,
-            totalPages: Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE)
+            totalPages: Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE) || 1
         },
         currentUser: req.session.user.username
     });
@@ -209,42 +172,39 @@ router.get("/admin/chats", validateSessionAndRole("SuperAdmin"), async (req, res
   }
 });
 
-// 4. BULK DELETE
+// 4. CHAT DETAIL INSPECTOR
+router.get("/admin/chats/:id", validateSessionAndRole("SuperAdmin"), async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT * FROM ai_history_chatapi WHERE id = $1', [req.params.id]);
+        if (rows.length === 0) return res.status(404).send("Not Found");
+        
+        const chat = rows[0];
+        const historyJson = typeof chat.conversation_history === 'string' 
+            ? chat.conversation_history 
+            : JSON.stringify(chat.conversation_history);
+
+        res.render("admin/chat-detail.handlebars", {
+            layout: false,
+            chat: { ...chat, created_at: new Date(chat.created_at).toLocaleString() },
+            historyJson, 
+            currentUser: req.session.user.username
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error loading chat detail");
+    }
+});
+
+// 5. BULK DELETE
 router.post("/admin/chats/bulk-delete", validateSessionAndRole("SuperAdmin"), async (req, res) => {
     try {
         const { chatIds } = req.body;
         if (!chatIds || !chatIds.length) return res.status(400).json({success: false});
-
-        // Soft delete
         await pool.query("UPDATE ai_history_chatapi SET is_deleted = TRUE WHERE id = ANY($1::int[])", [chatIds]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// 5. SYSTEM STATS (API)
-router.get("/admin/system-stats", validateSessionAndRole("SuperAdmin"), async (req, res) => {
-    try {
-        const mem = process.memoryUsage();
-        res.json({
-            success: true,
-            stats: {
-                server: {
-                    uptime: process.uptime(),
-                    memory: {
-                        rss: Math.round(mem.rss / 1024 / 1024) + " MB",
-                        heapTotal: Math.round(mem.heapTotal / 1024 / 1024) + " MB"
-                    }
-                },
-                database: {
-                    totalConnections: pool.totalCount,
-                    idleConnections: pool.idleCount
-                }
-            }
-        });
-    } catch (e) {
-        res.status(500).json({ success: false });
     }
 });
 
