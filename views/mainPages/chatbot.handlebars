@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TERMINAL_ACCESS // {{username}}</title>
+    <title> MBK_CHATAPI // {{username}}</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
     
     <!-- Fonts: JetBrains Mono (Coding Font) -->
@@ -32,7 +32,7 @@
             /* Cyberpunk / Hacker Palette */
             --term-bg: #050505;
             --term-panel: rgba(10, 15, 20, 0.95);
-            --term-border: #333;
+            --term-border: #3a3a3a;
             
             --neon-green: #00ff41;
             --neon-blue: #00f0ff;
@@ -211,6 +211,9 @@
             padding: 10px;
             scrollbar-width: thin;
             scrollbar-color: var(--term-border) transparent;
+            /* subtle partition visual */
+            border-right: 1px solid rgba(255,255,255,0.03);
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent 60%);
         }
 
         .chat-list::-webkit-scrollbar { width: 4px; }
@@ -581,6 +584,19 @@
             
             .message { max-width: 95%; }
         }
+        /* Splitter between sidebar and main content */
+        .splitter {
+            width: 6px;
+            cursor: col-resize;
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            transition: background 0.15s;
+            z-index: 150;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+        .splitter:hover { background: rgba(255,255,255,0.06); }
+        .resizing * { cursor: col-resize !important; }
     </style>
 </head>
 <body>
@@ -643,6 +659,9 @@
             </div>
         </aside>
 
+        <!-- Resizable Splitter -->
+        <div id="splitter" class="splitter" aria-hidden="false" title="Drag to resize sidebar"></div>
+
         <!-- MAIN CONTENT -->
         <section class="main-content">
             <div class="top-bar">
@@ -652,11 +671,7 @@
                 <div class="model-indicator" id="current-model-display">
                     <i class="fas fa-microchip"></i> <span id="model-name-text">GEMINI 1.5</span>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-icon" id="btn-export" title="Export Chat Log">
-                        <i class="fas fa-download"></i>
-                    </button>
-                </div>
+
             </div>
 
             <div class="messages-container" id="messages-container">
@@ -782,7 +797,7 @@
                         </div>
                         <div style="margin-top: 20px;">
                             <button onclick="logout()" class="btn btn-danger" style="width: 100%;">
-                                <i class="fas fa-sign-out-alt"></i> TERMINATE SESSION
+                                <i class="fas fa-sign-out-alt"></i> Logout
                             </button>
                         </div>
                     </div>
@@ -905,6 +920,7 @@
                 UI.applySettings();
                 UI.updateLimitBar(); // Check logic for Unlimited
                 UI.setupEventListeners();
+                UI.setupSplitter();
                 UI.setupMarkdown();
                 UI.loadHistory();
                 
@@ -913,8 +929,62 @@
                 }
 
                 setInterval(() => {
-                    document.getElementById('ping-val').innerText = Math.floor(Math.random() * 50 + 10) + 'ms';
+                    document.getElementById('ping-val').innerText = Math.floor(Math.random() * 500 + 10) + 'ms';
                 }, 2000);
+            },
+
+            setupSplitter: () => {
+                const root = document.documentElement;
+                const splitter = document.getElementById('splitter');
+                const storageKey = 'mbk_sidebar_width';
+                const minWidth = 200; // px
+                const maxWidth = Math.min(window.innerWidth - 300, 600);
+
+                // apply stored width if present
+                const stored = parseInt(localStorage.getItem(storageKey));
+                if(stored && !isNaN(stored)) {
+                    root.style.setProperty('--sidebar-width', stored + 'px');
+                }
+
+                let dragging = false;
+
+                const onMouseMove = (e) => {
+                    if(!dragging) return;
+                    const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
+                    root.style.setProperty('--sidebar-width', newWidth + 'px');
+                    localStorage.setItem(storageKey, newWidth);
+                };
+
+                const onMouseUp = () => {
+                    if(dragging) {
+                        dragging = false;
+                        document.body.classList.remove('resizing');
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    }
+                };
+
+                splitter.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    dragging = true;
+                    document.body.classList.add('resizing');
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+
+                // touch support
+                splitter.addEventListener('touchstart', (e) => {
+                    dragging = true;
+                    document.body.classList.add('resizing');
+                    window.addEventListener('touchmove', (ev) => {
+                        if(!dragging) return;
+                        const touch = ev.touches[0];
+                        const newWidth = Math.max(minWidth, Math.min(maxWidth, touch.clientX));
+                        root.style.setProperty('--sidebar-width', newWidth + 'px');
+                        localStorage.setItem(storageKey, newWidth);
+                    });
+                    window.addEventListener('touchend', () => { dragging = false; document.body.classList.remove('resizing'); });
+                });
             },
 
             applySettings: () => {
@@ -1138,8 +1208,9 @@
                     document.getElementById('temp-val-display').innerText = e.target.value / 100;
                 });
 
-                // Export
-                document.getElementById('btn-export').onclick = Chat.export;
+                // Export (attach only if element exists)
+                const exportBtn = document.getElementById('btn-export');
+                if (exportBtn) exportBtn.onclick = Chat.export;
             }
         };
 
