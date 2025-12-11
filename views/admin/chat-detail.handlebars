@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,14 +20,14 @@
             --warning: #ffcc00;
             --success: #00ff88;
         }
-        
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'JetBrains Mono', monospace;
         }
-        
+
         body {
             background: var(--bg);
             color: var(--text);
@@ -47,7 +48,7 @@
             margin-bottom: 20px;
             flex-shrink: 0;
         }
-        
+
         .meta {
             font-size: 0.9rem;
             color: var(--dim);
@@ -55,12 +56,12 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-        
+
         .meta span {
             color: #fff;
             font-weight: 400;
         }
-        
+
         .deleted-badge {
             background: var(--danger);
             color: #fff;
@@ -70,11 +71,19 @@
             margin-left: 10px;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         /* CONTROL PANEL */
@@ -88,7 +97,7 @@
             border: 1px solid var(--border);
             flex-shrink: 0;
         }
-        
+
         .control-group {
             display: flex;
             align-items: center;
@@ -96,40 +105,43 @@
             padding: 0 10px;
             border-right: 1px solid var(--border);
         }
-        
+
         .control-group:last-child {
             border-right: none;
         }
-        
+
         .slider-container {
             display: flex;
             align-items: center;
             gap: 8px;
             min-width: 200px;
         }
-        
-        /* TREE CONTAINER */
+
+/* TREE CONTAINER (Static Window) */
         .chart-wrapper {
             flex: 1;
             overflow: hidden;
-            background: #080808;
             border: 1px solid var(--border);
             border-radius: 6px;
             position: relative;
+            
+            /* MOVED BACKGROUND HERE for Infinite Effect */
+            background-color: #080808;
+            background-image: 
+                radial-gradient(#222 1px, transparent 1px),
+                linear-gradient(90deg, transparent 99px, #111 99px, #111 100px, transparent 100px),
+                linear-gradient(transparent 99px, #111 99px, #111 100px, transparent 100px);
+            background-size: 20px 20px, 100px 100px, 100px 100px;
         }
 
+        /* MOVING LAYER (Nodes Only) */
         #tree-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            padding: 50px;
-            background-image: 
-                radial-gradient(#222 1px, transparent 1px),
-                linear-gradient(90deg, transparent 99px, #111 99px, #111 100px, transparent 100px),
-                linear-gradient(transparent 99px, #111 99px, #111 100px, transparent 100px);
-            background-size: 20px 20px, 100px 100px, 100px 100px;
+            /* Removed background from here */
             transform-origin: 0 0;
             will-change: transform;
         }
@@ -148,40 +160,40 @@
             cursor: pointer;
             z-index: 10;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
-        
+
         .tree-node:hover {
             z-index: 1000;
             width: 400px;
             min-height: 200px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
             background: #111;
             border-color: var(--primary);
         }
-        
+
         .tree-node.user {
             border-left-color: var(--secondary);
-            background: linear-gradient(90deg, rgba(188,19,254,0.05) 0%, rgba(188,19,254,0) 100%);
+            background: linear-gradient(90deg, rgba(188, 19, 254, 0.05) 0%, rgba(188, 19, 254, 0) 100%);
         }
-        
+
         .tree-node.model {
             border-left-color: var(--primary);
-            background: linear-gradient(90deg, rgba(0,255,65,0.05) 0%, rgba(0,255,65,0) 100%);
+            background: linear-gradient(90deg, rgba(0, 255, 65, 0.05) 0%, rgba(0, 255, 65, 0) 100%);
         }
-        
+
         .tree-node.system {
             border-left-color: var(--warning);
-            background: linear-gradient(90deg, rgba(255,204,0,0.05) 0%, rgba(255,204,0,0) 100%);
+            background: linear-gradient(90deg, rgba(255, 204, 0, 0.05) 0%, rgba(255, 204, 0, 0) 100%);
         }
-        
+
         .node-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
-        
+
         .node-role {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -189,16 +201,16 @@
             color: var(--dim);
             letter-spacing: 1px;
         }
-        
+
         .node-id {
             font-size: 0.7rem;
             color: var(--dim);
             font-family: monospace;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             padding: 1px 4px;
             border-radius: 3px;
         }
-        
+
         .node-text {
             font-size: 0.8rem;
             color: #ccc;
@@ -209,14 +221,14 @@
             overflow: hidden;
             word-break: break-word;
         }
-        
+
         .tree-node:hover .node-text {
             -webkit-line-clamp: unset;
             overflow-y: auto;
             max-height: 150px;
             color: #fff;
         }
-        
+
         .node-timestamp {
             font-size: 0.7rem;
             color: var(--dim);
@@ -233,12 +245,12 @@
             transform-origin: 0 50%;
             pointer-events: none;
         }
-        
+
         .connector:hover {
             background: var(--primary);
             height: 3px;
         }
-        
+
         /* BUTTONS */
         .btn {
             background: #222;
@@ -254,36 +266,36 @@
             align-items: center;
             gap: 5px;
         }
-        
+
         .btn:hover {
             background: #333;
             border-color: var(--primary);
             color: var(--primary);
         }
-        
+
         .btn-primary {
             background: var(--primary);
             color: #000;
             border-color: var(--primary);
         }
-        
+
         .btn-primary:hover {
             background: #00cc33;
             border-color: #00cc33;
             color: #000;
         }
-        
+
         .btn-danger {
             background: var(--danger);
             color: #fff;
             border-color: var(--danger);
         }
-        
+
         .btn-danger:hover {
             background: #cc0029;
             border-color: #cc0029;
         }
-        
+
         /* LEGEND */
         .legend {
             position: fixed;
@@ -297,28 +309,36 @@
             z-index: 1000;
             backdrop-filter: blur(5px);
         }
-        
+
         .legend h4 {
             margin-bottom: 10px;
             color: var(--primary);
         }
-        
+
         .legend-item {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
         }
-        
+
         .legend-color {
             width: 20px;
             height: 10px;
             border-radius: 2px;
         }
-        
-        .legend-user { background: var(--secondary); }
-        .legend-model { background: var(--primary); }
-        .legend-system { background: var(--warning); }
+
+        .legend-user {
+            background: var(--secondary);
+        }
+
+        .legend-model {
+            background: var(--primary);
+        }
+
+        .legend-system {
+            background: var(--warning);
+        }
 
         /* LOADING */
         .loading {
@@ -329,7 +349,7 @@
             text-align: center;
             color: var(--primary);
         }
-        
+
         .spinner {
             border: 3px solid rgba(0, 255, 65, 0.3);
             border-top: 3px solid var(--primary);
@@ -339,10 +359,15 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* RESPONSIVE */
@@ -350,43 +375,45 @@
             .chart-wrapper {
                 padding: 30px;
             }
-            
+
             .tree-node {
                 width: 200px;
             }
-            
+
             .tree-node:hover {
                 width: 350px;
             }
         }
-        
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 15px;
             }
-            
+
             .meta {
                 flex-direction: column;
                 gap: 5px;
             }
-            
+
             .controls {
                 flex-wrap: wrap;
             }
-            
+
             .chart-wrapper {
                 padding: 20px;
             }
         }
     </style>
 </head>
+
 <body>
 
     <div class="header">
         <div>
-            <h2><i class="fas fa-network-wired"></i> CHAT_INSPECTOR {{#if chat.is_deleted}}<span class="deleted-badge">DELETED</span>{{/if}}</h2>
+            <h2><i class="fas fa-network-wired"></i> CHAT_INSPECTOR {{#if chat.is_deleted}}<span
+                    class="deleted-badge">DELETED</span>{{/if}}</h2>
             <div class="meta">
                 <div><i class="fas fa-user"></i> User: <span>{{chat.username}}</span></div>
                 <div><i class="fas fa-calendar"></i> Date: <span>{{chat.created_at}}</span></div>
@@ -412,22 +439,23 @@
                 <span id="zoom-value">100%</span>
             </div>
         </div>
-        
+
         <div class="control-group">
             <label for="spacing">Spacing:</label>
             <div class="slider-container">
                 <i class="fas fa-compress"></i>
-                <input type="range" id="spacing" min="50" max="300" step="10" value="120" oninput="updateSpacing(this.value)">
+                <input type="range" id="spacing" min="50" max="300" step="10" value="120"
+                    oninput="updateSpacing(this.value)">
                 <i class="fas fa-expand"></i>
                 <span id="spacing-value">120px</span>
             </div>
         </div>
-        
+
         <div class="control-group">
             <button class="btn" onclick="toggleConnectors()"><i class="fas fa-link"></i> Toggle Links</button>
             <button class="btn" onclick="resetView()"><i class="fas fa-redo"></i> Reset</button>
         </div>
-        
+
         <div class="control-group">
             <label for="node-filter">Filter:</label>
             <select id="node-filter" onchange="filterNodes(this.value)">
@@ -471,7 +499,7 @@
 
     <script>
         // Sample data structure for testing
-        const historyData = {{{historyJson}}} || {
+        const historyData = {{{ historyJson }}} || {
             nodes: {
                 "root": {
                     id: "root",
@@ -540,7 +568,7 @@
         const NODE_H = 100;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
                 loading.style.display = 'none';
                 renderTree();
@@ -551,9 +579,9 @@
 
         function renderTree() {
             treeLayer.innerHTML = '';
-            
+
             if (!historyData.nodes || !historyData.rootId) {
-                if(Array.isArray(historyData)) {
+                if (Array.isArray(historyData)) {
                     renderLinearHistory(historyData);
                     return;
                 }
@@ -562,23 +590,23 @@
             }
 
             const { nodes, rootId } = historyData;
-            
+
             // Calculate positions using a breadth-first layout
             const positions = calculatePositions(nodes, rootId);
-            
+
             // Update node count
             document.getElementById('node-count').textContent = Object.keys(nodes).length;
-            
+
             // Render connectors first (so they appear behind nodes)
             if (connectorsVisible) {
                 renderConnectors(nodes, positions);
             }
-            
+
             // Render nodes
             Object.keys(positions).forEach(id => {
                 renderNode(positions[id].x, positions[id].y, nodes[id]);
             });
-            
+
             // Apply current transform
             updateTransform();
         }
@@ -587,12 +615,12 @@
             const positions = {};
             const depthMap = {};
             let maxDepth = 0;
-            
+
             // First pass: calculate depth and collect nodes by depth
             function calculateDepth(nodeId, depth) {
                 depthMap[nodeId] = depth;
                 maxDepth = Math.max(maxDepth, depth);
-                
+
                 const node = nodes[nodeId];
                 if (node.children) {
                     node.children.forEach(childId => {
@@ -600,18 +628,18 @@
                     });
                 }
             }
-            
+
             calculateDepth(rootId, 0);
-            
+
             // Second pass: calculate positions
             const depthCounts = {};
-            
+
             function positionNode(nodeId, depth, order) {
                 const x = 50 + (depth * (NODE_W + nodeSpacing));
                 const y = 50 + (order * (NODE_H + nodeSpacing));
-                
+
                 positions[nodeId] = { x, y, depth, order };
-                
+
                 const node = nodes[nodeId];
                 if (node.children) {
                     node.children.forEach((childId, idx) => {
@@ -620,9 +648,9 @@
                     });
                 }
             }
-            
+
             positionNode(rootId, 0, 0);
-            
+
             return positions;
         }
 
@@ -630,7 +658,7 @@
             let y = 50;
             messages.forEach((msg, i) => {
                 createNode(50, y, msg.role, msg.parts ? msg.parts[0].text : msg.text, i);
-                if(i > 0) {
+                if (i > 0) {
                     drawConnector(50 + 100, y - nodeSpacing + 80, 50 + 100, y);
                 }
                 y += nodeSpacing;
@@ -643,10 +671,10 @@
             div.style.left = x + 'px';
             div.style.top = y + 'px';
             div.dataset.nodeId = node.id;
-            
+
             const timestamp = node.timestamp || '';
             const displayText = node.text || node.content || '';
-            
+
             div.innerHTML = `
                 <div class="node-header">
                     <div class="node-role">${escapeHtml(node.role)}</div>
@@ -655,12 +683,12 @@
                 <div class="node-text">${escapeHtml(displayText.substring(0, 200))}</div>
                 ${timestamp ? `<div class="node-timestamp">${timestamp}</div>` : ''}
             `;
-            
+
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
                 highlightBranch(node.id);
             });
-            
+
             treeLayer.appendChild(div);
         }
 
@@ -670,7 +698,7 @@
                 if (node.parentId && positions[node.parentId]) {
                     const startPos = positions[node.parentId];
                     const endPos = positions[id];
-                    
+
                     drawConnector(
                         startPos.x + NODE_W,
                         startPos.y + 40,
@@ -684,7 +712,7 @@
         function drawConnector(x1, y1, x2, y2) {
             const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
             const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-            
+
             const line = document.createElement('div');
             line.className = 'connector';
             line.style.width = length + 'px';
@@ -712,7 +740,7 @@
                 node.style.boxShadow = '';
                 node.style.zIndex = '10';
             });
-            
+
             // Highlight path to root
             let currentNodeId = nodeId;
             while (currentNodeId && historyData.nodes[currentNodeId]) {
@@ -724,11 +752,52 @@
                 currentNodeId = historyData.nodes[currentNodeId]?.parentId;
             }
         }
-
-        function updateTransform() {
+function updateTransform() {
+            // Move the nodes
             treeLayer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
+            
+            // Move the background pattern on the container so it looks infinite
+            container.style.backgroundPosition = `${translateX}px ${translateY}px`;
         }
 
+        function setupPanning() {
+            // 1. Disable the Right-Click Menu on the chart area
+            container.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+
+            // 2. Start Dragging (Left or Right click)
+            container.addEventListener('mousedown', (e) => {
+                // Allow drag if clicking container or the empty layer (not buttons/nodes)
+                if (e.target === container || e.target === treeLayer) {
+                    panning = true;
+                    // Calculate offset relative to current translation
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
+
+            // 3. Move (Attached to WINDOW so you don't lose focus)
+            window.addEventListener('mousemove', (e) => {
+                if (!panning) return;
+                e.preventDefault(); // Stop text selection
+                
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                
+                updateTransform();
+            });
+
+            // 4. Stop Dragging (Attached to WINDOW)
+            window.addEventListener('mouseup', () => {
+                if (panning) {
+                    panning = false;
+                    container.style.cursor = 'default';
+                }
+            });
+        }
         function setupPanning() {
             container.addEventListener('mousedown', (e) => {
                 if (e.target === container) {
@@ -752,11 +821,33 @@
             });
         }
 
-        function setupZoom() {
+function setupZoom() {
+            // Track mouse position relative to container
+            let mouseX = 0, mouseY = 0;
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+            });
+
             container.addEventListener('wheel', (e) => {
                 e.preventDefault();
+                
+                const oldZoom = zoomLevel;
                 const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-                zoomLevel = Math.max(0.5, Math.min(2, zoomLevel * zoomFactor));
+                let newZoom = Math.max(0.5, Math.min(2, oldZoom * zoomFactor));
+                
+                // Calculate position relative to the content before zooming
+                const contentX = (mouseX - translateX) / oldZoom;
+                const contentY = (mouseY - translateY) / oldZoom;
+                
+                // Apply new zoom
+                zoomLevel = newZoom;
+                
+                // Adjust translate to keep the content under the mouse stationary
+                translateX = mouseX - (contentX * zoomLevel);
+                translateY = mouseY - (contentY * zoomLevel);
+
                 document.getElementById('zoom').value = zoomLevel;
                 document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
                 updateTransform();
@@ -798,80 +889,57 @@
         function zoomToFit() {
             const nodes = container.querySelectorAll('.tree-node');
             if (nodes.length === 0) return;
-            
+
             let minX = Infinity, maxX = -Infinity;
             let minY = Infinity, maxY = -Infinity;
-            
+
+            // FIX: Loop only calculates positions now. 
+            // Event listeners have been removed.
             nodes.forEach(node => {
                 const x = parseFloat(node.style.left) || 0;
                 const y = parseFloat(node.style.top) || 0;
-                // Store mouse position for cursor-aware zoom
-                let mouseX = 0, mouseY = 0;
-
-                container.addEventListener('mousemove', (e) => {
-                  const rect = container.getBoundingClientRect();
-                const oldZoom = zoomLevel;
-                const offsetX = (mouseX - translateX) / oldZoom;
-                const offsetY = (mouseY - translateY) / oldZoom;
-                  mouseX = e.clientX - rect.left;
-                  mouseY = e.clientY - rect.top;
-                });
-
-                container.addEventListener('wheel', (e) => {
-                  e.preventDefault();
-                  const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-                  const oldZoom = zoomLevel;
-                  zoomLevel = Math.max(0.5, Math.min(2, zoomLevel * zoomFactor));
-                  
-                  // Adjust pan to zoom towards cursor
-                  translateX = mouseX - (mouseX - translateX) / oldZoom * zoomLevel;
-                  translateY = mouseY - (mouseY - translateY) / oldZoom * zoomLevel;
-                  
-                  document.getElementById('zoom').value = zoomLevel;
-                  document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
-                  updateTransform();
-                });
                 const width = node.clientWidth || NODE_W;
                 const height = node.clientHeight || NODE_H;
-                
+
                 minX = Math.min(minX, x);
                 maxX = Math.max(maxX, x + width);
                 minY = Math.min(minY, y);
                 maxY = Math.max(maxY, y + height);
             });
-            
+
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
             const contentWidth = maxX - minX;
             const contentHeight = maxY - minY;
-            
-            const scaleX = containerWidth / contentWidth;
-            const scaleY = containerHeight / contentHeight;
-            const scale = Math.min(scaleX, scaleY, 1) * 0.9;
-            
-            zoomLevel = scale;
-            document.getElementById('zoom').value = scale;
-            document.getElementById('zoom-value').textContent = `${Math.round(scale * 100)}%`;
-            
+
+            // Add some padding
+            const padding = 100;
+            const scaleX = (containerWidth - padding) / contentWidth;
+            const scaleY = (containerHeight - padding) / contentHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Cap at 100%
+
+            zoomLevel = Math.max(0.5, scale); // Don't zoom out too far
+            document.getElementById('zoom').value = zoomLevel;
+            document.getElementById('zoom-value').textContent = `${Math.round(zoomLevel * 100)}%`;
+
             // Center the content
-            translateX = (containerWidth - contentWidth * scale) / 2 - minX * scale;
-            translateY = (containerHeight - contentHeight * scale) / 2 - minY * scale;
-            
+            translateX = (containerWidth - contentWidth * zoomLevel) / 2 - minX * zoomLevel;
+            translateY = (containerHeight - contentHeight * zoomLevel) / 2 - minY * zoomLevel;
+
             updateTransform();
         }
-
         function resetView() {
             zoomLevel = 1;
             translateX = 0;
             translateY = 0;
             nodeSpacing = 120;
-            
+
             document.getElementById('zoom').value = 1;
             document.getElementById('zoom-value').textContent = '100%';
             document.getElementById('spacing').value = 120;
             document.getElementById('spacing-value').textContent = '120px';
             document.getElementById('node-filter').value = 'all';
-            
+
             updateTransform();
             renderTree();
         }
@@ -884,14 +952,15 @@
         }
 
         function exportData() {
-            const blob = new Blob([JSON.stringify(historyData, null, 2)], {type: "application/json"});
+            const blob = new Blob([JSON.stringify(historyData, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `chat_${historyData.rootId || 'log'}_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `chat_${historyData.rootId || 'log'}_${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
     </script>
 </body>
+
 </html>
