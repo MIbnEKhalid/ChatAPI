@@ -10,6 +10,7 @@ import minifyHTML from "express-minify-html";
 import minify from "express-minify";
 import compression from "compression";
 import mbkAuthRouter from "mbkauthe";
+import { renderError } from "mbkauthe";
 
 dotenv.config();
 const app = express();
@@ -497,11 +498,40 @@ router.get("/admin*", async (req, res) => {
   res.redirect("/admin/dashboard");
 });
 
+router.get("/dashboard", async (req, res) => {
+  res.redirect("/admin/dashboard");
+});
+
 router.get('/simulate-error', (req, res, next) => {
   next(new Error('Simulated router error'));
 });
 
+// 404 handler
+router.use((req, res) => {
+  console.log(`Path not found: ${req.method} ${req.url}`);
+  return renderError(res, {
+    layout: false,
+    code: 404,
+    error: "Not Found",
+    message: "The requested page was not found.",
+    pagename: "Home",
+    page: "/",
+  });
+});
 
+// Error handler
+router.use((err, req, res, next) => {
+  console.error(err.stack);
+  return renderError(res, {
+    layout: false,
+    code: 500,
+    error: "Internal app Error",
+    message: "An unexpected error occurred on the app.",
+    details: err.message,
+    pagename: "Home",
+    page: "/",
+  });
+});
 
 const port = 3030;
 
