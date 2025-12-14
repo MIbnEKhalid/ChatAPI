@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="AI Chat Application by mbktech.org - A simple web interface for chatting with AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Open-source and customizable.">
-    <meta name="keywords" content="AI Chat, ChatAPI, mbktech.org, Gemini AI, NVIDIA, Llama Nemotron, AI Assistant, Chatbot, Open Source, Node.js">
+        content="AI Chat Application by mbktech.org - A simple web interface for chatting with AI models including Gemini, Llama 3.1, and Gemma 2 via Groq, Cerebras, and SambaNova. Open-source and customizable.">
+    <meta name="keywords" content="AI Chat, ChatAPI, mbktech.org, Gemini AI, Groq, Cerebras, SambaNova, Llama 3.1, AI Assistant, Chatbot, Open Source, Node.js">
     <meta property="og:title" content="ChatAPI - Simple AI Chat Application | mbktech.org" />
-    <meta property="og:image" content="/Assets/Images/chatbot.png" />
+    <meta property="og:image" content="/Assets/Images/chatbot.jpg" />
     <meta property="og:url" content="">
-    <meta property="og:description" content="A simple web interface for chatting with AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Open-source and easy to deploy." />
+    <meta property="og:description" content="A simple web interface for chatting with AI models including Gemini, Llama 3.1, and Gemma 2. Open-source and easy to deploy." />
     <title>ChatAPI | mbktech.org</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Images/dgicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -567,6 +567,11 @@
             background: var(--secondary-light);
             color: var(--secondary);
         }
+        
+        .badge-custom {
+            background: rgba(0, 255, 65, 0.1);
+            color: #00ff41;
+        }
 
         /* Team Section */
         .team-section {
@@ -859,6 +864,69 @@
             background: radial-gradient(circle, rgba(247, 37, 133, 0.15), transparent 70%);
         }
 
+        /* Image Lightbox Modal Styles */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(67, 97, 238, 0.3);
+            border: 1px solid var(--glass-border);
+            animation: zoomIn 0.3s ease;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 2001;
+        }
+
+        .lightbox-close:hover,
+        .lightbox-close:focus {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .lightbox-caption {
+            margin-top: 15px;
+            color: #ccc;
+            font-size: 1.1rem;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        @keyframes zoomIn {
+            from {transform: scale(0.9); opacity: 0;}
+            to {transform: scale(1); opacity: 1;}
+        }
+
         /* Responsive Styles */
         @media (max-width: 1200px) {
             .hero h1 {
@@ -946,11 +1014,23 @@
             .footer-content {
                 grid-template-columns: 1fr;
             }
+            
+            .lightbox-close {
+                top: 10px;
+                right: 20px;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- Lightbox Modal Structure -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+
     <header>
         <nav>
             <div class="navbar">
@@ -985,9 +1065,9 @@
         <div class="hero-content">
             <div class="hero-text fade-in-up">
                 <h1>Simple <span>AI Chat Interface</span> by <span>mbktech.org</span></h1>
-                <p>A straightforward web-based chat application that connects you with multiple AI models including Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models. Customize your chat experience with this open-source solution.</p>
+                <p>A straightforward web-based chat application that connects you with multiple AI models including Gemini, Llama 3.1, and Gemma 2 via Groq, Cerebras, and SambaNova. Customize your chat experience with this open-source solution.</p>
                 <div class="cta-buttons">
-                    <a href="/login" class="btn btn-primary fade-in-up delay-1">
+                    <a href="/chatbot" class="btn btn-primary fade-in-up delay-1">
                         <i class="fas fa-rocket"></i> Open Chat
                     </a>
                     <a href="https://github.com/MIbnEKhalid/ChatAPI" class="btn btn-secondary fade-in-up delay-2">
@@ -1001,7 +1081,7 @@
     <section class="section" id="gallery">
         <h2 class="section-title">Gallery</h2>
         <div class="gallery-container">            <div class="gallery-intro">
-            <p>Explore the simple and clean interface of our AI chat application across desktop and mobile devices.</p>
+            <p>Explore the simple and clean interface of our AI chat application across desktop and mobile devices. Click on any image to enlarge.</p>
         </div>
             
             <!-- Desktop Experience -->
@@ -1012,8 +1092,8 @@
                 </h3>
                 <div class="gallery-grid">
                     <div class="gallery-item fade-in-up">
-                        <a href="/Assets/Images/chatbot.png" class="gallery-link">
-                            <img src="/Assets/Images/chatbot.png" alt="Chatbot Interface" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/chatbot.jpg', 'Chatbot Interface'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/chatbot.jpg" alt="Chatbot Interface" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1025,8 +1105,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up delay-1">
-                        <a href="/Assets/Images/settings.png" class="gallery-link">
-                            <img src="/Assets/Images/settings.png" alt="Settings Panel" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/settings.jpg', 'Settings Panel'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/settings.jpg" alt="Settings Panel" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1038,8 +1118,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up delay-2">
-                        <a href="/Assets/Images/dashboard.png" class="gallery-link">
-                            <img src="/Assets/Images/dashboard.png" alt="Dashboard Home" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/dashboard.jpg', 'Dashboard Home'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/dashboard.jpg" alt="Dashboard Home" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1051,8 +1131,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up delay-3">
-                        <a href="/Assets/Images/Userdashboard.png" class="gallery-link">
-                            <img src="/Assets/Images/Userdashboard.png" alt="User Management" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/Userdashboard.jpg', 'User Management'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/Userdashboard.jpg" alt="User Management" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1064,8 +1144,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up">
-                        <a href="/Assets/Images/Chatdashboard.png" class="gallery-link">
-                            <img src="/Assets/Images/Chatdashboard.png" alt="Chat Management" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/Chatdashboard.jpg', 'Chat Management'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/Chatdashboard.jpg" alt="Chat Management" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1086,8 +1166,8 @@
                 </h3>
                 <div class="gallery-grid mobile-grid">
                     <div class="gallery-item fade-in-up">
-                        <a href="/Assets/Images/mobile_chatbot.jpeg" class="gallery-link">
-                            <img src="/Assets/Images/mobile_chatbot.jpeg" alt="Mobile Chatbot" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/mobile_chatbot.jpg', 'Mobile Chatbot'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/mobile_chatbot.jpg" alt="Mobile Chatbot" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1099,8 +1179,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up delay-1">
-                        <a href="/Assets/Images/mobile_sidebar.jpeg" class="gallery-link">
-                            <img src="/Assets/Images/mobile_sidebar.jpeg" alt="Mobile Sidebar" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/mobile_sidebar.jpg', 'Mobile Sidebar'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/mobile_sidebar.jpg" alt="Mobile Sidebar" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1112,8 +1192,8 @@
                     </div>
                     
                     <div class="gallery-item fade-in-up delay-2">
-                        <a href="/Assets/Images/mobile_setting.jpeg" class="gallery-link">
-                            <img src="/Assets/Images/mobile_setting.jpeg" alt="Mobile Settings" class="gallery-image">
+                        <a href="#" onclick="openLightbox('/Assets/Images/mobile_setting.jpg', 'Mobile Settings'); return false;" class="gallery-link">
+                            <img src="/Assets/Images/mobile_setting.jpg" alt="Mobile Settings" class="gallery-image">
                             <div class="gallery-overlay">
                                 <i class="fas fa-search-plus"></i>
                             </div>
@@ -1217,6 +1297,7 @@
             display: block;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .gallery-image {
@@ -1322,7 +1403,7 @@
                     <i class="fas fa-network-wired"></i>
                 </div>
                 <h3>AI Model Integration</h3>
-                <p>Connect with multiple AI models including Gemini 2.0 Flash, Gemini 1.5 variants, and NVIDIA Llama Nemotron models through a simple web interface with PostgreSQL database for conversation history.</p>
+                <p>Connect with multiple AI models including Gemini 2.0, Groq, Cerebras, and SambaNova through a simple web interface with PostgreSQL database for conversation history.</p>
             </div>
             <div class="feature-card fade-in-up delay-1">
                 <div class="feature-icon">
@@ -1355,7 +1436,7 @@
                 <div class="detail-card fade-in-up">
                     <h3><i class="fas fa-brain"></i> AI Chat Features</h3>
                     <ul>
-                        <li><strong>Multiple AI Models:</strong> Access Gemini 2.0 Flash, Gemini 1.5 variants, and NVIDIA Llama Nemotron models</li>
+                        <li><strong>Multiple AI Models:</strong> Access Gemini, Llama 3.1, and Gemma 2 via diverse providers</li>
                         <li><strong>Conversation History:</strong> Save and manage your chat conversations with PostgreSQL database</li>
                         <li><strong>Adjustable Parameters:</strong> Control temperature and other AI parameters</li>
                         <li><strong>Message Management:</strong> Delete individual messages or clear entire conversations</li>
@@ -1369,7 +1450,7 @@
                     <ul>
                         <li><strong>Cloud Platforms:</strong> Deploy on platforms supporting Node.js applications</li>
                         <li><strong>Self-Hosted:</strong> Run on your own server with Node.js and PostgreSQL</li>
-                        <li><strong>Environment Variables:</strong> Configure Google Gemini and NVIDIA API keys via .env files</li>
+                        <li><strong>Environment Variables:</strong> Configure API keys via .env files</li>
                         <li><strong>Database Support:</strong> PostgreSQL database for user management and chat history</li>
                         <li><strong>Session Management:</strong> Built-in user authentication with secure sessions</li>
                     </ul>
@@ -1388,7 +1469,7 @@
             </div>
 
             <div class="detail-card fade-in-up delay-3" style="margin-top: 2rem;">
-                <h3><i class="fas fa-chart-line"></i> Available AI Models</h3>
+                <h3><i class="fas fa-chart-line"></i> Available AI Models (Efficient Tier)</h3>
                 <p>Choose from multiple AI models based on your requirements:</p>
 
                 <div style="overflow-x: auto;">
@@ -1398,51 +1479,51 @@
                                 <th>Model</th>
                                 <th>Provider</th>
                                 <th>Best For</th>
-                                <th>Version</th>
+                                <th>Tier</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>Gemini 2.0 Flash</td>
                                 <td><span class="badge badge-text">Google</span></td>
-                                <td>Latest model, fast responses</td>
-                                <td>2.0</td>
-                            </tr>
-                            <tr>
-                                <td>Gemini 2.0 Flash Lite</td>
-                                <td><span class="badge badge-text">Google</span></td>
-                                <td>Lightweight version, quick tasks</td>
-                                <td>2.0</td>
+                                <td>Fastest performance</td>
+                                <td>Reliable</td>
                             </tr>
                             <tr>
                                 <td>Gemini 1.5 Flash</td>
                                 <td><span class="badge badge-text">Google</span></td>
-                                <td>Balanced performance and speed</td>
-                                <td>1.5</td>
+                                <td>Balanced performance</td>
+                                <td>Reliable</td>
                             </tr>
                             <tr>
-                                <td>Gemini 1.5 Flash 8B</td>
-                                <td><span class="badge badge-text">Google</span></td>
-                                <td>8B parameter model, efficient</td>
-                                <td>1.5</td>
+                                <td>Llama 3.1 8B</td>
+                                <td><span class="badge badge-image">Groq</span></td>
+                                <td>Instant inference</td>
+                                <td>Instant</td>
                             </tr>
                             <tr>
-                                <td>Gemini 1.5 Pro</td>
-                                <td><span class="badge badge-text">Google</span></td>
-                                <td>Complex tasks, detailed responses</td>
-                                <td>1.5</td>
+                                <td>Gemma 2 9B</td>
+                                <td><span class="badge badge-image">Groq</span></td>
+                                <td>High quality open model</td>
+                                <td>Google</td>
                             </tr>
                             <tr>
-                                <td>Llama-3.1-Nemotron-Nano-8B-v1</td>
-                                <td><span class="badge badge-image">NVIDIA</span></td>
-                                <td>Compact open-source model</td>
-                                <td>3.1</td>
+                                <td>Llama 3.1 8B</td>
+                                <td><span class="badge badge-custom">Cerebras</span></td>
+                                <td>Wafer-scale speed</td>
+                                <td>Super Fast</td>
                             </tr>
                             <tr>
-                                <td>Llama-3.3-Nemotron-Super-49B-v1</td>
-                                <td><span class="badge badge-image">NVIDIA</span></td>
-                                <td>Large parameter open-source model</td>
-                                <td>3.3</td>
+                                <td>Llama 3.1 8B</td>
+                                <td><span class="badge badge-image">SambaNova</span></td>
+                                <td>Efficient processing</td>
+                                <td>Balanced</td>
+                            </tr>
+                             <tr>
+                                <td>Mallow T1</td>
+                                <td><span class="badge badge-custom">Experimental</span></td>
+                                <td>Custom interactions</td>
+                                <td>Custom</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1461,7 +1542,7 @@
                     <img src="https://avatars.githubusercontent.com/u/57322148?v=4" alt="Muhammad Bin Khalid"
                         class="team-avatar">
                     <h3 class="team-name">Muhammad Bin Khalid</h3>
-                    <p class="team-role">Lead Developer</p>
+                    <p class="team-role">Developer</p>
                     <div class="team-social">
                         <a href="https://github.com/MIbnEKhalid" target="_blank"><i class="fab fa-github"></i></a>
                         <a href="https://mbktech.org" target="_blank"><i class="fas fa-globe"></i></a>
@@ -1489,7 +1570,7 @@
                     <h3><i class="fas fa-lightbulb"></i> Current Features</h3>
                     <ul>
                         <li><strong>Text Conversations:</strong> Chat with AI models through a clean web interface</li>
-                        <li><strong>Multiple AI Models:</strong> Choose from Gemini 2.0, Gemini 1.5 variants, and NVIDIA Llama Nemotron models</li>
+                        <li><strong>Multiple AI Models:</strong> Choose from Gemini, Groq, Cerebras, and SambaNova models</li>
                         <li><strong>Chat History:</strong> Save and browse your conversation history in PostgreSQL</li>
                         <li><strong>Theme Options:</strong> Switch between dark and light themes</li>
                         <li><strong>Settings Panel:</strong> Adjust temperature and other parameters</li>
@@ -1502,7 +1583,7 @@
                     <ul>
                         <li><strong>User Authentication:</strong> Secure login system with session management</li>
                         <li><strong>Database Storage:</strong> PostgreSQL for user data and chat history</li>
-                        <li><strong>API Integration:</strong> Google Gemini and NVIDIA API integration</li>
+                        <li><strong>API Integration:</strong> Google Gemini and other provider integrations</li>
                         <li><strong>Message Limits:</strong> Configurable daily message limits per user</li>
                         <li><strong>Admin Dashboard:</strong> Manage users and view chat statistics</li>
                         <li><strong>Environment Configuration:</strong> Secure .env file configuration</li>
@@ -1615,12 +1696,60 @@
             });
         });
 
+        // Lightbox Modal Logic
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxCaption = document.getElementById('lightbox-caption');
+        const lightboxClose = document.querySelector('.lightbox-close');
+
+        // Function to open lightbox
+        function openLightbox(src, caption) {
+            lightbox.style.display = "flex";
+            // Small delay to allow display flex to apply before opacity transition
+            setTimeout(() => {
+                lightbox.classList.add('active');
+            }, 10);
+            
+            lightboxImg.src = src;
+            lightboxCaption.innerHTML = caption || '';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        // Close lightbox function
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            setTimeout(() => {
+                lightbox.style.display = "none";
+            }, 300); // Wait for transition
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        // Event listener for close button
+        lightboxClose.addEventListener('click', closeLightbox);
+
+        // Close when clicking outside the image
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" && lightbox.style.display === "flex") {
+                closeLightbox();
+            }
+        });
+
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-
                 const targetId = this.getAttribute('href');
+                
+                // If it's the lightbox link, don't scroll
+                if(this.hasAttribute('onclick') && targetId === '#') return;
+
+                e.preventDefault();
                 if (targetId === '#') return;
 
                 const targetElement = document.querySelector(targetId);

@@ -1,54 +1,48 @@
 # 🤖 ChatAPI - AI Chat Assistant
 
-A modern, full-featured AI chat application powered by Google Gemini API with advanced user management, conversation history, and admin dashboard.
+A modern, full-featured AI chat application powered by **Google Gemini**, **Groq**, **Cerebras**, and **SambaNova**. This application provides a unified interface to interact with cutting-edge models like Gemini 2.0 Flash, Llama 3.1, and Gemma 2, complete with user management, conversation history, and an admin dashboard.
 
-![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)
-![Express.js](https://img.shields.io/badge/Express.js-4.21+-blue.svg)
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)
+![Express.js](https://img.shields.io/badge/Express.js-4.21%2B-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## 🌟 Features
 
-### 🎯 Core Features
-- **AI-Powered Chat**: Intelligent conversations using Google Gemini API
-- **User Authentication**: Secure login/logout system with session management
-- **Conversation History**: Persistent chat history with organized conversation threads
-- **Real-time Chat**: Modern, responsive chat interface
-- **Multiple AI Models**: Support for various AI models including Gemini and NVIDIA APIs
+### 🎯 Core Capabilities
+- **Multi-Model Support**: Seamlessly switch between:
+  - **Google**: Gemini 2.0 Flash, Gemini 1.5 Flash
+  - **Groq**: Llama 3.1 8B (Instant), Gemma 2 9B
+  - **Cerebras**: Llama 3.1 8B (Super Fast)
+  - **SambaNova**: Llama 3.1 8B (Balanced)
+- **Efficient Tier Selection**: Optimized model selection for speed and reliability.
+- **Contextual Memory**: Persistent conversation history stored in PostgreSQL.
 
 ### 🎨 User Experience
-- **Modern UI**: Clean, responsive design with dark/light theme support
-- **Font Customization**: Adjustable font sizes for better accessibility
-- **Message Formatting**: Support for markdown, code highlighting, and rich text
-- **Mobile Responsive**: Optimized for all device sizes
-- **Real-time Updates**: Live chat updates and typing indicators
+- **Interactive Gallery**: Feature showcase with a built-in **Lightbox Image Viewer**.
+- **Modern UI**: Cyberpunk/Glassmorphism inspired design with dark/light theme support.
+- **Responsive Design**: Fully optimized for Desktop and Mobile devices (including sidebar navigation).
+- **Customization**: Adjustable font sizes, temperature controls, and theme settings.
+- **Rich Text**: Markdown support for code blocks, tables, and lists in chat responses.
 
-### 🔧 Admin Features
-- **Admin Dashboard**: Comprehensive management panel
-- **User Management**: View and manage all users
-- **Chat Analytics**: Monitor conversation statistics
-- **Message Limits**: Configurable daily message limits per user
-- **System Monitoring**: Server uptime and performance metrics
-
-### 📊 Advanced Features
-- **Message Limits**: Daily message quotas with customizable limits
-- **Temperature Control**: Adjustable AI response creativity
-- **Conversation Threading**: Organized chat sessions with unique IDs
-- **Export Functionality**: Export conversation history
-- **Search & Filter**: Advanced search through chat history
+### 🔧 Admin & Control
+- **Admin Dashboard**: Comprehensive panel to manage users and view system stats.
+- **User Management**: Role-based access control (Admin/User).
+- **Message Limits**: Configurable daily message quotas per user to manage API costs.
+- **Analytics**: Monitor chat volume and user activity.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18 or higher
-- PostgreSQL database
-- Google Gemini API key
+- PostgreSQL database (Local or Cloud like Neon/Supabase)
+- API Keys for the providers you wish to use (Google, Groq, etc.)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/ChatAPI.git
+   git clone https://github.com/MIbnEKhalid/ChatAPI.git
    cd ChatAPI
    ```
 
@@ -58,14 +52,15 @@ A modern, full-featured AI chat application powered by Google Gemini API with ad
    ```
 
 3. **Set up environment variables**
+   Create a `.env` file in the root directory:
    ```bash
    cp .env.template .env
    ```
-   Edit `.env` with your configuration (see [Environment Variables](#-environment-variables))
+   *See the [Environment Variables](#-environment-variables) section below.*
 
 4. **Set up the database**
+   Run the SQL script to create the necessary tables:
    ```bash
-   # Import the database schema
    psql -U your_username -d your_database -f model/db.sql
    ```
 
@@ -80,141 +75,59 @@ A modern, full-featured AI chat application powered by Google Gemini API with ad
 
 ## 🔧 Environment Variables
 
-### Required Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEON_POSTGRES` | PostgreSQL connection string | `postgres://user:pass@host:5432/db` |
-| `GEMINI_API_KEY` | Google Gemini API key | `AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` |
-
-### Optional Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NVIDIA_API` | NVIDIA AI API key | - |
-| `PORT` | Server port | `3030` |
-| `NODE_ENV` | Environment mode | `development` |
-
+Configure the following in your example`.env.template` file:
+[.env.template](.env.template). 
 ## 🗄️ Database Schema
 
 The application uses PostgreSQL with the following main tables:
 
-- **`ai_history_chatapi`**: Stores conversation history and metadata
-- **`user_settings_chatapi`**: User preferences and settings
-- **`user_message_logs_chatapi`**: Daily message usage tracking
+- **`ai_history_chatapi`**: Stores conversation threads, messages, and timestamps.
+- **`user_message_logs_chatapi`**: Tracks daily message usage for rate limiting.
+- **`users`** (or equivalent): User credentials and role management.
 
-## 🛠️ Development
-
-### Project Structure
-```
-ChatAPI/
-├── index.js                 # Main application entry point
-├── package.json             # Dependencies and scripts
-├── vercel.json             # Vercel deployment configuration
-├── model/
-│   └── db.sql              # Database schema
-├── routes/
-│   ├── main.js             # Main chat routes
-│   ├── dashboard.js        # Admin dashboard routes
-│   ├── pool.js             # Database connection pool
-│   └── checkMessageLimit.js # Message limit middleware
-├── views/
-│   ├── mainPages/          # Main application pages
-│   ├── admin/              # Admin dashboard pages
-│   ├── layouts/            # Handlebars layouts
-│   └── staticPage/         # Static pages
-├── public/
-│   └── Assets/             # Static assets (CSS, JS, images)
-```
-
-### Available Scripts
-
-```bash
-npm start
-```
-
-### Tech Stack
+## 🛠️ Tech Stack
 
 - **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL with connection pooling
-- **Template Engine**: Handlebars
-- **Authentication**: Custom session management (mbkauthe)
-- **AI Integration**: Google Gemini API
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Deployment**: Vercel-ready configuration
+- **Database**: PostgreSQL
+- **Frontend**: Handlebars (HBS), Vanilla CSS/JS
+- **Authentication**: Session-based (Custom/Passport)
+- **AI Integration**: Official SDKs and REST APIs
 
 ## 📱 API Endpoints
 
-### Chat API
-- `GET /chatbot` - Main chat interface
-- `POST /api/chat` - Send message to AI
-- `GET /api/chat-history` - Retrieve conversation history
-- `POST /api/save-chat` - Save conversation
-- `DELETE /api/delete-chat/:id` - Delete conversation
+### Chat Operations
+- `GET /chatbot` - Render the chat interface.
+- `POST /api/chat` - Process user message and return AI response.
+- `GET /api/history` - Fetch conversation history.
+- `DELETE /api/chat/:id` - Delete a specific conversation.
 
-### User Management
-- `GET /admin/dashboard` - Admin dashboard
-- `GET /admin/users` - User management
-- `GET /admin/chats` - Chat management
-- `POST /api/user-settings` - Update user preferences
+### Admin
+- `GET /admin/dashboard` - View system statistics.
+- `GET /admin/users` - Manage registered users.
 
-### Authentication
-- `POST /login` - User login
-- `POST /logout` - User logout
-- `GET /register` - User registration page
+## 🤝 Contributing
 
-## 🔐 Authentication & Security
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- Session-based authentication
-- CSRF protection
-- Input validation and sanitization
-- SQL injection prevention
-- Rate limiting for API endpoints
-- Message limit enforcement
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 🎨 Customization
 
-### Themes
-- Dark theme (default)
-- Light theme
-- Custom CSS variables for easy theming
 
-### AI Models
-- Google Gemini 1.5 Flash (default)
-- NVIDIA AI models (optional)
-- Configurable temperature settings
+## 👨‍💻 Team
 
-### User Settings
-- Adjustable font sizes
-- Theme preferences
-- Daily message limits
-- Model selection
-
-## 📊 Monitoring & Analytics
-
-- Real-time user activity tracking
-- Message usage statistics
-- System performance metrics
-- Conversation analytics
-- Error logging and monitoring
-
-### Manual Deployment
-```bash
-npm start
-```
+| Name | Role | Links |
+|------|------|-------|
+| **Muhammad Bin Khalid** | Lead Developer | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/MIbnEKhalid) [![Website](https://img.shields.io/badge/Website-mbktech.org-blue)](https://mbktech.org) |
+| **Maaz Waheed** | Developer | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/42Wor) |
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
-
-[**Muhammad Bin Khalid**](https://github.com/MIbnEKhalid/)
-
-[**Maaz Waheed**](https://github.com/42Wor/)
-- Developer and Maintainer
-- [mbktech.org](https://mbktech.org)
-
 ## Contact
 
-For questions or contributions, please contact Muhammad Bin Khalid at [mbktech.org/Support](https://mbktech.org/Support/?Project=MIbnEKhalidWeb), [support@mbktech.org](mailto:support@mbktech.org) or [chmuhammadbinkhalid28.com](mailto:chmuhammadbinkhalid28.com). 
+For questions or contributions, please contact Muhammad Bin Khalid at [mbktech.org/Support](https://mbktech.org/Support/?Project=MIbnEKhalidWeb), [support@mbktech.org](mailto:support@mbktech.org) , [chmuhammadbinkhalid28.com](mailto:chmuhammadbinkhalid28.com) and [wwork4287@gmail.com](mailto:wwork4287@gmail.com). 
