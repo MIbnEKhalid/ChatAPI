@@ -509,7 +509,7 @@ router.get('/simulate-error', (req, res, next) => {
 // 404 handler
 router.use((req, res) => {
   console.log(`Path not found: ${req.method} ${req.url}`);
-  return renderError(res, {
+  return renderError(res, req, {
     layout: false,
     code: 404,
     error: "Not Found",
@@ -522,7 +522,7 @@ router.use((req, res) => {
 // Error handler
 router.use((err, req, res, next) => {
   console.error(err.stack);
-  return renderError(res, {
+  return renderError(res, req, {
     layout: false,
     code: 500,
     error: "Internal app Error",
