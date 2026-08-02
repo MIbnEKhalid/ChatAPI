@@ -1,6 +1,6 @@
 # 🤖 ChatAPI - AI Chat Assistant
 
-A modern, full-featured AI chat application powered by **Google Gemini**, **Groq**, **Cerebras**, and **SambaNova**. This application provides a unified interface to interact with cutting-edge models like Gemini 2.0 Flash, Llama 3.1, and Gemma 2, complete with user management, conversation history, and an admin dashboard.
+A modern, full-featured AI chat application powered by **DeepSeek**. This application provides a unified interface to interact with DeepSeek V4 Flash and DeepSeek V4 Pro, complete with user management, conversation history, and an admin dashboard.
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)
 ![Express.js](https://img.shields.io/badge/Express.js-4.21%2B-blue.svg)
@@ -10,11 +10,7 @@ A modern, full-featured AI chat application powered by **Google Gemini**, **Groq
 ## 🌟 Features
 
 ### 🎯 Core Capabilities
-- **Multi-Model Support**: Seamlessly switch between:
-  - **Google**: Gemini 2.0 Flash, Gemini 1.5 Flash
-  - **Groq**: Llama 3.1 8B (Instant), Gemma 2 9B
-  - **Cerebras**: Llama 3.1 8B (Super Fast)
-  - **SambaNova**: Llama 3.1 8B (Balanced)
+- **DeepSeek Model Support**: Seamlessly switch between DeepSeek V4 Flash and DeepSeek V4 Pro.
 - **Efficient Tier Selection**: Optimized model selection for speed and reliability.
 - **Contextual Memory**: Persistent conversation history stored in PostgreSQL.
 
@@ -36,7 +32,7 @@ A modern, full-featured AI chat application powered by **Google Gemini**, **Groq
 ### Prerequisites
 - Node.js 18 or higher
 - PostgreSQL database (Local or Cloud like Neon/Supabase)
-- API Keys for the providers you wish to use (Google, Groq, etc.)
+- A DeepSeek API token
 
 ### Installation
 
@@ -76,7 +72,11 @@ A modern, full-featured AI chat application powered by **Google Gemini**, **Groq
 ## 🔧 Environment Variables
 
 Configure the following in your example`.env.template` file:
-[.env.template](.env.template). 
+[.env.template](.env.template).
+
+- `DEEPSEEK_API_TOKEN` — shared DeepSeek token used when a user has not saved their own token.
+- `API_KEY_ENCRYPTION_SECRET` — secret used to encrypt and decrypt the saved DeepSeek token.
+
 ## 🗄️ Database Schema
 
 The application uses PostgreSQL with the following main tables:
@@ -91,7 +91,7 @@ The application uses PostgreSQL with the following main tables:
 - **Database**: PostgreSQL
 - **Frontend**: Handlebars (HBS), Vanilla CSS/JS
 - **Authentication**: Session-based (Custom/Passport)
-- **AI Integration**: Official SDKs and REST APIs
+- **AI Integration**: DeepSeek REST API with encrypted token storage
 
 ## 📱 API Endpoints
 

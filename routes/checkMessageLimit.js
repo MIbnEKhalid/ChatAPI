@@ -1,13 +1,6 @@
 import { pool } from "./pool.js";
 
-// Cache for user settings to reduce database queries
-const userSettingsCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-// Clear cache periodically
-setInterval(() => {
-  userSettingsCache.clear();
-}, CACHE_TTL);
+// No in-memory caching (serverless / Vercel friendly)
 
 export const checkMessageLimit = async (req, res, next) => {
   // Start performance measurement
@@ -27,61 +20,61 @@ export const checkMessageLimit = async (req, res, next) => {
       return next();
     }
 
-    // Get current date in user's timezone
+    // Get current date in user's timezone (header is minutes offset)
     const today = new Date();
-    const timezoneOffset = req.headers['timezone-offset'] || 0;
+    const timezoneOffset = parseInt(req.headers['timezone-offset'] || '0', 10) || 0;
     today.setMinutes(today.getMinutes() - timezoneOffset);
     const dateString = today.toISOString().split('T')[0];
 
-    // Try to get settings from cache first
-    let userSettings = userSettingsCache.get(username);
-
-    if (!userSettings) {
-      console.log(`[checkMessageLimit] Fetching settings for user: ${username}`);
-      const settingsQuery = await pool.query(
-        `SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1`,
-        [username]
-      );
-
-      userSettings = {
-        dailyLimit: settingsQuery.rows[0]?.daily_message_limit || 100,
-        lastUpdated: Date.now()
-      };
-
-      userSettingsCache.set(username, userSettings);
-    }
-
-    const { dailyLimit } = userSettings;
-
-    // Check message count with a single query using upsert approach
-    const messageCountResult = await pool.query(
-      `INSERT INTO user_message_logs_chatapi (username, date, message_count)
-       VALUES ($1, $2, 1)
-       ON CONFLICT (username, date)
-       DO UPDATE SET message_count = user_message_logs_chatapi.message_count + 1
-       RETURNING message_count`,
-      [username, dateString]
+    // Fetch user settings directly (no caching in serverless environment)
+    const settingsQuery = await pool.query(
+      `SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1`,
+      [username]
     );
+    const dailyLimit = settingsQuery.rows[0]?.daily_message_limit || 100;
 
-    const currentCount = messageCountResult.rows[0]?.message_count || 1;
+    // Use a transaction with SELECT ... FOR UPDATE to avoid increment-then-decrement race
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (currentCount > dailyLimit) {
-      console.warn(`[checkMessageLimit] User ${username} exceeded daily limit (${currentCount}/${dailyLimit})`);
-
-      // Rollback the increment since they're over limit
-      await pool.query(
-        `UPDATE user_message_logs_chatapi 
-         SET message_count = message_count - 1 
-         WHERE username = $1 AND date = $2`,
+      const selectRes = await client.query(
+        `SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2 FOR UPDATE`,
         [username, dateString]
       );
 
-      return res.status(429).json({
-        message: "Daily message limit reached",
-        limit: dailyLimit,
-        current: currentCount - 1, // Show count before this attempt
-        reset: getResetTime(timezoneOffset)
-      });
+      if (selectRes.rows.length) {
+        const currentCount = parseInt(selectRes.rows[0].message_count || 0, 10);
+        if (currentCount >= dailyLimit) {
+          await client.query('ROLLBACK');
+          console.warn(`[checkMessageLimit] User ${username} exceeded daily limit (${currentCount}/${dailyLimit})`);
+          return res.status(429).json({
+            message: "Daily message limit reached",
+            limit: dailyLimit,
+            current: currentCount,
+            reset: getResetTime(timezoneOffset)
+          });
+        }
+
+        const updateRes = await client.query(
+          `UPDATE user_message_logs_chatapi SET message_count = message_count + 1 WHERE username = $1 AND date = $2 RETURNING message_count`,
+          [username, dateString]
+        );
+
+        await client.query('COMMIT');
+        // continue
+      } else {
+        const insertRes = await client.query(
+          `INSERT INTO user_message_logs_chatapi (username, date, message_count) VALUES ($1, $2, 1)`,
+          [username, dateString]
+        );
+        await client.query('COMMIT');
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
     }
 
     // Log performance

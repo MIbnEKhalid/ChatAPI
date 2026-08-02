@@ -1,15 +1,15 @@
 {
   "name": "nodejstemplate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "author": "Muhammad Bin Khalid",
   "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

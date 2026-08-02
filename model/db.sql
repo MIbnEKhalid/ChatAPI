@@ -1,7 +1,6 @@
 -- =========================================================
 -- SAFE INITIALIZATION SCRIPT (Runs on every startup)
 -- =========================================================
-
 -- 1. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -34,21 +33,37 @@ CREATE INDEX IF NOT EXISTS idx_message_logs_lookup ON user_message_logs_chatapi(
 
 -- 4. Triggers (PostgreSQL doesn't support "CREATE TRIGGER IF NOT EXISTS" easily, 
 -- so we wrap it in a DO block to prevent errors)
-CREATE OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE
+OR REPLACE FUNCTION update_timestamp() RETURNS TRIGGER AS $ $ BEGIN NEW.updated_at = CURRENT_TIMESTAMP;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_update_chat_timestamp') THEN
-        CREATE TRIGGER trigger_update_chat_timestamp
-        BEFORE UPDATE ON ai_history_chatapi
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
-    END IF;
+RETURN NEW;
+
 END;
-$$;
+
+$ $ LANGUAGE plpgsql;
+
+DO $ $ BEGIN IF NOT EXISTS (
+    SELECT
+        1
+    FROM
+        pg_trigger
+    WHERE
+        tgname = 'trigger_update_chat_timestamp'
+) THEN CREATE TRIGGER trigger_update_chat_timestamp BEFORE
+UPDATE
+    ON ai_history_chatapi FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+END IF;
+
+END;
+
+$ $;
+
+CREATE TABLE IF NOT EXISTS user_api_keys_chatapi (
+    username TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    encrypted_key TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (username, provider)
+)

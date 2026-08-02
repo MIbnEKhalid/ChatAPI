@@ -48,20 +48,27 @@ router.get("/admin/dashboard", validateSessionAndRole("SuperAdmin"), async (req,
       pool.query(hourlyVolumeQuery)
     ]);
 
-    const stats = statsRes.rows[0];
+    const stats = statsRes.rows[0] || {};
 
-    // Process recent chats
-    const recentChats = recentRes.rows.map(chat => ({
-        ...chat,
-        // Safety check: ensure history exists before counting
-        message_count: chat.conversation_history ? countTreeNodes(chat.conversation_history) : 0,
-        created_at: new Date(chat.created_at).toLocaleString()
-    }));
+    // Process recent chats with safe parsing
+    const recentChats = recentRes.rows.map(chat => {
+        let message_count = 0;
+        try {
+            message_count = chat.conversation_history ? countTreeNodes(chat.conversation_history) : 0;
+        } catch (e) {
+            message_count = 0;
+        }
+        return {
+            ...chat,
+            message_count,
+            created_at: new Date(chat.created_at).toLocaleString()
+        };
+    });
 
     // Process hourly data for the chart (0-23 hours)
     const hourlyData = Array(24).fill(0);
     hourlyRes.rows.forEach(row => {
-        hourlyData[parseInt(row.hour)] = parseInt(row.count);
+        hourlyData[parseInt(row.hour, 10)] = parseInt(row.count, 10);
     });
 
     res.render("admin/dashboard.handlebars", {

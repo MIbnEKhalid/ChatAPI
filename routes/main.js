@@ -4,7 +4,6 @@ import fetch from 'node-fetch';
 import { pool } from "./pool.js";
 import { validateSession, validateSessionAndRole } from "mbkauthe";
 import { checkMessageLimit } from "./checkMessageLimit.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import crypto from 'crypto'; 
 
 dotenv.config();
@@ -14,31 +13,43 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
 // --- 1. CONFIGURATION ---
-const AI_PROVIDERS = {
-    'gemini': { 
-        type: 'google', 
-        apiKey: process.env.GEMINI_API_KEY 
-    },
-    'groq': { 
-        type: 'openai', 
-        baseURL: 'https://api.groq.com/openai/v1/chat/completions', 
-        apiKey: process.env.GROQ_API_KEY 
-    },
-    'cerebras': { 
-        type: 'openai', 
-        baseURL: 'https://api.cerebras.ai/v1/chat/completions', 
-        apiKey: process.env.CEREBRAS_API_KEY 
-    },
-    'sambanova': { 
-        type: 'openai', 
-        baseURL: 'https://api.sambanova.ai/v1/chat/completions', 
-        apiKey: process.env.SAMBANOVA_API_KEY 
-    },
-    'mallow': { 
-        type: 'mallow', 
-        url: 'https://literate-slightly-seahorse.ngrok-free.app/generate' 
-    }
+const AI_PROVIDER = {
+    type: 'openai-compatible',
+    baseURL: 'https://api.deepseek.com/chat/completions',
+    apiKey: process.env.DEEPSEEK_API_TOKEN,
+    authType: 'bearer'
 };
+
+const DEEPSEEK_MODELS = new Set(['deepseek-v4-flash', 'deepseek-v4-pro']);
+
+const ENCRYPTION_SECRET = process.env.API_KEY_ENCRYPTION_SECRET;
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(ENCRYPTION_SECRET || 'mbk-chatapi-default-secret-please-set-env').digest();
+const USER_KEY_STORAGE_ENABLED = Boolean(ENCRYPTION_SECRET);
+
+function encryptKey(plainText) {
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    const encrypted = Buffer.concat([cipher.update(String(plainText), 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptKey(encryptedText) {
+    if (!encryptedText || typeof encryptedText !== 'string') return null;
+    const [ivHex, tagHex, encryptedHex] = encryptedText.split(':');
+    if (!ivHex || !tagHex || !encryptedHex) return null;
+    const iv = Buffer.from(ivHex, 'hex');
+    const tag = Buffer.from(tagHex, 'hex');
+    const encrypted = Buffer.from(encryptedHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    decipher.setAuthTag(tag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString('utf8');
+}
+
+if (!USER_KEY_STORAGE_ENABLED) {
+    console.warn('API_KEY_ENCRYPTION_SECRET is not set. User-provided AI keys are disabled until the environment variable is configured.');
+}
 
 // --- 2. TREE LOGIC HELPER ---
 class ChatTree {
@@ -114,39 +125,21 @@ class ChatTree {
 const aiServices = {
     formatResponse: (text) => String(text || '').trim(),
 
-    google: async (apiKey, model, history, temp) => {
-        try {
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const cleanModel = model.replace(/^models\//, '');
-            const modelInstance = genAI.getGenerativeModel({ model: cleanModel, generationConfig: { temperature: temp } });
-            
-            // Separate System Prompt
-            const historyForSdk = history.filter(m => m.role !== 'system');
-            const systemMsg = history.find(m => m.role === 'system');
-            
-            if(systemMsg) {
-                modelInstance.systemInstruction = { parts: [{ text: systemMsg.parts[0].text }] };
-            }
-
-            const lastMsg = historyForSdk.pop().parts[0].text;
-            const chat = modelInstance.startChat({ history: historyForSdk, generationConfig: { temperature: temp } });
-            const result = await chat.sendMessage(lastMsg);
-            return aiServices.formatResponse(result.response.text());
-        } catch (e) { 
-            throw new Error(e.message.includes('429') ? "Gemini Rate Limit (429)" : e.message); 
-        }
-    },
-
     openaiCompatible: async (config, model, history, temp) => {
+        if (!config.apiKey) throw new Error('DeepSeek API token is missing.');
         const messages = history.map(m => ({ 
             role: m.role === 'model' ? 'assistant' : m.role, 
             content: m.parts[0].text 
         }));
         
         try {
+            const authHeaders = config.authType === 'x-api-key'
+                ? { 'X-API-Key': config.apiKey }
+                : { 'Authorization': `Bearer ${config.apiKey}` };
+
             const res = await fetch(config.baseURL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+                headers: { 'Content-Type': 'application/json', ...authHeaders },
                 body: JSON.stringify({ 
                     model, 
                     messages, 
@@ -160,20 +153,8 @@ const aiServices = {
             if (!res.ok) throw new Error(data.error?.message || `API Error ${res.status}`);
             return aiServices.formatResponse(data.choices[0].message.content);
         } catch (e) { 
-            throw new Error(e.message.includes('429') ? "Provider Rate Limit (429)" : e.message); 
+                        throw new Error(e.message.includes('429') ? "DeepSeek Rate Limit (429)" : e.message); 
         }
-    },
-
-    mallow: async (config, prompt) => {
-        try {
-            const res = await fetch(config.url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
-            const data = await res.json();
-            return aiServices.formatResponse(data.response);
-        } catch (e) { throw new Error("Mallow API unavailable"); }
     }
 };
 
@@ -212,6 +193,48 @@ const db = {
         } catch (e) {
             return { dailyLimit: 100, messageCount: 0 }; 
         }
+    },
+
+    initUserApiKeyStore: async () => {
+        if (!USER_KEY_STORAGE_ENABLED) return;
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS user_api_keys_chatapi (
+                username TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                encrypted_key TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (username, provider)
+            )
+        `);
+    },
+
+    getUserApiKeys: async (username) => {
+        if (!USER_KEY_STORAGE_ENABLED) return {};
+        await db.initUserApiKeyStore();
+        const res = await pool.query('SELECT provider, encrypted_key FROM user_api_keys_chatapi WHERE username = $1', [username]);
+        return res.rows.reduce((acc, row) => {
+            const decrypted = decryptKey(row.encrypted_key);
+            if (decrypted) acc[row.provider] = decrypted;
+            return acc;
+        }, {});
+    },
+
+    saveUserApiKey: async (username, provider, apiKey) => {
+        if (!USER_KEY_STORAGE_ENABLED) throw new Error('User API key storage is not enabled. Set API_KEY_ENCRYPTION_SECRET.');
+        await db.initUserApiKeyStore();
+        if (!apiKey) {
+            await pool.query('DELETE FROM user_api_keys_chatapi WHERE username = $1 AND provider = $2', [username, provider]);
+            return;
+        }
+        const encryptedKey = encryptKey(apiKey);
+        await pool.query(
+            `INSERT INTO user_api_keys_chatapi (username, provider, encrypted_key)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (username, provider)
+             DO UPDATE SET encrypted_key = $3, updated_at = CURRENT_TIMESTAMP`,
+            [username, provider, encryptedKey]
+        );
     }
 };
 
@@ -256,9 +279,10 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         const temp = parseFloat(tempParam) || 0.7;
         
         // Model Parsing
-        let [provider, ...modelParts] = (modelStr || 'gemini/gemini-1.5-flash').split('/');
-        let modelName = modelParts.join('/') || provider;
-        if(modelParts.length === 0) provider = 'gemini';
+        let modelName = (modelStr || 'deepseek/deepseek-v4-flash').split('/').pop();
+        if (!DEEPSEEK_MODELS.has(modelName)) {
+            modelName = 'deepseek-v4-flash';
+        }
 
         // 1. Load Tree or Init New
         let tree;
@@ -288,17 +312,16 @@ router.post('/api/bot-chat', checkMessageLimit, async (req, res) => {
         const historyForAI = tree.getThread(userNodeId);
 
         // 4. Generate AI Response
-        const config = AI_PROVIDERS[provider.toLowerCase()];
-        if (!config) throw new Error("Invalid Provider Configuration");
+        const userApiKeys = await db.getUserApiKeys(username);
+        const userApiKey = userApiKeys.deepseek;
+        // Use user-provided API token if available; otherwise fall back to the shared system token.
+        const requestConfig = { ...AI_PROVIDER, apiKey: userApiKey || AI_PROVIDER.apiKey };
 
-        let responseText;
-        if (config.type === 'google') {
-            responseText = await aiServices.google(config.apiKey, modelName, historyForAI, temp);
-        } else if (config.type === 'mallow') {
-            responseText = await aiServices.mallow(config, message);
-        } else {
-            responseText = await aiServices.openaiCompatible(config, modelName, historyForAI, temp);
+        if (!requestConfig.apiKey) {
+            throw new Error('No DeepSeek API token configured. Add a valid token in your account settings or set DEEPSEEK_API_TOKEN in environment variables.');
         }
+
+        const responseText = await aiServices.openaiCompatible(requestConfig, modelName, historyForAI, temp);
 
         // 5. Add AI Node (Child of User Node)
         tree.addMessage('model', responseText, userNodeId);
@@ -358,6 +381,33 @@ router.get('/api/chat/histories', validateSessionAndRole("Any"), async (req, res
         res.json(grouped);
     } catch (e) {
         res.status(500).json({ message: "Error loading list" });
+    }
+});
+
+router.get('/api/user/api-keys', validateSessionAndRole("Any"), async (req, res) => {
+    try {
+        const apiKeys = await db.getUserApiKeys(req.session.user.username);
+        const response = { deepseek: apiKeys.deepseek ? 'configured' : null };
+        res.json({ apiKeys: response });
+    } catch (e) {
+        res.status(500).json({ message: e.message || 'Unable to load API keys' });
+    }
+});
+
+router.post('/api/user/api-keys', validateSessionAndRole("Any"), async (req, res) => {
+    try {
+        const { provider, apiKey } = req.body;
+        if (!provider || typeof provider !== 'string') return res.status(400).json({ message: 'Provider is required' });
+
+        const providerKey = provider.toLowerCase();
+        if (providerKey !== 'deepseek') {
+            return res.status(400).json({ message: 'Unknown provider' });
+        }
+
+        await db.saveUserApiKey(req.session.user.username, providerKey, apiKey?.trim());
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ message: e.message || 'Unable to save API key' });
     }
 });
 
