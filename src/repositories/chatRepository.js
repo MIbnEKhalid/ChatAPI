@@ -26,21 +26,47 @@ export const db = {
   },
 
   // UPDATED: Removed Temperature Column, Updates Updated_at
-  saveChat: async (id, treeData, username) => {
+  saveChat: async (id, treeData, username, title = null) => {
     const json = JSON.stringify(treeData);
     if (id) {
-      await pool.query(
-        "UPDATE ai_history_chatapi SET conversation_history = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-        [json, id]
-      );
+      const params = [json, id];
+      if (title) {
+        await pool.query(
+          "UPDATE ai_history_chatapi SET conversation_history = $1, title = COALESCE(title, $3), updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+          [json, id, title]
+        );
+      } else {
+        await pool.query(
+          "UPDATE ai_history_chatapi SET conversation_history = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+          [json, id]
+        );
+      }
       return id;
     } else {
       const res = await pool.query(
-        "INSERT INTO ai_history_chatapi (conversation_history, username) VALUES ($1, $2) RETURNING id",
-        [json, username]
+        "INSERT INTO ai_history_chatapi (conversation_history, username, title) VALUES ($1, $2, $3) RETURNING id",
+        [json, username, title]
       );
       return res.rows[0].id;
     }
+  },
+
+  // Rename a chat (ownership-checked)
+  renameChat: async (id, title, username) => {
+    const res = await pool.query(
+      "UPDATE ai_history_chatapi SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND username = $3 AND is_deleted = FALSE RETURNING id",
+      [title, id, username]
+    );
+    return res.rowCount > 0;
+  },
+
+  // Toggle pin status (ownership-checked)
+  togglePin: async (id, username) => {
+    const res = await pool.query(
+      "UPDATE ai_history_chatapi SET is_pinned = NOT is_pinned, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 AND is_deleted = FALSE RETURNING is_pinned",
+      [id, username]
+    );
+    return res.rows[0]?.is_pinned ?? null;
   },
 
   // Mock Limits (Connect to your real tables if needed)

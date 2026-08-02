@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS ai_history_chatapi (
     id SERIAL PRIMARY KEY,
     conversation_id UUID NOT NULL DEFAULT uuid_generate_v4(),
     conversation_history JSONB NOT NULL,
+    title VARCHAR(255),
+    is_pinned BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     username VARCHAR(100) NOT NULL,
@@ -18,7 +20,15 @@ CREATE TABLE IF NOT EXISTS ai_history_chatapi (
 -- Indexes (Safe creation)
 CREATE INDEX IF NOT EXISTS idx_chat_username ON ai_history_chatapi(username);
 CREATE INDEX IF NOT EXISTS idx_chat_deleted ON ai_history_chatapi(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_chat_pinned ON ai_history_chatapi(username, is_pinned);
 CREATE INDEX IF NOT EXISTS idx_chat_history_gin ON ai_history_chatapi USING gin (conversation_history);
+
+-- Safe column additions for existing tables
+DO $$ BEGIN
+  ALTER TABLE ai_history_chatapi ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+  ALTER TABLE ai_history_chatapi ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
 
 -- 3. Create User Message Logs (Only if missing)
 CREATE TABLE IF NOT EXISTS user_message_logs_chatapi (

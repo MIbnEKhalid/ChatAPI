@@ -12,28 +12,7 @@ const router = express.Router();
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-// --- 5. ROUTES ---
-
-// Render Page
-router.get(
-  ["/chatbot/:chatId?", "/chat/:chatId?"],
-  validateSessionAndRole("Any"),
-  async (req, res) => {
-    try {
-      const limits = await db.getLimits(req.session.user.username);
-      res.render("mainPages/chatbot.handlebars", {
-        layout: false,
-        chatId: req.params.chatId || null,
-        username: req.session.user.username,
-        role: req.session.user.role,
-        limits,
-      });
-    } catch (error) {
-      console.error("Chat Interface Error:", error);
-      res.status(500).send("Error loading chat interface.");
-    }
-  }
-);
+// --- ROUTES ---
 
 // Load Chat API (Returns Full Tree) — ownership-checked
 router.get(
@@ -97,7 +76,7 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
       }
     } else {
       tree = new ChatTree(null);
-      tree.addMessage("system", "You are a helpful AI assistant. Be concise.", null);
+    //  tree.addMessage("system", "You are a helpful AI assistant. Be concise.", null);
     }
 
     // 2. Add User Node
@@ -131,7 +110,9 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
     tree.addMessage("model", responseText, userNodeId);
 
     // 6. Save (No Temperature Column)
-    const newChatId = await db.saveChat(dbId, tree.toJSON(), username);
+    // Auto-generate title from first user message if this is a new chat
+    const autoTitle = !dbId ? trimmedMessage.slice(0, 80) : null;
+    const newChatId = await db.saveChat(dbId, tree.toJSON(), username, autoTitle);
 
     res.json({
       aiResponse: responseText,
@@ -143,6 +124,82 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
     // Handle Rate Limits specially
     const status = error.message.includes("429") ? 429 : 500;
     res.status(status).json({ message: error.message });
+  }
+});
+
+// Streaming Chat Route — SSE real-time response
+router.post("/api/bot-chat/stream", checkMessageLimit, async (req, res) => {
+  const { message, chatId, parentMessageId, model: modelStr, temperature: tempParam } = req.body;
+  const { username } = req.session.user;
+
+  const trimmedMessage = String(message || "").trim();
+  if (!trimmedMessage) return res.status(400).json({ message: "Empty message" });
+
+  // Setup SSE headers
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders(); // send headers immediately, no buffering
+
+  try {
+    const temp = parseFloat(tempParam) || 0.7;
+    let modelName = (modelStr || "deepseek/deepseek-v4-flash").split("/").pop();
+    if (!DEEPSEEK_MODELS.has(modelName)) modelName = "deepseek-v4-flash";
+
+    // Load or init tree
+    let tree, dbId = chatId;
+    if (dbId) {
+      const chat = await db.getChat(dbId);
+      if (chat) {
+        const raw = typeof chat.conversation_history === "string" ? JSON.parse(chat.conversation_history) : chat.conversation_history;
+        tree = new ChatTree(raw);
+      } else {
+        tree = new ChatTree(null);
+        dbId = null;
+      }
+    } else {
+      tree = new ChatTree(null);
+    }
+
+    // Add user node
+    const parentId = parentMessageId || tree.currentLeafId;
+    const userNodeId = tree.addMessage("user", trimmedMessage, parentId);
+    const historyForAI = tree.getThread(userNodeId);
+
+    // API config
+    const userApiKeys = await db.getUserApiKeys(username);
+    const requestConfig = { ...AI_PROVIDER, apiKey: userApiKeys.deepseek || AI_PROVIDER.apiKey };
+    if (!requestConfig.apiKey) {
+      res.write(`data: ${JSON.stringify({ type: "error", message: "No DeepSeek API token configured." })}\n\n`);
+      return res.end();
+    }
+
+    // Stream AI response
+    let fullResponse = "";
+    for await (const delta of aiServices.openaiCompatibleStream(requestConfig, modelName, historyForAI, temp)) {
+      fullResponse += delta;
+      res.write(`data: ${JSON.stringify({ type: "chunk", content: delta })}\n\n`);
+    }
+
+    // Save to tree + DB
+    tree.addMessage("model", fullResponse, userNodeId);
+    const autoTitle = !dbId ? trimmedMessage.slice(0, 80) : null;
+    const newChatId = await db.saveChat(dbId, tree.toJSON(), username, autoTitle);
+
+    // Send final done event
+    res.write(`data: ${JSON.stringify({
+      type: "done",
+      newChatId,
+      treeData: tree.toJSON(),
+    })}\n\n`);
+    res.end();
+  } catch (error) {
+    console.error("Stream Error:", error);
+    res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
+    res.end();
   }
 });
 
@@ -167,36 +224,83 @@ router.post(
   }
 );
 
-// Fetch List (Filter is_deleted = FALSE)
+// Fetch List (Filter is_deleted = FALSE) — supports ?search= query
 router.get("/api/chat/histories", validateSessionAndRole("Any"), async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      "SELECT id, created_at FROM ai_history_chatapi WHERE username = $1 AND is_deleted = FALSE ORDER BY updated_at DESC",
-      [req.session.user.username]
-    );
+    const search = (req.query.search || '').trim();
+    let query = "SELECT id, title, is_pinned, created_at, updated_at FROM ai_history_chatapi WHERE username = $1 AND is_deleted = FALSE";
+    const params = [req.session.user.username];
 
-    // Grouping
-    const grouped = { today: [], yesterday: [], older: [] };
+    if (search) {
+      query += " AND (title ILIKE $2 OR id::text = $3)";
+      params.push(`%${search}%`, search);
+    }
+
+    query += " ORDER BY is_pinned DESC, updated_at DESC";
+
+    const { rows } = await pool.query(query, params);
+
+    // Grouping — pinned items first, then by date
+    const grouped = { pinned: [], today: [], yesterday: [], older: [] };
     const now = new Date();
-    const today = new Date(now.setHours(0, 0, 0, 0));
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayDate = new Date(todayDate);
+    yesterdayDate.setDate(todayDate.getDate() - 1);
 
     rows.forEach((r) => {
       const d = new Date(r.created_at);
-      const dTime = new Date(d).setHours(0, 0, 0, 0);
+      const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-      const obj = { id: r.id, created_at: d.toLocaleDateString() };
+      const obj = {
+        id: r.id,
+        title: r.title || null,
+        is_pinned: r.is_pinned || false,
+        created_at: d.toLocaleDateString(),
+      };
 
-      if (dTime === today.getTime()) grouped.today.push(obj);
-      else if (dTime === yesterday.getTime()) grouped.yesterday.push(obj);
-      else grouped.older.push(obj);
+      if (r.is_pinned) {
+        grouped.pinned.push(obj);
+      } else if (dDate.getTime() === todayDate.getTime()) {
+        grouped.today.push(obj);
+      } else if (dDate.getTime() === yesterdayDate.getTime()) {
+        grouped.yesterday.push(obj);
+      } else {
+        grouped.older.push(obj);
+      }
     });
 
     res.json(grouped);
   } catch (e) {
     console.error("History List Error:", e);
     res.status(500).json({ message: "Error loading list" });
+  }
+});
+
+// PATCH: Rename or toggle pin on a chat
+router.patch("/api/chat/histories/:chatId", validateSessionAndRole("Any"), async (req, res) => {
+  try {
+    const { action, title } = req.body;
+    const { chatId } = req.params;
+    const { username } = req.session.user;
+
+    if (action === 'rename') {
+      const newTitle = String(title || '').trim().slice(0, 200);
+      if (!newTitle) return res.status(400).json({ message: "Title is required" });
+      const ok = await db.renameChat(chatId, newTitle, username);
+      if (!ok) return res.status(404).json({ message: "Not found" });
+      return res.json({ success: true, title: newTitle });
+    }
+
+    if (action === 'pin') {
+      const pinned = await db.togglePin(chatId, username);
+      if (pinned === null) return res.status(404).json({ message: "Not found" });
+      return res.json({ success: true, is_pinned: pinned });
+    }
+
+    res.status(400).json({ message: "Invalid action. Use 'rename' or 'pin'." });
+  } catch (e) {
+    console.error("Chat Update Error:", e);
+    res.status(500).json({ message: e.message });
   }
 });
 
@@ -233,6 +337,21 @@ router.post("/api/user/api-keys", validateSessionAndRole("Any"), async (req, res
   } catch (e) {
     console.error("API Keys Save Error:", e);
     res.status(500).json({ message: e.message || "Unable to save API key" });
+  }
+});
+
+// User Session Info (for React SPA)
+router.get("/api/user/session", validateSessionAndRole("Any"), async (req, res) => {
+  try {
+    const limits = await db.getLimits(req.session.user.username);
+    res.json({
+      username: req.session.user.username,
+      role: req.session.user.role,
+      limits,
+    });
+  } catch (e) {
+    console.error("Session Error:", e);
+    res.status(500).json({ message: "Session error" });
   }
 });
 

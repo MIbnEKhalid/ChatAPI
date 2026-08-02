@@ -3,21 +3,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
-import Handlebars from "handlebars";
 import helmet from "helmet";
 import mbkAuthRouter, { renderError } from "mbkauthe";
 import chatRoutes from "./routes/chat.js";
 import adminRoutes from "./routes/admin.js";
-import { helpers, registerHandlebarsHelpers } from "./utils/handlebarsHelpers.js";
 
 dotenv.config();
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Register all Handlebars helpers globally so every template/partial can use them.
-registerHandlebarsHelpers(Handlebars);
 
 app.use(express.json());
 app.use(mbkAuthRouter);
@@ -55,23 +50,19 @@ app.use(
   })
 );
 
-// Configure Handlebars
+// Minimal Handlebars config for mbkauthe auth pages
 app.engine(
   "handlebars",
   engine({
     partialsDir: [
       path.resolve(__dirname, "../node_modules/mbkauthe/views"),
-      path.join(__dirname, "views/notice"),
-      path.join(__dirname, "views"),
     ],
     cache: false,
-    helpers,
   })
 );
 
 app.set("view engine", "handlebars");
 app.set("views", [
-  path.join(__dirname, "views"),
   path.resolve(__dirname, "../node_modules/mbkauthe/views"),
 ]);
 
@@ -87,26 +78,27 @@ app.use(
   })
 );
 
-// Landing pages
-app.get(["/", "/info/main"], (req, res) => {
-  return res.render("staticPage/index.handlebars", { layout: false });
-});
-
-app.get(["/home"], (req, res) => {
-  return res.redirect("/chatbot");
-});
-
-app.use(mbkAuthRouter);
-
 app.use("/", chatRoutes);
 app.use("/", adminRoutes);
 
-app.get("/admin*", async (req, res) => {
-  res.redirect("/admin/dashboard");
-});
+// Serve React frontend in production
+const REACT_BUILD_PATH = path.resolve(__dirname, "../frontend/dist");
+app.use(express.static(REACT_BUILD_PATH));
 
-app.get("/dashboard", async (req, res) => {
-  res.redirect("/admin/dashboard");
+// SPA fallback — serve React index.html for all non-API, non-static routes
+app.get("*", (req, res, next) => {
+  if (
+    req.path.startsWith("/api/") ||
+    req.path.startsWith("/mbkauthe") ||
+    req.path.startsWith("/Assets/") ||
+    req.path === "/login" ||
+    req.path.startsWith("/icon.svg")
+  ) {
+    return next();
+  }
+  res.sendFile(path.join(REACT_BUILD_PATH, "index.html"), (err) => {
+    if (err) next();
+  });
 });
 
 app.get("/simulate-error", (req, res, next) => {

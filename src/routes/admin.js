@@ -1,6 +1,7 @@
 import express from "express";
 import { pool } from "../config/database.js";
 import { validateSessionAndRole } from "mbkauthe";
+import { ChatTree } from "../models/chatTree.js";
 
 const router = express.Router();
 
@@ -16,37 +17,18 @@ const countTreeNodes = (history) => {
     : 0;
 };
 
-// 1. ADMIN DASHBOARD
+// ===== JSON API ENDPOINTS FOR REACT FRONTEND =====
+
+// API: Dashboard Stats
 router.get(
-  "/admin/dashboard",
+  "/api/admin/stats",
   validateSessionAndRole("SuperAdmin"),
   async (req, res) => {
     try {
-      // 1. Stats Query: removed "Active Today" calculation
-      const statsQuery = `
-      SELECT 
-        (SELECT COUNT(*) FROM ai_history_chatapi) as total_chats,
-        (SELECT COUNT(*) FROM ai_history_chatapi WHERE is_deleted = TRUE) as deleted_chats,
-        (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users
-    `;
+      const statsQuery = `SELECT (SELECT COUNT(*) FROM ai_history_chatapi) as total_chats, (SELECT COUNT(*) FROM ai_history_chatapi WHERE is_deleted = TRUE) as deleted_chats, (SELECT COUNT(DISTINCT username) FROM ai_history_chatapi) as unique_users`;
+      const recentChatsQuery = `SELECT id, username, created_at, conversation_history, is_deleted FROM ai_history_chatapi ORDER BY created_at DESC LIMIT 10`;
+      const hourlyVolumeQuery = `SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count FROM ai_history_chatapi WHERE created_at >= CURRENT_DATE GROUP BY hour ORDER BY hour`;
 
-      // 2. Recent Chats: Strictly limited to latest 10
-      const recentChatsQuery = `
-      SELECT id, username, created_at, conversation_history, is_deleted
-      FROM ai_history_chatapi
-      ORDER BY created_at DESC
-      LIMIT 10
-    `;
-
-      // 3. Hourly Volume for the Chart (Today only)
-      const hourlyVolumeQuery = `
-      SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count
-      FROM ai_history_chatapi
-      WHERE created_at >= CURRENT_DATE
-      GROUP BY hour ORDER BY hour
-    `;
-
-      // Execute all queries in parallel for performance
       const [statsRes, recentRes, hourlyRes] = await Promise.all([
         pool.query(statsQuery),
         pool.query(recentChatsQuery),
@@ -55,46 +37,26 @@ router.get(
 
       const stats = statsRes.rows[0] || {};
 
-      // Process recent chats with safe parsing
       const recentChats = recentRes.rows.map((chat) => {
         let message_count = 0;
-        try {
-          message_count = chat.conversation_history
-            ? countTreeNodes(chat.conversation_history)
-            : 0;
-        } catch (e) {
-          message_count = 0;
-        }
-        return {
-          ...chat,
-          message_count,
-          created_at: new Date(chat.created_at).toLocaleString(),
-        };
+        try { message_count = chat.conversation_history ? countTreeNodes(chat.conversation_history) : 0; } catch (e) {}
+        return { ...chat, message_count, created_at: new Date(chat.created_at).toLocaleString() };
       });
 
-      // Process hourly data for the chart (0-23 hours)
       const hourlyData = Array(24).fill(0);
-      hourlyRes.rows.forEach((row) => {
-        hourlyData[parseInt(row.hour, 10)] = parseInt(row.count, 10);
-      });
+      hourlyRes.rows.forEach((row) => { hourlyData[parseInt(row.hour, 10)] = parseInt(row.count, 10); });
 
-      res.render("admin/dashboard.handlebars", {
-        layout: false,
-        stats,
-        recentChats,
-        hourlyData: JSON.stringify(hourlyData),
-        currentUser: req.session.user.username,
-      });
+      res.json({ stats, recentChats, hourlyData });
     } catch (error) {
-      console.error("Dashboard Error:", error);
-      res.status(500).send("Server Error");
+      console.error("API Dashboard Error:", error);
+      res.status(500).json({ message: "Server Error" });
     }
   }
 );
 
-// 2. USER MANAGEMENT
+// API: Users List
 router.get(
-  "/admin/users",
+  "/api/admin/users",
   validateSessionAndRole("SuperAdmin"),
   async (req, res) => {
     try {
@@ -102,184 +64,94 @@ router.get(
       const offset = (page - 1) * DEFAULT_PAGE_SIZE;
       const search = req.query.search || "";
 
-      // Dynamic Query Construction
       let whereClause = "";
       let params = [];
+      if (search) { whereClause = "WHERE username ILIKE $1"; params.push(`%${search}%`); }
 
-      // If searching, add filter
-      if (search) {
-        whereClause = "WHERE username ILIKE $1";
-        params.push(`%${search}%`);
-      }
-
-      // Main Data Query
-      // Note: We use string interpolation for LIMIT/OFFSET as they are trusted integers here
-      const usersQuery = `
-      SELECT username, COUNT(*) as total_chats, MAX(created_at) as last_active
-      FROM ai_history_chatapi
-      ${whereClause}
-      GROUP BY username
-      ORDER BY last_active DESC
-      LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}
-    `;
-
-      // Count Query for Pagination
+      const usersQuery = `SELECT username, COUNT(*) as total_chats, MAX(created_at) as last_active FROM ai_history_chatapi ${whereClause} GROUP BY username ORDER BY last_active DESC LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}`;
       const countQuery = `SELECT COUNT(DISTINCT username) FROM ai_history_chatapi ${whereClause}`;
 
-      // Execute queries
-      const [usersRes, countRes] = await Promise.all([
-        pool.query(usersQuery, params),
-        pool.query(countQuery, params),
-      ]);
-
-      // Format Dates
-      const users = usersRes.rows.map((u) => ({
-        ...u,
-        last_active: new Date(u.last_active).toLocaleString(),
-      }));
-
+      const [usersRes, countRes] = await Promise.all([pool.query(usersQuery, params), pool.query(countQuery, params)]);
+      const users = usersRes.rows.map((u) => ({ ...u, last_active: new Date(u.last_active).toLocaleString() }));
       const totalItems = parseInt(countRes.rows[0].count) || 0;
       const totalPages = Math.ceil(totalItems / DEFAULT_PAGE_SIZE) || 1;
 
-      res.render("admin/users.handlebars", {
-        layout: false,
-        users,
-        searchQuery: search,
-        currentUser: req.session.user.username,
-        pagination: {
-          currentPage: page,
-          totalPages: totalPages,
-          hasPrev: page > 1,
-          hasNext: page < totalPages,
-          prevPage: page - 1,
-          nextPage: page + 1,
-        },
-      });
+      res.json({ users, pagination: { currentPage: page, totalPages, hasPrev: page > 1, hasNext: page < totalPages, prevPage: page - 1, nextPage: page + 1 } });
     } catch (error) {
-      console.error("Users Error:", error);
-      res.status(500).send("Error loading users");
+      console.error("API Users Error:", error);
+      res.status(500).json({ message: "Error loading users" });
     }
   }
 );
 
-// 3. CHAT MANAGEMENT (Shows Deleted Too)
+// API: Chats List
 router.get(
-  "/admin/chats",
+  "/api/admin/chats",
   validateSessionAndRole("SuperAdmin"),
   async (req, res) => {
     try {
       const page = parseInt(req.query.page) || 1;
       const offset = (page - 1) * DEFAULT_PAGE_SIZE;
-
-      // Extract filters
-      const { username, status } = req.query; // status can be 'all', 'active', 'deleted'
+      const { username, status } = req.query;
 
       let conditions = [];
       let params = [];
-
-      // 1. Username Filter
-      if (username) {
-        conditions.push(`username ILIKE $${params.length + 1}`);
-        params.push(`%${username}%`);
-      }
-
-      // 2. Status Filter (New)
-      if (status === "deleted") {
-        conditions.push(`is_deleted = TRUE`);
-      } else if (status === "active") {
-        conditions.push(`is_deleted = FALSE`);
-      }
-      // If status is 'all' or undefined, we don't add a condition, so it returns both.
+      if (username) { conditions.push(`username ILIKE $${params.length + 1}`); params.push(`%${username}%`); }
+      if (status === "deleted") conditions.push(`is_deleted = TRUE`);
+      else if (status === "active") conditions.push(`is_deleted = FALSE`);
 
       const whereSQL = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
-
-      const chatsQuery = `
-      SELECT id, username, created_at, conversation_history, is_deleted
-      FROM ai_history_chatapi
-      ${whereSQL}
-      ORDER BY created_at DESC
-      LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}
-    `;
-
+      const chatsQuery = `SELECT id, username, created_at, conversation_history, is_deleted FROM ai_history_chatapi ${whereSQL} ORDER BY created_at DESC LIMIT ${DEFAULT_PAGE_SIZE} OFFSET ${offset}`;
       const countQuery = `SELECT COUNT(*) FROM ai_history_chatapi ${whereSQL}`;
 
-      const [chatsRes, countRes] = await Promise.all([
-        pool.query(chatsQuery, params),
-        pool.query(countQuery, params),
-      ]);
+      const [chatsRes, countRes] = await Promise.all([pool.query(chatsQuery, params), pool.query(countQuery, params)]);
+      const chats = chatsRes.rows.map((c) => ({ ...c, message_count: countTreeNodes(c.conversation_history), created_at: new Date(c.created_at).toLocaleString() }));
+      const totalItems = parseInt(countRes.rows[0].count) || 0;
+      const totalPages = Math.ceil(totalItems / DEFAULT_PAGE_SIZE) || 1;
 
-      const chats = chatsRes.rows.map((c) => ({
-        ...c,
-        message_count: countTreeNodes(c.conversation_history),
-        created_at: new Date(c.created_at).toLocaleString(),
-      }));
-
-      res.render("admin/chats.handlebars", {
-        layout: false,
-        chats,
-        // Pass filters back to view to keep inputs filled
-        filters: {
-          username: username || "",
-          status: status || "all",
-        },
-        pagination: {
-          currentPage: page,
-          totalPages:
-            Math.ceil(parseInt(countRes.rows[0].count) / DEFAULT_PAGE_SIZE) || 1,
-        },
-        currentUser: req.session.user.username,
-      });
+      res.json({ chats, pagination: { currentPage: page, totalPages, hasPrev: page > 1, hasNext: page < totalPages, prevPage: page - 1, nextPage: page + 1 } });
     } catch (error) {
-      console.error(error);
-      res.status(500).send("Error loading chats");
+      console.error("API Chats Error:", error);
+      res.status(500).json({ message: "Error loading chats" });
     }
   }
 );
 
-// 4. CHAT DETAIL INSPECTOR
+// API: Chat Detail
 router.get(
-  "/admin/chats/:id",
+  "/api/admin/chat-detail/:id",
   validateSessionAndRole("SuperAdmin"),
   async (req, res) => {
     try {
-      const { rows } = await pool.query(
-        "SELECT * FROM ai_history_chatapi WHERE id = $1",
-        [req.params.id]
-      );
-      if (rows.length === 0) return res.status(404).send("Not Found");
+      const { rows } = await pool.query("SELECT * FROM ai_history_chatapi WHERE id = $1", [req.params.id]);
+      if (rows.length === 0) return res.status(404).json({ message: "Not Found" });
 
       const chat = rows[0];
-      const historyJson =
-        typeof chat.conversation_history === "string"
-          ? chat.conversation_history
-          : JSON.stringify(chat.conversation_history);
+      let treeData = null;
+      try {
+        const history = typeof chat.conversation_history === "string" ? JSON.parse(chat.conversation_history) : chat.conversation_history;
+        const tree = new ChatTree(history);
+        treeData = tree.toJSON();
+      } catch (e) {}
 
-      res.render("admin/chat-detail.handlebars", {
-        layout: false,
-        chat: { ...chat, created_at: new Date(chat.created_at).toLocaleString() },
-        historyJson,
-        currentUser: req.session.user.username,
-      });
+      res.json({ chat: { ...chat, created_at: new Date(chat.created_at).toLocaleString() }, treeData });
     } catch (error) {
-      console.error(error);
-      res.status(500).send("Error loading chat detail");
+      console.error("API Chat Detail Error:", error);
+      res.status(500).json({ message: "Error loading chat detail" });
     }
   }
 );
 
-// 5. BULK DELETE
+// Bulk Delete
 router.post(
-  "/admin/chats/bulk-delete",
+  "/api/admin/chats/bulk-delete",
   validateSessionAndRole("SuperAdmin"),
   async (req, res) => {
     try {
-      const { chatIds } = req.body;
-      if (!chatIds || !chatIds.length)
-        return res.status(400).json({ success: false });
-      await pool.query(
-        "UPDATE ai_history_chatapi SET is_deleted = TRUE WHERE id = ANY($1::int[])",
-        [chatIds]
-      );
+      const { chatIds, ids } = req.body;
+      const deleteIds = chatIds || ids;
+      if (!deleteIds || !deleteIds.length) return res.status(400).json({ success: false });
+      await pool.query("UPDATE ai_history_chatapi SET is_deleted = TRUE WHERE id = ANY($1::int[])", [deleteIds]);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
