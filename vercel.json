@@ -1,6 +1,7 @@
 {
     "version": 2,
     "buildCommand": "cd frontend && npm install && npm run build",
+    "outputDirectory": "frontend/dist",
     "builds": [
       {
         "src": "index.js",
@@ -9,8 +10,28 @@
     ],
     "routes": [
       {
-        "src": "/(.*)",
+        "src": "/api/(.*)",
         "dest": "/index.js"
+      },
+      {
+        "src": "/mbkauthe/(.*)",
+        "dest": "/index.js"
+      },
+      {
+        "src": "/login",
+        "dest": "/index.js"
+      },
+      {
+        "src": "/Assets/(.*)",
+        "dest": "/index.js"
+      },
+      {
+        "src": "/icon.svg",
+        "dest": "/index.js"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/index.html"
       }
     ]
   }
