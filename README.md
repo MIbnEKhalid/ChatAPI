@@ -57,7 +57,7 @@ A modern, full-featured AI chat application powered by **DeepSeek**. This applic
 4. **Set up the database**
    Run the SQL script to create the necessary tables:
    ```bash
-   psql -U your_username -d your_database -f model/db.sql
+   psql -U your_username -d your_database -f database/schema.sql
    ```
 
 5. **Start the application**

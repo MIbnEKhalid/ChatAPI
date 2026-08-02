@@ -1,4 +1,4 @@
-import { pool } from "./pool.js";
+import { pool } from "../config/database.js";
 
 // No in-memory caching (serverless / Vercel friendly)
 
@@ -7,24 +7,28 @@ export const checkMessageLimit = async (req, res, next) => {
   const startTime = process.hrtime();
 
   try {
-    const { username: username, role } = req.session.user;
+    const { username, role } = req.session.user;
 
     if (!username || !role) {
-      console.warn('[checkMessageLimit] Missing username or role in session');
-      return res.status(401).json({ message: "Unauthorized - missing user information" });
+      console.warn("[checkMessageLimit] Missing username or role in session");
+      return res
+        .status(401)
+        .json({ message: "Unauthorized - missing user information" });
     }
 
     // SuperAdmin bypass
     if (role === "SuperAdmin") {
-      console.log(`[checkMessageLimit] SuperAdmin ${username} bypassed message limit check`);
+      console.log(
+        `[checkMessageLimit] SuperAdmin ${username} bypassed message limit check`
+      );
       return next();
     }
 
     // Get current date in user's timezone (header is minutes offset)
     const today = new Date();
-    const timezoneOffset = parseInt(req.headers['timezone-offset'] || '0', 10) || 0;
+    const timezoneOffset = parseInt(req.headers["timezone-offset"] || "0", 10) || 0;
     today.setMinutes(today.getMinutes() - timezoneOffset);
-    const dateString = today.toISOString().split('T')[0];
+    const dateString = today.toISOString().split("T")[0];
 
     // Fetch user settings directly (no caching in serverless environment)
     const settingsQuery = await pool.query(
@@ -36,7 +40,7 @@ export const checkMessageLimit = async (req, res, next) => {
     // Use a transaction with SELECT ... FOR UPDATE to avoid increment-then-decrement race
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       const selectRes = await client.query(
         `SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2 FOR UPDATE`,
@@ -46,32 +50,34 @@ export const checkMessageLimit = async (req, res, next) => {
       if (selectRes.rows.length) {
         const currentCount = parseInt(selectRes.rows[0].message_count || 0, 10);
         if (currentCount >= dailyLimit) {
-          await client.query('ROLLBACK');
-          console.warn(`[checkMessageLimit] User ${username} exceeded daily limit (${currentCount}/${dailyLimit})`);
+          await client.query("ROLLBACK");
+          console.warn(
+            `[checkMessageLimit] User ${username} exceeded daily limit (${currentCount}/${dailyLimit})`
+          );
           return res.status(429).json({
             message: "Daily message limit reached",
             limit: dailyLimit,
             current: currentCount,
-            reset: getResetTime(timezoneOffset)
+            reset: getResetTime(timezoneOffset),
           });
         }
 
-        const updateRes = await client.query(
+        await client.query(
           `UPDATE user_message_logs_chatapi SET message_count = message_count + 1 WHERE username = $1 AND date = $2 RETURNING message_count`,
           [username, dateString]
         );
 
-        await client.query('COMMIT');
+        await client.query("COMMIT");
         // continue
       } else {
-        const insertRes = await client.query(
+        await client.query(
           `INSERT INTO user_message_logs_chatapi (username, date, message_count) VALUES ($1, $2, 1)`,
           [username, dateString]
         );
-        await client.query('COMMIT');
+        await client.query("COMMIT");
       }
     } catch (txErr) {
-      await client.query('ROLLBACK').catch(() => {});
+      await client.query("ROLLBACK").catch(() => {});
       throw txErr;
     } finally {
       client.release();
@@ -89,10 +95,10 @@ export const checkMessageLimit = async (req, res, next) => {
     // Include error details in development
     const errorResponse = {
       message: "Message limit check failed",
-      ...(process.env.NODE_ENV === 'development' && {
+      ...(process.env.NODE_ENV === "development" && {
         error: error.message,
-        stack: error.stack
-      })
+        stack: error.stack,
+      }),
     };
 
     res.status(500).json(errorResponse);
