@@ -86,7 +86,7 @@ const REACT_BUILD_PATH = path.resolve(__dirname, "../frontend/dist");
 app.use(express.static(REACT_BUILD_PATH));
 
 // SPA fallback — serve React index.html for all non-API, non-static routes
-app.get("*", (req, res, next) => {
+app.get(/.*/, (req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
     req.path.startsWith("/mbkauthe") ||
