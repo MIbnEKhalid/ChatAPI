@@ -1,10 +1,9 @@
 import express from "express";
-import { pool } from "../config/database.js";
-import { validateSessionAndRole } from "mbkauthe";
+import { validateSessionAndRole, sendSuccess, sendError } from "mbkauthe";
 import { checkMessageLimit } from "../middleware/checkMessageLimit.js";
 import { ChatTree } from "../models/chatTree.js";
 import aiServices from "../services/aiService.js";
-import { db } from "../repositories/chatRepository.js";
+import { chatRepository } from "../repositories/index.js";
 import { AI_PROVIDER, DEEPSEEK_MODELS } from "../config/ai.js";
 
 const router = express.Router();
@@ -20,8 +19,8 @@ router.get(
   validateSessionAndRole("Any"),
   async (req, res) => {
     try {
-      const chat = await db.getChat(req.params.chatId, req.session.user.username);
-      if (!chat) return res.status(404).json({ message: "Not found" });
+      const chat = await chatRepository.getChat(req.params.chatId, req.session.user.username);
+      if (!chat) return sendError(res, "Not found", { statusCode: 404, code: "CHAT_NOT_FOUND" });
 
       // Parse tree
       let history =
@@ -33,7 +32,7 @@ router.get(
       res.json({ ...chat, treeData: tree.toJSON() });
     } catch (error) {
       console.error("Load Chat Error:", error);
-      res.status(500).json({ message: "Error loading chat history" });
+      return sendError(res, "Error loading chat history", { statusCode: 500, details: error.message });
     }
   }
 );
@@ -45,8 +44,8 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
 
   // Validate and sanitize input
   const trimmedMessage = String(message || "").trim();
-  if (!trimmedMessage) return res.status(400).json({ message: "Empty message" });
-  if (trimmedMessage.length > 10000) return res.status(400).json({ message: "Message too long (max 10,000 characters)" });
+  if (!trimmedMessage) return sendError(res, "Empty message", { statusCode: 400, code: "EMPTY_MESSAGE" });
+  if (trimmedMessage.length > 10000) return sendError(res, "Message too long (max 10,000 characters)", { statusCode: 400, code: "MESSAGE_TOO_LONG" });
 
   try {
     const temp = parseFloat(tempParam) || 0.7;
@@ -62,7 +61,7 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
     let dbId = chatId;
 
     if (dbId) {
-      const chat = await db.getChat(dbId);
+      const chat = await chatRepository.getChat(dbId);
       if (chat) {
         const rawData =
           typeof chat.conversation_history === "string"
@@ -88,7 +87,7 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
     const historyForAI = tree.getThread(userNodeId);
 
     // 4. Generate AI Response
-    const userApiKeys = await db.getUserApiKeys(username);
+    const userApiKeys = await chatRepository.getUserApiKeys(username);
     const userApiKey = userApiKeys.deepseek;
     // Use user-provided API token if available; otherwise fall back to the shared system token.
     const requestConfig = { ...AI_PROVIDER, apiKey: userApiKey || AI_PROVIDER.apiKey };
@@ -112,7 +111,7 @@ router.post("/api/bot-chat", checkMessageLimit, async (req, res) => {
     // 6. Save (No Temperature Column)
     // Auto-generate title from first user message if this is a new chat
     const autoTitle = !dbId ? trimmedMessage.slice(0, 80) : null;
-    const newChatId = await db.saveChat(dbId, tree.toJSON(), username, autoTitle);
+    const newChatId = await chatRepository.saveChat(dbId, tree.toJSON(), username, autoTitle);
 
     res.json({
       aiResponse: responseText,
@@ -152,7 +151,7 @@ router.post("/api/bot-chat/stream", checkMessageLimit, async (req, res) => {
     // Load or init tree
     let tree, dbId = chatId;
     if (dbId) {
-      const chat = await db.getChat(dbId);
+      const chat = await chatRepository.getChat(dbId);
       if (chat) {
         const raw = typeof chat.conversation_history === "string" ? JSON.parse(chat.conversation_history) : chat.conversation_history;
         tree = new ChatTree(raw);
@@ -170,7 +169,7 @@ router.post("/api/bot-chat/stream", checkMessageLimit, async (req, res) => {
     const historyForAI = tree.getThread(userNodeId);
 
     // API config
-    const userApiKeys = await db.getUserApiKeys(username);
+    const userApiKeys = await chatRepository.getUserApiKeys(username);
     const requestConfig = { ...AI_PROVIDER, apiKey: userApiKeys.deepseek || AI_PROVIDER.apiKey };
     if (!requestConfig.apiKey) {
       res.write(`data: ${JSON.stringify({ type: "error", message: "No DeepSeek API token configured." })}\n\n`);
@@ -187,7 +186,7 @@ router.post("/api/bot-chat/stream", checkMessageLimit, async (req, res) => {
     // Save to tree + DB
     tree.addMessage("model", fullResponse, userNodeId);
     const autoTitle = !dbId ? trimmedMessage.slice(0, 80) : null;
-    const newChatId = await db.saveChat(dbId, tree.toJSON(), username, autoTitle);
+    const newChatId = await chatRepository.saveChat(dbId, tree.toJSON(), username, autoTitle);
 
     // Send final done event
     res.write(`data: ${JSON.stringify({
@@ -209,11 +208,8 @@ router.post(
   validateSessionAndRole("Any"),
   async (req, res) => {
     try {
-      const { rowCount } = await pool.query(
-        "UPDATE ai_history_chatapi SET is_deleted = TRUE WHERE id = $1 AND username = $2",
-        [req.params.chatId, req.session.user.username]
-      );
-      if (rowCount === 0) {
+      const ok = await chatRepository.softDeleteChat(req.params.chatId, req.session.user.username);
+      if (!ok) {
         return res.status(403).json({ success: false, message: "Not authorized or not found" });
       }
       res.json({ success: true, message: "Chat moved to trash" });
@@ -228,17 +224,7 @@ router.post(
 router.get("/api/chat/histories", validateSessionAndRole("Any"), async (req, res) => {
   try {
     const search = (req.query.search || '').trim();
-    let query = "SELECT id, title, is_pinned, created_at, updated_at FROM ai_history_chatapi WHERE username = $1 AND is_deleted = FALSE";
-    const params = [req.session.user.username];
-
-    if (search) {
-      query += " AND (title ILIKE $2 OR id::text = $3)";
-      params.push(`%${search}%`, search);
-    }
-
-    query += " ORDER BY is_pinned DESC, updated_at DESC";
-
-    const { rows } = await pool.query(query, params);
+    const rows = await chatRepository.listUserChats(req.session.user.username, { q: search });
 
     // Grouping — pinned items first, then by date
     const grouped = { pinned: [], today: [], yesterday: [], older: [] };
@@ -286,13 +272,13 @@ router.patch("/api/chat/histories/:chatId", validateSessionAndRole("Any"), async
     if (action === 'rename') {
       const newTitle = String(title || '').trim().slice(0, 200);
       if (!newTitle) return res.status(400).json({ message: "Title is required" });
-      const ok = await db.renameChat(chatId, newTitle, username);
+      const ok = await chatRepository.renameChat(chatId, newTitle, username);
       if (!ok) return res.status(404).json({ message: "Not found" });
       return res.json({ success: true, title: newTitle });
     }
 
     if (action === 'pin') {
-      const pinned = await db.togglePin(chatId, username);
+      const pinned = await chatRepository.togglePin(chatId, username);
       if (pinned === null) return res.status(404).json({ message: "Not found" });
       return res.json({ success: true, is_pinned: pinned });
     }
@@ -306,7 +292,7 @@ router.patch("/api/chat/histories/:chatId", validateSessionAndRole("Any"), async
 
 router.get("/api/user/api-keys", validateSessionAndRole("Any"), async (req, res) => {
   try {
-    const apiKeys = await db.getUserApiKeys(req.session.user.username);
+    const apiKeys = await chatRepository.getUserApiKeys(req.session.user.username);
     const response = { deepseek: apiKeys.deepseek ? "configured" : null };
     res.json({ apiKeys: response });
   } catch (e) {
@@ -332,7 +318,7 @@ router.post("/api/user/api-keys", validateSessionAndRole("Any"), async (req, res
       return res.status(400).json({ message: "API key too long" });
     }
 
-    await db.saveUserApiKey(req.session.user.username, providerKey, trimmedApiKey);
+    await chatRepository.saveUserApiKey(req.session.user.username, providerKey, trimmedApiKey);
     res.json({ success: true });
   } catch (e) {
     console.error("API Keys Save Error:", e);
@@ -343,7 +329,7 @@ router.post("/api/user/api-keys", validateSessionAndRole("Any"), async (req, res
 // User Session Info (for React SPA)
 router.get("/api/user/session", validateSessionAndRole("Any"), async (req, res) => {
   try {
-    const limits = await db.getLimits(req.session.user.username);
+    const limits = await chatRepository.getLimits(req.session.user.username);
     res.json({
       username: req.session.user.username,
       role: req.session.user.role,

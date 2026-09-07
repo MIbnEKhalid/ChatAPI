@@ -1,8 +1,9 @@
-import { pool } from "../config/database.js";
+import { adapter } from "../db/index.js";
 
 // No in-memory caching (serverless / Vercel friendly)
 
-export const checkMessageLimit = async (req, res, next) => {
+export const checkMessageLimit = async (req, res, next, customAdapter = null) => {
+  const currentAdapter = customAdapter || req?.app?.locals?.adapter || adapter;
   // Start performance measurement
   const startTime = process.hrtime();
 
@@ -16,10 +17,10 @@ export const checkMessageLimit = async (req, res, next) => {
         .json({ message: "Unauthorized - missing user information" });
     }
 
-    // SuperAdmin bypass
-    if (role === "SuperAdmin") {
+    // superadmin bypass
+    if (role === "superadmin") {
       console.log(
-        `[checkMessageLimit] SuperAdmin ${username} bypassed message limit check`
+        `[checkMessageLimit] superadmin ${username} bypassed message limit check`
       );
       return next();
     }
@@ -31,19 +32,19 @@ export const checkMessageLimit = async (req, res, next) => {
     const dateString = today.toISOString().split("T")[0];
 
     // Fetch user settings directly (no caching in serverless environment)
-    const settingsQuery = await pool.query(
-      `SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1`,
+    const settingsQuery = await currentAdapter.query(
+      `SELECT daily_message_limit FROM chatapi_user_settings WHERE username = $1`,
       [username]
     );
     const dailyLimit = settingsQuery.rows[0]?.daily_message_limit || 100;
 
     // Use a transaction with SELECT ... FOR UPDATE to avoid increment-then-decrement race
-    const client = await pool.connect();
+    const client = await currentAdapter.connect();
     try {
       await client.query("BEGIN");
 
       const selectRes = await client.query(
-        `SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2 FOR UPDATE`,
+        `SELECT message_count FROM chatapi_user_message_logs WHERE username = $1 AND date = $2 FOR UPDATE`,
         [username, dateString]
       );
 
@@ -63,7 +64,7 @@ export const checkMessageLimit = async (req, res, next) => {
         }
 
         await client.query(
-          `UPDATE user_message_logs_chatapi SET message_count = message_count + 1 WHERE username = $1 AND date = $2 RETURNING message_count`,
+          `UPDATE chatapi_user_message_logs SET message_count = message_count + 1 WHERE username = $1 AND date = $2 RETURNING message_count`,
           [username, dateString]
         );
 
@@ -71,7 +72,7 @@ export const checkMessageLimit = async (req, res, next) => {
         // continue
       } else {
         await client.query(
-          `INSERT INTO user_message_logs_chatapi (username, date, message_count) VALUES ($1, $2, 1)`,
+          `INSERT INTO chatapi_user_message_logs (username, date, message_count) VALUES ($1, $2, 1)`,
           [username, dateString]
         );
         await client.query("COMMIT");

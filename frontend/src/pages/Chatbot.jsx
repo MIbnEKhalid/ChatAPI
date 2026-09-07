@@ -293,7 +293,7 @@ export default function Chatbot() {
 
 // ── Inline account panel ──
 function AccountPanel({ userData, saveApiKey, clearApiKey }) {
-  const unlim = userData.role === 'Admin' || userData.role === 'SuperAdmin'
+  const unlim = userData.role === 'Admin' || userData.role === 'superadmin'
   const pct = unlim ? 100 : Math.min((userData.limits.messageCount / userData.limits.dailyLimit) * 100, 100)
   return (
     <>

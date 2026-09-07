@@ -1,15 +1,19 @@
 {
   "name": "nodejstemplate",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "init-sqlite": "node src/scripts/init-sqlite.js",
+    "schema:sqlite": "node src/scripts/init-sqlite.js",
+    "test": "vitest run"
   },
   "author": "Muhammad Bin Khalid",
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^11.9.1",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -28,6 +32,9 @@
     }
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@types/supertest": "^7.2.1",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.0.0",
+    "vitest": "^4.1.11"
   }
 }

@@ -81,8 +81,8 @@ Configure the following in your example`.env.template` file:
 
 The application uses PostgreSQL with the following main tables:
 
-- **`ai_history_chatapi`**: Stores conversation threads, messages, and timestamps.
-- **`user_message_logs_chatapi`**: Tracks daily message usage for rate limiting.
+- **`chatapi_ai_history`**: Stores conversation threads, messages, and timestamps.
+- **`chatapi_user_message_logs`**: Tracks daily message usage for rate limiting.
 - **`users`** (or equivalent): User credentials and role management.
 
 ## 🛠️ Tech Stack

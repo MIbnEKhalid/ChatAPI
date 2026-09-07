@@ -1,9 +1,6 @@
-import { pool } from "../config/database.js";
-import {
-  decryptKey,
-  encryptKey,
-  USER_KEY_STORAGE_ENABLED,
-} from "../utils/crypto.js";
+import { BaseRepository } from "mbkauthe";
+import { defaultAdapter } from "../db/index.js";
+import { decryptKey, encryptKey, USER_KEY_STORAGE_ENABLED } from "../utils/crypto.js";
 
 if (!USER_KEY_STORAGE_ENABLED) {
   console.warn(
@@ -11,107 +8,125 @@ if (!USER_KEY_STORAGE_ENABLED) {
   );
 }
 
-// Database operations for chat history and user API keys.
-export const db = {
-  // Fetch a single chat, optionally scoped to a username (ownership check).
-  getChat: async (id, username = null) => {
-    let query = "SELECT * FROM ai_history_chatapi WHERE id = $1 AND is_deleted = FALSE";
+export class ChatRepository extends BaseRepository {
+  constructor(adapter = defaultAdapter) {
+    super(adapter);
+  }
+
+  // --- Chat End-User Operations ---
+
+  async getChat(id, username = null) {
+    let sql = "SELECT * FROM chatapi_ai_history WHERE id = $1 AND is_deleted = FALSE";
     const params = [id];
     if (username) {
-      query += " AND username = $2";
+      sql += " AND username = $2";
       params.push(username);
     }
-    const res = await pool.query(query, params);
-    return res.rows[0];
-  },
+    const res = await this.query(sql, params);
+    return res.rows[0] || null;
+  }
 
-  // UPDATED: Removed Temperature Column, Updates Updated_at
-  saveChat: async (id, treeData, username, title = null) => {
+  async saveChat(id, treeData, username, title = null) {
     const json = JSON.stringify(treeData);
     if (id) {
-      const params = [json, id];
       if (title) {
-        await pool.query(
-          "UPDATE ai_history_chatapi SET conversation_history = $1, title = COALESCE(title, $3), updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+        await this.query(
+          "UPDATE chatapi_ai_history SET conversation_history = $1, title = COALESCE(title, $3), updated_at = CURRENT_TIMESTAMP WHERE id = $2",
           [json, id, title]
         );
       } else {
-        await pool.query(
-          "UPDATE ai_history_chatapi SET conversation_history = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+        await this.query(
+          "UPDATE chatapi_ai_history SET conversation_history = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
           [json, id]
         );
       }
       return id;
     } else {
-      const res = await pool.query(
-        "INSERT INTO ai_history_chatapi (conversation_history, username, title) VALUES ($1, $2, $3) RETURNING id",
+      const res = await this.query(
+        "INSERT INTO chatapi_ai_history (conversation_history, username, title) VALUES ($1, $2, $3) RETURNING id",
         [json, username, title]
       );
       return res.rows[0].id;
     }
-  },
+  }
 
-  // Rename a chat (ownership-checked)
-  renameChat: async (id, title, username) => {
-    const res = await pool.query(
-      "UPDATE ai_history_chatapi SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND username = $3 AND is_deleted = FALSE RETURNING id",
+  async softDeleteChat(id, username) {
+    const res = await this.query(
+      "UPDATE chatapi_ai_history SET is_deleted = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 RETURNING id",
+      [id, username]
+    );
+    return res.rowCount > 0;
+  }
+
+  async listUserChats(username, options = {}) {
+    const params = [username];
+    let sql = "SELECT id, title, is_pinned, created_at FROM chatapi_ai_history WHERE username = $1 AND is_deleted = FALSE";
+
+    if (options.q && String(options.q).trim()) {
+      params.push(`%${options.q.trim()}%`);
+      sql += ` AND (title ILIKE $${params.length} OR conversation_history::text ILIKE $${params.length})`;
+    }
+
+    sql += " ORDER BY is_pinned DESC, created_at DESC";
+    const res = await this.query(sql, params);
+    return res.rows || [];
+  }
+
+  async renameChat(id, title, username) {
+    const res = await this.query(
+      "UPDATE chatapi_ai_history SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND username = $3 AND is_deleted = FALSE RETURNING id",
       [title, id, username]
     );
     return res.rowCount > 0;
-  },
+  }
 
-  // Toggle pin status (ownership-checked)
-  togglePin: async (id, username) => {
-    const res = await pool.query(
-      "UPDATE ai_history_chatapi SET is_pinned = NOT is_pinned, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 AND is_deleted = FALSE RETURNING is_pinned",
+  async togglePin(id, username) {
+    const res = await this.query(
+      "UPDATE chatapi_ai_history SET is_pinned = NOT is_pinned, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 AND is_deleted = FALSE RETURNING is_pinned",
       [id, username]
     );
     return res.rows[0]?.is_pinned ?? null;
-  },
+  }
 
-  // Mock Limits (Connect to your real tables if needed)
-  getLimits: async (username) => {
+  async getLimits(username) {
     try {
       const today = new Date().toISOString().split("T")[0];
       const [settings, logs] = await Promise.all([
-        pool
-          .query("SELECT daily_message_limit FROM user_settings_chatapi WHERE username = $1", [username])
+        this.query("SELECT daily_message_limit FROM chatapi_user_settings WHERE username = $1", [username])
           .catch(() => ({ rows: [] })),
-        pool
-          .query("SELECT message_count FROM user_message_logs_chatapi WHERE username = $1 AND date = $2", [
-            username,
-            today,
-          ])
-          .catch(() => ({ rows: [] })),
+        this.query("SELECT message_count FROM chatapi_user_message_logs WHERE username = $1 AND date = $2", [
+          username,
+          today,
+        ]).catch(() => ({ rows: [] })),
       ]);
       return {
         dailyLimit: settings.rows[0]?.daily_message_limit || 100,
         messageCount: logs.rows[0]?.message_count || 0,
       };
-    } catch (e) {
+    } catch {
       return { dailyLimit: 100, messageCount: 0 };
     }
-  },
+  }
 
-  initUserApiKeyStore: async () => {
+  async initUserApiKeyStore() {
     if (!USER_KEY_STORAGE_ENABLED) return;
-    await pool.query(`
-            CREATE TABLE IF NOT EXISTS user_api_keys_chatapi (
-                username TEXT NOT NULL,
-                provider TEXT NOT NULL,
-                encrypted_key TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (username, provider)
-            )
-        `);
-  },
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS chatapi_user_api_keys (
+        username VARCHAR(50) NOT NULL,
+        provider TEXT NOT NULL,
+        encrypted_key TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (username, provider)
+      )
+    `);
+  }
 
-  getUserApiKeys: async (username) => {
+  async getUserApiKeys(username) {
     if (!USER_KEY_STORAGE_ENABLED) return {};
-    await db.initUserApiKeyStore();
-    const res = await pool.query(
-      "SELECT provider, encrypted_key FROM user_api_keys_chatapi WHERE username = $1",
+    await this.initUserApiKeyStore();
+    const res = await this.query(
+      "SELECT provider, encrypted_key FROM chatapi_user_api_keys WHERE username = $1",
       [username]
     );
     return res.rows.reduce((acc, row) => {
@@ -119,28 +134,133 @@ export const db = {
       if (decrypted) acc[row.provider] = decrypted;
       return acc;
     }, {});
-  },
+  }
 
-  saveUserApiKey: async (username, provider, apiKey) => {
-    if (!USER_KEY_STORAGE_ENABLED)
-      throw new Error(
-        "User API key storage is not enabled. Set API_KEY_ENCRYPTION_SECRET."
-      );
-    await db.initUserApiKeyStore();
+  async saveUserApiKey(username, provider, apiKey) {
+    if (!USER_KEY_STORAGE_ENABLED) {
+      throw new Error("User API key storage is not enabled. Set API_KEY_ENCRYPTION_SECRET.");
+    }
+    await this.initUserApiKeyStore();
     if (!apiKey) {
-      await pool.query(
-        "DELETE FROM user_api_keys_chatapi WHERE username = $1 AND provider = $2",
+      await this.query(
+        "DELETE FROM chatapi_user_api_keys WHERE username = $1 AND provider = $2",
         [username, provider]
       );
       return;
     }
     const encryptedKey = encryptKey(apiKey);
-    await pool.query(
-      `INSERT INTO user_api_keys_chatapi (username, provider, encrypted_key)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (username, provider)
-             DO UPDATE SET encrypted_key = $3, updated_at = CURRENT_TIMESTAMP`,
+    await this.query(
+      `INSERT INTO chatapi_user_api_keys (username, provider, encrypted_key)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (username, provider)
+       DO UPDATE SET encrypted_key = $3, updated_at = CURRENT_TIMESTAMP`,
       [username, provider, encryptedKey]
     );
-  },
-};
+  }
+
+  // --- Admin Operations ---
+
+  async getAdminStats() {
+    const statsQuery = `SELECT 
+      (SELECT COUNT(*) FROM chatapi_ai_history) as total_chats, 
+      (SELECT COUNT(*) FROM chatapi_ai_history WHERE is_deleted = TRUE) as deleted_chats, 
+      (SELECT COUNT(DISTINCT username) FROM chatapi_ai_history) as unique_users`;
+    const recentChatsQuery = `SELECT id, username, created_at, conversation_history, is_deleted 
+      FROM chatapi_ai_history ORDER BY created_at DESC LIMIT 10`;
+    const hourlyVolumeQuery = `SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count 
+      FROM chatapi_ai_history WHERE created_at >= CURRENT_DATE GROUP BY hour ORDER BY hour`;
+
+    const [statsRes, recentRes, hourlyRes] = await Promise.all([
+      this.query(statsQuery),
+      this.query(recentChatsQuery),
+      this.query(hourlyVolumeQuery),
+    ]);
+
+    return {
+      stats: statsRes.rows[0] || {},
+      recentChats: recentRes.rows || [],
+      hourlyRows: hourlyRes.rows || [],
+    };
+  }
+
+  async getAdminUsers({ page = 1, pageSize = 20, search = "" } = {}) {
+    const offset = (page - 1) * pageSize;
+    let whereClause = "";
+    const params = [];
+    if (search) {
+      whereClause = "WHERE username ILIKE $1";
+      params.push(`%${search}%`);
+    }
+
+    const usersQuery = `SELECT username, COUNT(*) as total_chats, MAX(created_at) as last_active 
+      FROM chatapi_ai_history ${whereClause} 
+      GROUP BY username ORDER BY last_active DESC 
+      LIMIT ${pageSize} OFFSET ${offset}`;
+    const countQuery = `SELECT COUNT(DISTINCT username) AS count FROM chatapi_ai_history ${whereClause}`;
+
+    const [usersRes, countRes] = await Promise.all([
+      this.query(usersQuery, params),
+      this.query(countQuery, params),
+    ]);
+
+    const totalItems = parseInt(countRes.rows[0]?.count || 0, 10);
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    return {
+      users: usersRes.rows || [],
+      totalItems,
+      totalPages,
+    };
+  }
+
+  async getAdminChats({ page = 1, pageSize = 20, username = "", status = "" } = {}) {
+    const offset = (page - 1) * pageSize;
+    const conditions = [];
+    const params = [];
+
+    if (username) {
+      conditions.push(`username ILIKE $${params.length + 1}`);
+      params.push(`%${username}%`);
+    }
+    if (status === "deleted") {
+      conditions.push(`is_deleted = TRUE`);
+    } else if (status === "active") {
+      conditions.push(`is_deleted = FALSE`);
+    }
+
+    const whereSQL = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
+    const chatsQuery = `SELECT id, username, created_at, conversation_history, is_deleted 
+      FROM chatapi_ai_history ${whereSQL} 
+      ORDER BY created_at DESC 
+      LIMIT ${pageSize} OFFSET ${offset}`;
+    const countQuery = `SELECT COUNT(*) AS count FROM chatapi_ai_history ${whereSQL}`;
+
+    const [chatsRes, countRes] = await Promise.all([
+      this.query(chatsQuery, params),
+      this.query(countQuery, params),
+    ]);
+
+    const totalItems = parseInt(countRes.rows[0]?.count || 0, 10);
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    return {
+      chats: chatsRes.rows || [],
+      totalItems,
+      totalPages,
+    };
+  }
+
+  async getAdminChatDetail(id) {
+    const { rows } = await this.query("SELECT * FROM chatapi_ai_history WHERE id = $1", [id]);
+    return rows[0] || null;
+  }
+
+  async bulkDeleteChats(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return false;
+    await this.query("UPDATE chatapi_ai_history SET is_deleted = TRUE WHERE id = ANY($1::int[])", [ids]);
+    return true;
+  }
+}
+
+export const chatRepository = new ChatRepository();
+export default chatRepository;
