@@ -8,7 +8,7 @@ export default defineConfig({
       '/api': 'http://localhost:3030',
       '/mbkauthe': 'http://localhost:3030',
       '/icon.svg': 'http://localhost:3030',
-      '/Assets': 'http://localhost:3030',
+      '/assets': 'http://localhost:3030',
     },
   },
   build: {

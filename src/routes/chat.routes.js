@@ -1,8 +1,8 @@
 import express from "express";
 import { validateSessionAndRole, sendSuccess, sendError } from "mbkauthe";
-import { checkMessageLimit } from "../middleware/checkMessageLimit.js";
-import { ChatTree } from "../models/chatTree.js";
-import aiServices from "../services/aiService.js";
+import { checkMessageLimit } from "../middleware/check-message-limit.js";
+import { ChatTree } from "../models/chat-tree.js";
+import aiServices from "../services/ai.service.js";
 import { chatRepository } from "../repositories/index.js";
 import { AI_PROVIDER, DEEPSEEK_MODELS } from "../config/ai.js";
 

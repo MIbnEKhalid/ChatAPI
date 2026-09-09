@@ -1,7 +1,7 @@
 import express from "express";
 import { createNotFoundHandler, createErrorHandler } from "mbkauthe";
-import chatRoutes from "../../src/routes/chat.js";
-import adminRoutes from "../../src/routes/admin.js";
+import chatRoutes from "../../src/routes/chat.routes.js";
+import adminRoutes from "../../src/routes/admin.routes.js";
 
 /**
  * Creates an Express test app with mockable session authentication.

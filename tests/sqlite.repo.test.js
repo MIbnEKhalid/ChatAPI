@@ -3,8 +3,8 @@ import { fileURLToPath } from "url";
 import { describe, test, expect, beforeAll, afterAll, vi } from "vitest";
 import { SqliteAdapter, sqliteDialect, applySchema, closeAllConnections } from "mbkauthe";
 
-import { ChatRepository } from "../src/repositories/ChatRepository.js";
-import { checkMessageLimit } from "../src/middleware/checkMessageLimit.js";
+import { ChatRepository } from "../src/repositories/chat.repository.js";
+import { checkMessageLimit } from "../src/middleware/check-message-limit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

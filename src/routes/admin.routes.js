@@ -1,7 +1,7 @@
 import express from "express";
 import { validateSessionAndRole, sendSuccess, sendError } from "mbkauthe";
 import { chatRepository } from "../repositories/index.js";
-import { ChatTree } from "../models/chatTree.js";
+import { ChatTree } from "../models/chat-tree.js";
 
 const router = express.Router();
 

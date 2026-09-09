@@ -22,7 +22,7 @@
         "dest": "/index.js"
       },
       {
-        "src": "/Assets/(.*)",
+        "src": "/assets/(.*)",
         "dest": "/index.js"
       },
       {

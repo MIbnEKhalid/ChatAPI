@@ -6,8 +6,8 @@ import dotenv from "dotenv";
 import { engine } from "express-handlebars";
 import helmet from "helmet";
 import mbkAuthRouter, { renderError, createNotFoundHandler, createErrorHandler } from "mbkauthe";
-import chatRoutes from "./routes/chat.js";
-import adminRoutes from "./routes/admin.js";
+import chatRoutes from "./routes/chat.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 dotenv.config();
 
@@ -82,8 +82,8 @@ app.set("views", [
 
 // Serve static files
 app.use(
-  "/Assets",
-  express.static(path.join(__dirname, "../public/Assets"), {
+  "/assets",
+  express.static(path.join(__dirname, "../public/assets"), {
     setHeaders: (res, path) => {
       if (path.endsWith(".css")) {
         res.setHeader("Content-Type", "text/css");
@@ -104,7 +104,7 @@ app.get(/.*/, (req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
     req.path.startsWith("/mbkauthe") ||
-    req.path.startsWith("/Assets/") ||
+    req.path.startsWith("/assets/") ||
     req.path === "/login" ||
     req.path.startsWith("/icon.svg")
   ) {
