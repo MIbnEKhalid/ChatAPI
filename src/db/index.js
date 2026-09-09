@@ -1,5 +1,6 @@
 import { PostgresAdapter, SqliteAdapter, postgresDialect, sqliteDialect, BaseRepository, registerGracefulShutdown } from "mbkauthe";
-import { pool, poolConfig, sqlitePath, dbType, initSchema } from "./connection.js";
+import { pool, poolConfig, sqlitePath, dbType } from "./connection.js";
+import { initPostgresSchema, initSqliteSchema } from "./schema/init.js";
 
 let defaultAdapter;
 
@@ -12,13 +13,6 @@ if (dbType === "sqlite") {
   });
   registerGracefulShutdown(adapter);
   defaultAdapter = adapter;
-
-  // Auto-initialize SQLite schema idempotently
-  if (process.env.NODE_ENV !== "test" || !process.env.JEST_WORKER_ID) {
-    initSchema(adapter).catch((err) => {
-      console.error("[sqlite] Schema initialization error:", err.message);
-    });
-  }
 } else {
   defaultAdapter = new PostgresAdapter(pool, postgresDialect);
 }
@@ -31,7 +25,8 @@ export {
   poolConfig,
   sqlitePath,
   dbType,
-  initSchema,
+  initPostgresSchema,
+  initSqliteSchema,
   PostgresAdapter,
   postgresDialect,
   SqliteAdapter,

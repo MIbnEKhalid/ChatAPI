@@ -1,13 +1,13 @@
 {
-  "name": "nodejstemplate",
-  "version": "2.1.0",
-  "main": "index.js",
+  "name": "chat-api",
+  "version": "2.1.1",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "init-sqlite": "node src/scripts/init-sqlite.js",
-    "schema:sqlite": "node src/scripts/init-sqlite.js",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:init:postgres": "node scripts/initDb.js --type=postgres",
+    "db:init:sqlite": "node scripts/initDb.js --type=sqlite",
     "test": "vitest run"
   },
   "author": "Muhammad Bin Khalid",

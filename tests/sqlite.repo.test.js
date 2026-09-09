@@ -8,7 +8,7 @@ import { checkMessageLimit } from "../src/middleware/checkMessageLimit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SCHEMA_PATH = path.resolve(__dirname, "../src/db/schema/schema.sqlite.sql");
+const SCHEMA_PATH = path.resolve(__dirname, "../src/db/schema/sqlite.sql");
 
 describe("ChatAPI SQLite Repository & Middleware Integration", () => {
   let adapter;

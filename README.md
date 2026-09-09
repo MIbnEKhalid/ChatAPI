@@ -55,9 +55,13 @@ A modern, full-featured AI chat application powered by **DeepSeek**. This applic
    *See the [Environment Variables](#-environment-variables) section below.*
 
 4. **Set up the database**
-   Run the SQL script to create the necessary tables:
+   Initialize the database via the standardized package commands:
    ```bash
-   psql -U your_username -d your_database -f database/schema.sql
+   # PostgreSQL
+   npm run db:init:postgres
+
+   # Or SQLite
+   npm run db:init:sqlite
    ```
 
 5. **Start the application**
