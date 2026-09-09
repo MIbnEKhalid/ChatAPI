@@ -1,5 +1,5 @@
 import express from "express";
-import { validateSessionAndRole } from "mbkauthe";
+import { validateSessionAndRole, sendSuccess, sendError } from "mbkauthe";
 import { chatRepository } from "../repositories/index.js";
 import { ChatTree } from "../models/chatTree.js";
 
@@ -43,7 +43,7 @@ router.get(
       res.json({ stats, recentChats, hourlyData });
     } catch (error) {
       console.error("API Dashboard Error:", error);
-      res.status(500).json({ message: "Server Error" });
+      sendError(res, error, { statusCode: 500, code: "ADMIN_STATS_ERROR" });
     }
   }
 );
@@ -81,7 +81,7 @@ router.get(
       });
     } catch (error) {
       console.error("API Users Error:", error);
-      res.status(500).json({ message: "Error loading users" });
+      sendError(res, error, { statusCode: 500, code: "ADMIN_USERS_ERROR" });
     }
   }
 );
@@ -121,7 +121,7 @@ router.get(
       });
     } catch (error) {
       console.error("API Chats Error:", error);
-      res.status(500).json({ message: "Error loading chats" });
+      sendError(res, error, { statusCode: 500, code: "ADMIN_CHATS_ERROR" });
     }
   }
 );
@@ -133,7 +133,7 @@ router.get(
   async (req, res) => {
     try {
       const chat = await chatRepository.getAdminChatDetail(req.params.id);
-      if (!chat) return res.status(404).json({ message: "Not Found" });
+      if (!chat) return sendError(res, "Not Found", { statusCode: 404, code: "CHAT_NOT_FOUND" });
 
       let treeData = null;
       try {
@@ -151,7 +151,7 @@ router.get(
       });
     } catch (error) {
       console.error("API Chat Detail Error:", error);
-      res.status(500).json({ message: "Error loading chat detail" });
+      sendError(res, error, { statusCode: 500, code: "ADMIN_CHAT_DETAIL_ERROR" });
     }
   }
 );
@@ -164,12 +164,14 @@ router.post(
     try {
       const { chatIds, ids } = req.body;
       const deleteIds = chatIds || ids;
-      if (!deleteIds || !deleteIds.length) return res.status(400).json({ success: false });
+      if (!deleteIds || !deleteIds.length) {
+        return sendError(res, "No chat IDs provided for deletion", { statusCode: 400, code: "INVALID_REQUEST" });
+      }
 
       await chatRepository.bulkDeleteChats(deleteIds);
-      res.json({ success: true });
+      sendSuccess(res, { success: true });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      sendError(res, error, { statusCode: 500, code: "BULK_DELETE_ERROR" });
     }
   }
 );
