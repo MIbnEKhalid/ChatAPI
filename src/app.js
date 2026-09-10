@@ -4,7 +4,6 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
-import helmet from "helmet";
 import mbkAuthRouter, { renderError, createNotFoundHandler, createErrorHandler } from "mbkauthe";
 import chatRoutes from "./routes/chat.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -17,39 +16,6 @@ const __dirname = path.dirname(__filename);
 
 app.use(express.json());
 app.use(mbkAuthRouter);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "'unsafe-eval'",
-          "https://cdnjs.cloudflare.com",
-          "https://cdn.jsdelivr.net",
-        ],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://fonts.googleapis.com",
-          "https://cdnjs.cloudflare.com",
-        ],
-        styleSrcAttr: ["'unsafe-inline'"],
-        scriptSrcAttr: ["'unsafe-inline'"],
-        fontSrc: [
-          "'self'",
-          "https://fonts.gstatic.com",
-          "https://cdnjs.cloudflare.com",
-        ],
-        imgSrc: ["'self'", "data:", "blob:"],
-        connectSrc: ["'self'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-  })
-);
 
 // Minimal Handlebars config for mbkauthe auth pages
 app.engine(
@@ -81,9 +47,7 @@ app.set("views", [
 ]);
 
 // Serve static files
-app.use(
-  "/assets",
-  express.static(path.join(__dirname, "../public/assets"), {
+app.use("/assets", express.static(path.join(__dirname, "../public/assets"), {
     setHeaders: (res, path) => {
       if (path.endsWith(".css")) {
         res.setHeader("Content-Type", "text/css");

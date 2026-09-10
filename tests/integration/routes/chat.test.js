@@ -12,7 +12,24 @@ describe("ChatAPI Route Integration Tests", () => {
   beforeAll(async () => {
     adapter = await createTestDb();
     chatRepo = new ChatRepository(adapter);
-    app = createTestApp({ user: { username: "routeuser", role: "normaluser" } });
+    app = createTestApp({
+      user: {
+        username: "routeuser",
+        role: "normaluser",
+        permissions: {
+          allows: [
+            "chatapi:chat:send",
+            "chatapi:chat:stream",
+            "chatapi:history:read",
+            "chatapi:history:clear",
+            "chatapi:history:rename",
+            "chatapi:api_keys:manage",
+            "chatapi:session:read",
+          ],
+          denies: [],
+        },
+      },
+    });
   });
 
   afterAll(async () => {
