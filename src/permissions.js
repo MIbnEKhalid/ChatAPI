@@ -39,13 +39,26 @@ const MANIFEST = {
   },
 };
 
-export const Permissions = definePermissions(MANIFEST, { fallbackAppKey: "chatapi" });
+const ROLES = {
+  admin: {
+    label: "ChatAPI Administrator",
+    description: "Manage and monitor AI chat systems, users, and conversations",
+    permissions: ["*"],
+  },
+  normaluser: {
+    label: "Standard AI User",
+    description: "Send chat messages, manage histories and personal API keys",
+    permissions: ["chat:*", "history:*", "api_keys:*", "session:*"],
+  },
+};
 
-/** Register this app's permissions in the catalog (idempotent, best-effort). */
+export const Permissions = definePermissions(MANIFEST, { fallbackAppKey: "chatapi", roles: ROLES });
+
+/** Register this app's permissions & roles in the catalog (idempotent, best-effort). */
 export async function syncChatApiPermissions() {
   try {
     const result = await syncAppPermissions(Permissions, { fallbackAppKey: "chatapi" });
-    console.log(`[chatapi] Permission catalog synced (${result.synced} permissions)`);
+    console.log(`[chatapi] Permissions & roles synced (${result.synced} permissions, ${result.rolesSynced} roles)`);
     return result;
   } catch (err) {
     console.warn("[chatapi] Permission catalog sync skipped:", err?.message || err);
@@ -54,3 +67,4 @@ export async function syncChatApiPermissions() {
 }
 
 export default Permissions;
+

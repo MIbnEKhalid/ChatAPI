@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { registerGracefulShutdown } from "mbkauthe";
+import { registerGracefulShutdown, wrapPoolWithRetry } from "mbkauthe";
 
 const { Pool } = pkg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,11 +24,19 @@ if (dbType === "sqlite" && sqlitePath !== ":memory:") {
   }
 }
 
+const connectionTimeoutMillis = Number(process.env.DB_CONNECTION_TIMEOUT_MS) || 15000;
+const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS) || 30000;
+
 export const poolConfig = {
   connectionString: process.env.NEON_POSTGRES || process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: true,
   },
+  idleTimeoutMillis,
+  connectionTimeoutMillis,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
+  application_name: "chatapi-app",
 };
 
 const dummyPool = {
@@ -41,6 +49,11 @@ const dummyPool = {
 export const pool = dbType !== "sqlite" ? new Pool(poolConfig) : dummyPool;
 
 if (dbType !== "sqlite" && pool && typeof pool.on === "function") {
+  wrapPoolWithRetry(pool, {
+    name: "ChatAPI PostgreSQL",
+    maxRetries: Number(process.env.DB_MAX_RETRIES) || 3,
+  });
+
   registerGracefulShutdown(pool);
 }
 

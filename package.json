@@ -1,12 +1,12 @@
 {
   "name": "chat-api",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "sync-permissions": "node scripts/sync-permissions.js",
+    "sync_permissions": "node scripts/sync_permissions.js",
     "db:init:postgres": "node scripts/initDb.js --type=postgres",
     "db:init:sqlite": "node scripts/initDb.js --type=sqlite",
     "test": "vitest run"
@@ -21,9 +21,9 @@
     "express": "^5.1.0",
     "express-handlebars": "^9.0.1",
     "handlebars": "^4.7.8",
-    "mbkauthe": "latest",
+    "mbkauthe": "file:../mbkauthe",
     "mbkhealth": "latest",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3"
   },
