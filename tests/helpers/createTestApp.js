@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 import express from "express";
 import { engine } from "express-handlebars";
 import { createNotFoundHandler, createErrorHandler } from "mbkauthe";
-import { createHealthRouter } from "mbkhealth";
 import chatRoutes from "../../src/routes/chat.routes.js";
 import adminRoutes from "../../src/routes/admin.routes.js";
 
@@ -55,8 +54,6 @@ export function createTestApp({ user = { username: "testuser", role: "normaluser
 
   app.use("/", chatRoutes);
   app.use("/", adminRoutes);
-  app.use("/api/health", createHealthRouter({ appName: "ChatAPI", app }));
-  app.get("/health", (req, res) => res.redirect("/api/health"));
 
   app.use(createNotFoundHandler({ appName: "ChatAPI" }));
   app.use(createErrorHandler({ appName: "ChatAPI" }));

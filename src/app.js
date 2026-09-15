@@ -5,7 +5,6 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
 import mbkAuthRouter, { renderError, createNotFoundHandler, createErrorHandler } from "mbkauthe";
-import { createHealthRouter } from "mbkhealth";
 import chatRoutes from "./routes/chat.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
@@ -59,8 +58,6 @@ app.use("/assets", express.static(path.join(__dirname, "../public/assets"), {
 
 app.use("/", chatRoutes);
 app.use("/", adminRoutes);
-app.use("/api/health", createHealthRouter({ appName: "ChatAPI", app }));
-app.get("/health", (req, res) => res.redirect("/api/health"));
 
 // Serve React frontend in production
 const REACT_BUILD_PATH = path.resolve(__dirname, "../frontend/dist");
@@ -70,7 +67,6 @@ app.use(express.static(REACT_BUILD_PATH));
 app.get(/.*/, (req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
-    req.path.startsWith("/health") ||
     req.path.startsWith("/mbkauthe") ||
     req.path.startsWith("/assets/") ||
     req.path === "/login" ||

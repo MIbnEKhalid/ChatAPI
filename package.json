@@ -1,6 +1,6 @@
 {
   "name": "chat-api",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -21,8 +21,7 @@
     "express": "^5.1.0",
     "express-handlebars": "^9.0.1",
     "handlebars": "^4.7.8",
-    "mbkauthe": "file:../mbkauthe",
-    "mbkhealth": "latest",
+    "mbkauthe": "latest",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3"

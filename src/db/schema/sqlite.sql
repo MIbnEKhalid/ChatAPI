@@ -62,22 +62,6 @@ CREATE TABLE IF NOT EXISTS mbkcore_two_factor (
     FOREIGN KEY (username) REFERENCES mbkcore_users(username) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS mbkcore_trusted_devices (
-    id TEXT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    device_identifier TEXT NOT NULL,
-    device_name TEXT,
-    ip_address TEXT,
-    user_agent TEXT,
-    trusted_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    expires_at TEXT NOT NULL,
-    last_used TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (username) REFERENCES mbkcore_users(username) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_mbkcore_trusted_devices_user ON mbkcore_trusted_devices(username);
-CREATE INDEX IF NOT EXISTS idx_mbkcore_trusted_devices_lookup ON mbkcore_trusted_devices(username, device_identifier);
-
 CREATE TABLE IF NOT EXISTS mbkcore_session (
     sid TEXT PRIMARY KEY,
     sess TEXT NOT NULL,
