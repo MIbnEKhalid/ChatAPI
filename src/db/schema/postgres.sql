@@ -1,3 +1,6 @@
+-- First The DB should have PrereQuisite SQL Query 
+-- for mbkauthe from mbkauthe/docs/schema/.
+
 -- =========================================================
 -- SAFE INITIALIZATION SCRIPT (Runs on every startup)
 -- =========================================================

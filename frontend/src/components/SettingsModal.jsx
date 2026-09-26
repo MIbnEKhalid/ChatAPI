@@ -82,6 +82,13 @@ export default function SettingsModal({ settings, updateSettings, showToast, isO
                   </div>
                   <div className="setting-control">
                     <select className="form-control" value={settings.model} onChange={e => updateSettings({ model: e.target.value })}>
+                      <optgroup label="Google Gemini">
+                        <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+                        <option value="google/gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="google/gemini-1.5-pro">Gemini 1.5 Pro</option>
+                      </optgroup>
                       <optgroup label="DeepSeek">
                         <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
                         <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>

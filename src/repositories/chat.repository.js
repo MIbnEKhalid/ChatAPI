@@ -10,7 +10,12 @@ if (!USER_KEY_STORAGE_ENABLED) {
 
 export class ChatRepository extends BaseRepository {
   constructor(adapter = defaultAdapter) {
-    super(adapter);
+    super(adapter, {
+      defaultTable: "chatapi_ai_history",
+      jsonColumns: ["conversation_history"],
+      booleanColumns: ["is_deleted", "is_pinned"],
+      dateColumns: ["created_at", "updated_at"],
+    });
   }
 
   // --- Chat End-User Operations ---
@@ -23,11 +28,11 @@ export class ChatRepository extends BaseRepository {
       params.push(username);
     }
     const res = await this.query(sql, params);
-    return res.rows[0] || null;
+    return res.rows[0] ? this.normalizeEntity(res.rows[0]) : null;
   }
 
   async saveChat(id, treeData, username, title = null) {
-    const json = JSON.stringify(treeData);
+    const json = typeof treeData === "string" ? treeData : JSON.stringify(treeData);
     if (id) {
       if (title) {
         await this.query(
@@ -46,7 +51,7 @@ export class ChatRepository extends BaseRepository {
         "INSERT INTO chatapi_ai_history (conversation_history, username, title) VALUES ($1, $2, $3) RETURNING id",
         [json, username, title]
       );
-      return res.rows[0].id;
+      return res.rows[0]?.id;
     }
   }
 
@@ -55,7 +60,7 @@ export class ChatRepository extends BaseRepository {
       "UPDATE chatapi_ai_history SET is_deleted = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 RETURNING id",
       [id, username]
     );
-    return res.rowCount > 0;
+    return (res.rowCount || res.rows.length) > 0;
   }
 
   async listUserChats(username, options = {}) {
@@ -64,12 +69,16 @@ export class ChatRepository extends BaseRepository {
 
     if (options.q && String(options.q).trim()) {
       params.push(`%${options.q.trim()}%`);
-      sql += ` AND (title ILIKE $${params.length} OR conversation_history::text ILIKE $${params.length})`;
+      if (this.dialect.name === "sqlite") {
+        sql += ` AND (title LIKE $${params.length} OR conversation_history LIKE $${params.length})`;
+      } else {
+        sql += ` AND (title ILIKE $${params.length} OR conversation_history::text ILIKE $${params.length})`;
+      }
     }
 
     sql += " ORDER BY is_pinned DESC, created_at DESC";
     const res = await this.query(sql, params);
-    return res.rows || [];
+    return (res.rows || []).map((row) => this.normalizeEntity(row));
   }
 
   async renameChat(id, title, username) {
@@ -77,7 +86,7 @@ export class ChatRepository extends BaseRepository {
       "UPDATE chatapi_ai_history SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND username = $3 AND is_deleted = FALSE RETURNING id",
       [title, id, username]
     );
-    return res.rowCount > 0;
+    return (res.rowCount || res.rows.length) > 0;
   }
 
   async togglePin(id, username) {
@@ -85,7 +94,8 @@ export class ChatRepository extends BaseRepository {
       "UPDATE chatapi_ai_history SET is_pinned = NOT is_pinned, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND username = $2 AND is_deleted = FALSE RETURNING is_pinned",
       [id, username]
     );
-    return res.rows[0]?.is_pinned ?? null;
+    const row = res.rows[0] ? this.normalizeEntity(res.rows[0]) : null;
+    return row?.is_pinned ?? null;
   }
 
   async getLimits(username) {
@@ -167,8 +177,11 @@ export class ChatRepository extends BaseRepository {
       (SELECT COUNT(DISTINCT username) FROM chatapi_ai_history) as unique_users`;
     const recentChatsQuery = `SELECT id, username, created_at, conversation_history, is_deleted 
       FROM chatapi_ai_history ORDER BY created_at DESC LIMIT 10`;
-    const hourlyVolumeQuery = `SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count 
-      FROM chatapi_ai_history WHERE created_at >= CURRENT_DATE GROUP BY hour ORDER BY hour`;
+    const hourlyVolumeQuery = this.dialect.name === "sqlite"
+      ? `SELECT strftime('%H', created_at) as hour, COUNT(*) as count 
+         FROM chatapi_ai_history WHERE date(created_at) >= date('now') GROUP BY hour ORDER BY hour`
+      : `SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count 
+         FROM chatapi_ai_history WHERE created_at >= CURRENT_DATE GROUP BY hour ORDER BY hour`;
 
     const [statsRes, recentRes, hourlyRes] = await Promise.all([
       this.query(statsQuery),
@@ -178,7 +191,7 @@ export class ChatRepository extends BaseRepository {
 
     return {
       stats: statsRes.rows[0] || {},
-      recentChats: recentRes.rows || [],
+      recentChats: (recentRes.rows || []).map((row) => this.normalizeEntity(row)),
       hourlyRows: hourlyRes.rows || [],
     };
   }
@@ -188,7 +201,7 @@ export class ChatRepository extends BaseRepository {
     let whereClause = "";
     const params = [];
     if (search) {
-      whereClause = "WHERE username ILIKE $1";
+      whereClause = this.dialect.name === "sqlite" ? "WHERE username LIKE $1" : "WHERE username ILIKE $1";
       params.push(`%${search}%`);
     }
 
@@ -219,7 +232,8 @@ export class ChatRepository extends BaseRepository {
     const params = [];
 
     if (username) {
-      conditions.push(`username ILIKE $${params.length + 1}`);
+      const matchOp = this.dialect.name === "sqlite" ? "LIKE" : "ILIKE";
+      conditions.push(`username ${matchOp} $${params.length + 1}`);
       params.push(`%${username}%`);
     }
     if (status === "deleted") {
@@ -244,7 +258,7 @@ export class ChatRepository extends BaseRepository {
     const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
     return {
-      chats: chatsRes.rows || [],
+      chats: (chatsRes.rows || []).map((row) => this.normalizeEntity(row)),
       totalItems,
       totalPages,
     };
@@ -252,12 +266,17 @@ export class ChatRepository extends BaseRepository {
 
   async getAdminChatDetail(id) {
     const { rows } = await this.query("SELECT * FROM chatapi_ai_history WHERE id = $1", [id]);
-    return rows[0] || null;
+    return rows[0] ? this.normalizeEntity(rows[0]) : null;
   }
 
   async bulkDeleteChats(ids) {
     if (!Array.isArray(ids) || ids.length === 0) return false;
-    await this.query("UPDATE chatapi_ai_history SET is_deleted = TRUE WHERE id = ANY($1::int[])", [ids]);
+    if (this.dialect.name === "sqlite") {
+      const placeholders = ids.map(() => "?").join(",");
+      await this.query(`UPDATE chatapi_ai_history SET is_deleted = 1 WHERE id IN (${placeholders})`, ids);
+    } else {
+      await this.query("UPDATE chatapi_ai_history SET is_deleted = TRUE WHERE id = ANY($1::int[])", [ids]);
+    }
     return true;
   }
 }

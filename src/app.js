@@ -19,8 +19,9 @@ app.use(mbkAuthRouter);
 
 // Minimal Handlebars config for mbkauthe auth pages
 app.engine(
-  "handlebars",
+  "hbs",
   engine({
+    extname: ".hbs",
     partialsDir: [
       path.resolve(__dirname, "../node_modules/mbkauthe/views"),
       path.resolve(__dirname, "../node_modules/mbkauthe/views/Error"),
@@ -41,7 +42,7 @@ app.engine(
   })
 );
 
-app.set("view engine", "handlebars");
+app.set("view engine", "hbs");
 app.set("views", [
   path.resolve(__dirname, "../node_modules/mbkauthe/views"),
 ]);

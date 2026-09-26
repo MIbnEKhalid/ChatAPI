@@ -18,8 +18,9 @@ const __dirname = path.dirname(__filename);
 export function createTestApp({ user = { username: "testuser", role: "normaluser" } } = {}) {
   const app = express();
   app.engine(
-    "handlebars",
+    "hbs",
     engine({
+      extname: ".hbs",
       partialsDir: [
         path.resolve(__dirname, "../../node_modules/mbkauthe/views"),
         path.resolve(__dirname, "../../node_modules/mbkauthe/views/Error"),
@@ -38,7 +39,7 @@ export function createTestApp({ user = { username: "testuser", role: "normaluser
       },
     })
   );
-  app.set("view engine", "handlebars");
+  app.set("view engine", "hbs");
   app.set("views", [path.resolve(__dirname, "../../node_modules/mbkauthe/views")]);
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

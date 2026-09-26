@@ -1,6 +1,6 @@
 # 🤖 ChatAPI - AI Chat Assistant
 
-A modern, full-featured AI chat application powered by **DeepSeek**. This application provides a unified interface to interact with DeepSeek V4 Flash and DeepSeek V4 Pro, complete with user management, conversation history, and an admin dashboard.
+A modern, full-featured AI chat application powered by **Google Gemini** & **DeepSeek**. This application provides a unified interface to interact with Gemini 2.5 Flash/Pro, Gemini 2.0 Flash, Gemini 1.5 Flash/Pro, DeepSeek V4 Flash, and DeepSeek V4 Pro, complete with user management, conversation history, and an admin dashboard.
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)
 ![Express.js](https://img.shields.io/badge/Express.js-4.21%2B-blue.svg)
@@ -10,9 +10,9 @@ A modern, full-featured AI chat application powered by **DeepSeek**. This applic
 ## 🌟 Features
 
 ### 🎯 Core Capabilities
-- **DeepSeek Model Support**: Seamlessly switch between DeepSeek V4 Flash and DeepSeek V4 Pro.
-- **Efficient Tier Selection**: Optimized model selection for speed and reliability.
-- **Contextual Memory**: Persistent conversation history stored in PostgreSQL.
+- **Multi-Model AI Support**: Seamlessly switch between Google Gemini (2.5 Flash/Pro, 2.0, 1.5) and DeepSeek (V4 Flash/Pro).
+- **Encrypted API Key Vault**: Users can bring and securely store their own Gemini or DeepSeek API keys (AES-256-GCM encrypted).
+- **Contextual Memory & Branching**: Persistent conversation history stored in PostgreSQL / SQLite with message tree branching.
 
 ### 🎨 User Experience
 - **Interactive Gallery**: Feature showcase with a built-in **Lightbox Image Viewer**.
@@ -31,10 +31,10 @@ A modern, full-featured AI chat application powered by **DeepSeek**. This applic
 
 ### Prerequisites
 - Node.js 18 or higher
-- PostgreSQL database (Local or Cloud like Neon/Supabase)
-- A DeepSeek API token
+- PostgreSQL database (Local or Cloud like Neon/Supabase) or SQLite
+- A Google Gemini API key and/or DeepSeek API token
 
-### Installation
+### Installation & Development
 
 1. **Clone the repository**
    ```bash
@@ -50,51 +50,46 @@ A modern, full-featured AI chat application powered by **DeepSeek**. This applic
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
    ```bash
-   cp .env.template .env
+   cp .env.example .env
    ```
-   *See the [Environment Variables](#-environment-variables) section below.*
 
 4. **Set up the database**
-   Initialize the database via the standardized package commands:
    ```bash
-   # PostgreSQL
+   # PostgreSQL (Recommended for cloud/Vercel)
    npm run db:init:postgres
 
-   # Or SQLite
+   # Or SQLite (Local development)
    npm run db:init:sqlite
    ```
 
-5. **Start the application**
+5. **Build and Run Unified Project**
    ```bash
+   # Build the React frontend
+   npm run build
+
+   # Start the Express server (serves both API and built React SPA)
    npm start
    ```
 
-6. **Access the application**
-   - Main Application: `http://localhost:3030`
-   - Admin Dashboard: `http://localhost:3030/admin`
+6. **Development Mode**
+   - Backend dev server: `npm run dev`
+   - Frontend Vite dev server with proxy: `npm run dev:frontend`
 
-## 🔧 Environment Variables
+### ☁️ Deploying to Vercel
 
-Configure the following in your example`.env.template` file:
-[.env.template](.env.template).
+The project is structured to deploy backend and frontend together directly on Vercel:
 
-- `DEEPSEEK_API_TOKEN` — shared DeepSeek token used when a user has not saved their own token.
-- `API_KEY_ENCRYPTION_SECRET` — secret used to encrypt and decrypt the saved DeepSeek token.
-
-## 🗄️ Database Schema
-
-The application uses PostgreSQL with the following main tables:
-
-- **`chatapi_ai_history`**: Stores conversation threads, messages, and timestamps.
-- **`chatapi_user_message_logs`**: Tracks daily message usage for rate limiting.
-- **`users`** (or equivalent): User credentials and role management.
+1. Connect your repository to Vercel.
+2. Ensure Root Directory is set to `./` (or `ChatAPI` if part of a monorepo).
+3. Set your environment variables (`DATABASE_URL`, `DEEPSEEK_API_TOKEN`, `API_KEY_ENCRYPTION_SECRET`, `SESSION_SECRET`, etc.) in the Vercel Project Settings.
+4. Deploy! Vercel will run `npm run build` to generate the frontend assets and automatically route API requests to the `/api` serverless handler defined in [`api/index.js`](api/index.js).
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL
-- **Frontend**: Handlebars (HBS), Vanilla CSS/JS
-- **Authentication**: Session-based (Custom/Passport)
+- **Backend**: Node.js, Express.js (Runs locally & serverless on Vercel)
+- **Frontend**: React, Vite, Tailwind/CSS
+- **Database**: PostgreSQL (Cloud / Supabase / Neon) or SQLite (Local)
+- **Authentication**: `mbkauthe`
 - **AI Integration**: DeepSeek REST API with encrypted token storage
 
 ## 📱 API Endpoints

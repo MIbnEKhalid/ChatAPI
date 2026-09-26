@@ -97,10 +97,10 @@ export default function Landing() {
         <section className="hero">
           <h1>
             <span className="text-gradient">Intelligent Conversations</span><br />
-            Powered by DeepSeek AI
+            Powered by Gemini & DeepSeek AI
           </h1>
           <p>
-            A powerful AI chat platform with branching conversations, multiple models,
+            A powerful AI chat platform with branching conversations, Google Gemini & DeepSeek models,
             and a cyberpunk-inspired interface. Open-source and easy to deploy.
           </p>
           <div className="btn-group">
@@ -128,7 +128,7 @@ export default function Landing() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
             </div>
             <h3>Multiple AI Models</h3>
-            <p>Choose between DeepSeek V4 Flash and DeepSeek V4 Pro for the right balance of speed and intelligence.</p>
+            <p>Seamlessly switch between Google Gemini (2.5 Flash/Pro, 2.0, 1.5) and DeepSeek (V4 Flash/Pro) models.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon green">
@@ -149,7 +149,7 @@ export default function Landing() {
         </section>
 
         <footer>
-          <p>&copy; {new Date().getFullYear()} ChatAPI by mbktech.org. Built with DeepSeek AI.</p>
+          <p>&copy; {new Date().getFullYear()} ChatAPI by mbktech.org. Built with Gemini & DeepSeek AI.</p>
         </footer>
       </div>
     </>

@@ -2,7 +2,7 @@ import { sendError } from "mbkauthe";
 import { ChatTree } from "../models/chat-tree.js";
 import aiServices from "../services/ai.service.js";
 import { chatRepository } from "../repositories/index.js";
-import { AI_PROVIDER, DEEPSEEK_MODELS } from "../config/ai.js";
+import { DEEPSEEK_CONFIG, GEMINI_CONFIG, getModelProvider } from "../config/ai.js";
 
 // Load Chat API (Returns Full Tree) — ownership-checked
 export async function getChatHistory(req, res) {
@@ -37,11 +37,8 @@ export async function processChat(req, res) {
   try {
     const temp = parseFloat(tempParam) || 0.7;
 
-    // Model Parsing
-    let modelName = (modelStr || "deepseek/deepseek-v4-flash").split("/").pop();
-    if (!DEEPSEEK_MODELS.has(modelName)) {
-      modelName = "deepseek-v4-flash";
-    }
+    // Model Provider & Name Parsing
+    const { provider, modelName } = getModelProvider(modelStr);
 
     // 1. Load Tree or Init New
     let tree;
@@ -62,7 +59,7 @@ export async function processChat(req, res) {
       }
     } else {
       tree = new ChatTree(null);
-    //  tree.addMessage("system", "You are a helpful AI assistant. Be concise.", null);
+          //  tree.addMessage("system", "You are a helpful AI assistant. Be concise.", null);
     }
 
     // 2. Add User Node
@@ -75,27 +72,46 @@ export async function processChat(req, res) {
 
     // 4. Generate AI Response
     const userApiKeys = await chatRepository.getUserApiKeys(username);
-    const userApiKey = userApiKeys.deepseek;
-    // Use user-provided API token if available; otherwise fall back to the shared system token.
-    const requestConfig = { ...AI_PROVIDER, apiKey: userApiKey || AI_PROVIDER.apiKey };
+    let responseText;
 
-    if (!requestConfig.apiKey) {
-      throw new Error(
-        "No DeepSeek API token configured. Add a valid token in your account settings or set DEEPSEEK_API_TOKEN in environment variables."
+    if (provider === "gemini") {
+      const userApiKey = userApiKeys.gemini;
+      const requestConfig = { ...GEMINI_CONFIG, apiKey: userApiKey || GEMINI_CONFIG.apiKey };
+
+      if (!requestConfig.apiKey) {
+        throw new Error(
+          "No Google Gemini API key configured. Add your key in Settings or set GEMINI_API_KEY in environment variables."
+        );
+      }
+
+      responseText = await aiServices.gemini(
+        requestConfig,
+        modelName,
+        historyForAI,
+        temp
+      );
+    } else {
+      const userApiKey = userApiKeys.deepseek;
+      const requestConfig = { ...DEEPSEEK_CONFIG, apiKey: userApiKey || DEEPSEEK_CONFIG.apiKey };
+
+      if (!requestConfig.apiKey) {
+        throw new Error(
+          "No DeepSeek API token configured. Add a valid token in your account settings or set DEEPSEEK_API_TOKEN in environment variables."
+        );
+      }
+
+      responseText = await aiServices.openaiCompatible(
+        requestConfig,
+        modelName,
+        historyForAI,
+        temp
       );
     }
-
-    const responseText = await aiServices.openaiCompatible(
-      requestConfig,
-      modelName,
-      historyForAI,
-      temp
-    );
 
     // 5. Add AI Node (Child of User Node)
     tree.addMessage("model", responseText, userNodeId);
 
-    // 6. Save (No Temperature Column)
+    // 6. Save
     // Auto-generate title from first user message if this is a new chat
     const autoTitle = !dbId ? trimmedMessage.slice(0, 80) : null;
     const newChatId = await chatRepository.saveChat(dbId, tree.toJSON(), username, autoTitle);
@@ -132,8 +148,7 @@ export async function streamChat(req, res) {
 
   try {
     const temp = parseFloat(tempParam) || 0.7;
-    let modelName = (modelStr || "deepseek/deepseek-v4-flash").split("/").pop();
-    if (!DEEPSEEK_MODELS.has(modelName)) modelName = "deepseek-v4-flash";
+    const { provider, modelName } = getModelProvider(modelStr);
 
     // Load or init tree
     let tree, dbId = chatId;
@@ -155,17 +170,31 @@ export async function streamChat(req, res) {
     const userNodeId = tree.addMessage("user", trimmedMessage, parentId);
     const historyForAI = tree.getThread(userNodeId);
 
-    // API config
+    // API config & Streaming generator selection
     const userApiKeys = await chatRepository.getUserApiKeys(username);
-    const requestConfig = { ...AI_PROVIDER, apiKey: userApiKeys.deepseek || AI_PROVIDER.apiKey };
-    if (!requestConfig.apiKey) {
-      res.write(`data: ${JSON.stringify({ type: "error", message: "No DeepSeek API token configured." })}\n\n`);
-      return res.end();
+    let streamIterator;
+
+    if (provider === "gemini") {
+      const userApiKey = userApiKeys.gemini;
+      const requestConfig = { ...GEMINI_CONFIG, apiKey: userApiKey || GEMINI_CONFIG.apiKey };
+      if (!requestConfig.apiKey) {
+        res.write(`data: ${JSON.stringify({ type: "error", message: "No Google Gemini API key configured. Add your key in Settings or set GEMINI_API_KEY." })}\n\n`);
+        return res.end();
+      }
+      streamIterator = aiServices.geminiStream(requestConfig, modelName, historyForAI, temp);
+    } else {
+      const userApiKey = userApiKeys.deepseek;
+      const requestConfig = { ...DEEPSEEK_CONFIG, apiKey: userApiKey || DEEPSEEK_CONFIG.apiKey };
+      if (!requestConfig.apiKey) {
+        res.write(`data: ${JSON.stringify({ type: "error", message: "No DeepSeek API token configured. Add a token in Settings or set DEEPSEEK_API_TOKEN." })}\n\n`);
+        return res.end();
+      }
+      streamIterator = aiServices.openaiCompatibleStream(requestConfig, modelName, historyForAI, temp);
     }
 
     // Stream AI response
     let fullResponse = "";
-    for await (const delta of aiServices.openaiCompatibleStream(requestConfig, modelName, historyForAI, temp)) {
+    for await (const delta of streamIterator) {
       fullResponse += delta;
       res.write(`data: ${JSON.stringify({ type: "chunk", content: delta })}\n\n`);
     }
@@ -276,7 +305,10 @@ export async function updateChatHistory(req, res) {
 export async function getUserApiKeys(req, res) {
   try {
     const apiKeys = await chatRepository.getUserApiKeys(req.session.user.username);
-    const response = { deepseek: apiKeys.deepseek ? "configured" : null };
+    const response = {
+      deepseek: apiKeys.deepseek ? "configured" : null,
+      gemini: apiKeys.gemini ? "configured" : null,
+    };
     res.json({ apiKeys: response });
   } catch (e) {
     console.error("API Keys Load Error:", e);
@@ -291,8 +323,8 @@ export async function saveUserApiKey(req, res) {
       return res.status(400).json({ message: "Provider is required" });
 
     const providerKey = provider.toLowerCase();
-    if (providerKey !== "deepseek") {
-      return res.status(400).json({ message: "Unknown provider" });
+    if (providerKey !== "deepseek" && providerKey !== "gemini") {
+      return res.status(400).json({ message: "Unknown provider (supported: deepseek, gemini)" });
     }
 
     // Limit API key length to prevent abuse

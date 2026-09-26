@@ -33,8 +33,17 @@ const ChatTopBar = memo(function ChatTopBar({ modelName, sidebarCollapsed, onTog
           onChange={e => updateSettings?.({ model: e.target.value })}
           title="Select AI model"
         >
-          <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
-          <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>
+          <optgroup label="Google Gemini">
+            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="google/gemini-1.5-flash">Gemini 1.5 Flash</option>
+            <option value="google/gemini-1.5-pro">Gemini 1.5 Pro</option>
+          </optgroup>
+          <optgroup label="DeepSeek">
+            <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
+            <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>
+          </optgroup>
         </select>
       )}
     </div>

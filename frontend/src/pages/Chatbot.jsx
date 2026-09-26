@@ -173,6 +173,23 @@ export default function Chatbot() {
   }, [])
 
   // --- API Key ---
+  const [configuredKeys, setConfiguredKeys] = useState({})
+
+  const loadApiKeys = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/api-keys')
+      if (!res.ok) return
+      const d = await res.json()
+      if (d.apiKeys) setConfiguredKeys(d.apiKeys)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    if (sessionChecked) loadApiKeys()
+  }, [sessionChecked, loadApiKeys])
+
   const saveApiKey = useCallback(async (prov) => {
     const inp = document.getElementById(`api-key-${prov}`)
     if (!inp) return
@@ -182,7 +199,8 @@ export default function Chatbot() {
       const res = await fetch('/api/user/api-keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: prov, apiKey: k }) })
       const d = await res.json()
       if (!res.ok) throw new Error(d.message || 'Save failed')
-      inp.value = ''; inp.placeholder = 'Saved key configured'
+      inp.value = ''
+      setConfiguredKeys(prev => ({ ...prev, [prov]: 'configured' }))
       showToast(`${prov.toUpperCase()} key saved`, 'success')
     } catch (e) { showToast(e.message, 'error') }
   }, [showToast])
@@ -193,12 +211,13 @@ export default function Chatbot() {
       const d = await res.json()
       if (!res.ok) throw new Error(d.message || 'Clear failed')
       const inp = document.getElementById(`api-key-${prov}`)
-      if (inp) { inp.value = ''; inp.placeholder = 'Enter API key' }
+      if (inp) inp.value = ''
+      setConfiguredKeys(prev => ({ ...prev, [prov]: null }))
       showToast(`${prov.toUpperCase()} key cleared`, 'success')
     } catch (e) { showToast(e.message, 'error') }
   }, [showToast])
 
-  const modelName = (settings.model || '').split('/').pop()?.toUpperCase() || 'DEEPSEEK V4 FLASH'
+  const modelName = (settings.model || '').split('/').pop()?.replace(/-/g, ' ').toUpperCase() || 'GEMINI 2.5 FLASH'
 
   // --- Loading ---
   if (!sessionChecked) {
@@ -283,7 +302,7 @@ export default function Chatbot() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
       >
-        <AccountPanel userData={userData} saveApiKey={saveApiKey} clearApiKey={clearApiKey} />
+        <AccountPanel userData={userData} configuredKeys={configuredKeys} saveApiKey={saveApiKey} clearApiKey={clearApiKey} />
       </SettingsModal>
 
       <ToastContainer />
@@ -292,7 +311,7 @@ export default function Chatbot() {
 }
 
 // ── Inline account panel ──
-function AccountPanel({ userData, saveApiKey, clearApiKey }) {
+function AccountPanel({ userData, configuredKeys = {}, saveApiKey, clearApiKey }) {
   const unlim = userData.role === 'Admin' || userData.role === 'superadmin'
   const pct = unlim ? 100 : Math.min((userData.limits.messageCount / userData.limits.dailyLimit) * 100, 100)
   return (
@@ -310,14 +329,35 @@ function AccountPanel({ userData, saveApiKey, clearApiKey }) {
         </div>
       </div>
       <div className="api-key-section">
-        <label className="api-key-label">Your own DeepSeek API token (encrypted)</label>
+        <label className="api-key-label">Custom API Keys (Encrypted on Server)</label>
+
+        {/* Google Gemini */}
+        <div className="provider-key-row" style={{ marginBottom: '0.75rem' }}>
+          <span className="provider-name" style={{ minWidth: '85px' }}>Gemini</span>
+          <input
+            type="password"
+            className="form-control"
+            id="api-key-gemini"
+            placeholder={configuredKeys.gemini ? 'Saved key configured' : 'Enter Gemini API key'}
+          />
+          <button className="btn btn-secondary" onClick={() => saveApiKey('gemini')}>Save</button>
+          <button className="btn btn-secondary btn-clear" onClick={() => clearApiKey('gemini')}>Clear</button>
+        </div>
+
+        {/* DeepSeek */}
         <div className="provider-key-row">
-          <span className="provider-name">DeepSeek</span>
-          <input type="password" className="form-control" id="api-key-deepseek" placeholder="Enter DeepSeek API token" />
+          <span className="provider-name" style={{ minWidth: '85px' }}>DeepSeek</span>
+          <input
+            type="password"
+            className="form-control"
+            id="api-key-deepseek"
+            placeholder={configuredKeys.deepseek ? 'Saved key configured' : 'Enter DeepSeek API token'}
+          />
           <button className="btn btn-secondary" onClick={() => saveApiKey('deepseek')}>Save</button>
           <button className="btn btn-secondary btn-clear" onClick={() => clearApiKey('deepseek')}>Clear</button>
         </div>
-        <small className="api-key-note">Your token is encrypted on the server. Used for DeepSeek requests when available.</small>
+
+        <small className="api-key-note">Your keys are encrypted on the server. Used whenever you select models from each respective provider.</small>
       </div>
       <div className="settings-actions">
         <button onClick={() => { window.location.href = '/mbkauthe/api/logout' }} className="btn btn-danger btn-full"><i className="fas fa-sign-out-alt"></i> Logout</button>

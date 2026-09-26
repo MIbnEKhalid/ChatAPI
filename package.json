@@ -1,11 +1,14 @@
 {
   "name": "chat-api",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
+    "build": "npm run build:frontend",
+    "dev:frontend": "npm --prefix frontend run dev",
     "sync_permissions": "node scripts/sync_permissions.js",
     "db:init:postgres": "node scripts/initDb.js --type=postgres",
     "db:init:sqlite": "node scripts/initDb.js --type=sqlite",
