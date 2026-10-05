@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 // AI service layer — talks to the configured model providers (DeepSeek & Google Gemini).
 const aiServices = {
   formatResponse: (text) => String(text || "").trim(),
