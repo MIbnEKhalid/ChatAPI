@@ -52,12 +52,12 @@ const ROLES = {
   },
 };
 
-export const Permissions = definePermissions(MANIFEST, { fallbackAppKey: "chatapi", roles: ROLES });
+export const Permissions = definePermissions(MANIFEST, { appKey: "chatapi", fallbackAppKey: "chatapi", roles: ROLES });
 
 /** Register this app's permissions & roles in the catalog (idempotent, best-effort). */
 export async function syncChatApiPermissions() {
   try {
-    const result = await syncAppPermissions(Permissions, { fallbackAppKey: "chatapi" });
+    const result = await syncAppPermissions(Permissions, { appKey: "chatapi", fallbackAppKey: "chatapi" });
     console.log(`[chatapi] Permissions & roles synced (${result.synced} permissions, ${result.rolesSynced} roles)`);
     return result;
   } catch (err) {

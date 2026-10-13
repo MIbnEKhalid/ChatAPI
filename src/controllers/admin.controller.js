@@ -1,4 +1,4 @@
-import { sendSuccess, sendError } from "mbkauthe";
+import { sendSuccess, sendError } from "mbkutils";
 import { chatRepository } from "../repositories/index.js";
 import { ChatTree } from "../models/chat-tree.js";
 

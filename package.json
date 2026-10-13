@@ -1,11 +1,11 @@
 {
   "name": "chat-api",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
     "build": "npm run build:frontend",
     "dev:frontend": "npm --prefix frontend run dev",
@@ -23,14 +23,13 @@
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
     "express-handlebars": "^9.0.1",
-    "handlebars": "^4.7.8",
-    "mbkauthe": "latest",
+    "mbkauthe": "file:../mbkauthe",
+    "mbkutils": "file:../mbkutils",
     "multer": "^2.4.0",
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/supertest": "^7.2.1",
-    "nodemon": "^3.1.14",
     "supertest": "^7.3.1",
     "vite": "^8.3.2",
     "vitest": "5.0.3"

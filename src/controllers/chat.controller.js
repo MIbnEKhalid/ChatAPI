@@ -1,4 +1,4 @@
-import { sendError } from "mbkauthe";
+import { sendError } from "mbkutils";
 import { ChatTree } from "../models/chat-tree.js";
 import aiServices from "../services/ai.service.js";
 import { chatRepository } from "../repositories/index.js";

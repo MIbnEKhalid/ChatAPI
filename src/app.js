@@ -3,8 +3,8 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { engine } from "express-handlebars";
-import mbkAuthRouter, { renderError, createNotFoundHandler, createErrorHandler } from "mbkauthe";
+import mbkAuthRouter from "mbkauthe";
+import { setupViewEngine, renderError, createNotFoundHandler, createErrorHandler } from "mbkutils";
 import chatRoutes from "./routes/chat.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
@@ -17,35 +17,12 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(mbkAuthRouter);
 
-// Minimal Handlebars config for mbkauthe auth pages
-app.engine(
-  "hbs",
-  engine({
-    extname: ".hbs",
-    partialsDir: [
-      path.resolve(__dirname, "../node_modules/mbkauthe/views"),
-      path.resolve(__dirname, "../node_modules/mbkauthe/views/Error"),
-    ],
-    cache: false,
-    helpers: {
-      eq: (a, b) => a === b,
-      neq: (a, b) => a !== b,
-      encodeURIComponent: (str) => encodeURIComponent(str),
-      formatTimestamp: (timestamp) => new Date(timestamp).toLocaleString(),
-      jsonStringify: (context) => JSON.stringify(context),
-      json: (obj) => JSON.stringify(obj, null, 2),
-      objectEntries: (obj) =>
-        obj && typeof obj === "object"
-          ? Object.entries(obj).map(([key, value]) => ({ key, value }))
-          : [],
-    },
-  })
-);
-
-app.set("view engine", "hbs");
-app.set("views", [
-  path.resolve(__dirname, "../node_modules/mbkauthe/views"),
-]);
+// Handlebars view engine setup using mbkutils
+setupViewEngine(app, {
+  rootDir: path.resolve(__dirname, "../"),
+  defaultLayout: false,
+  cache: false,
+});
 
 // Serve static files
 app.use("/assets", express.static(path.join(__dirname, "../public/assets"), {
