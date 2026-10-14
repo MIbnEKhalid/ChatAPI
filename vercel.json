@@ -1,31 +1,3 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "frontend/dist",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/mbkauthe/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/login",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/assets/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/icon.svg",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/((?!api/|mbkauthe/|assets/|login|icon\\.svg).*)",
-      "destination": "/index.html"
-    }
-  ]
+  "framework": "nextjs"
 }

@@ -3,7 +3,7 @@
 A modern, full-featured AI chat application powered by **Google Gemini** & **DeepSeek**. This application provides a unified interface to interact with Gemini 2.5 Flash/Pro, Gemini 2.0 Flash, Gemini 1.5 Flash/Pro, DeepSeek V4 Flash, and DeepSeek V4 Pro, complete with user management, conversation history, and an admin dashboard.
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)
-![Express.js](https://img.shields.io/badge/Express.js-4.21%2B-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16%2B-black.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -64,33 +64,35 @@ A modern, full-featured AI chat application powered by **Google Gemini** & **Dee
 
 5. **Build and Run Unified Project**
    ```bash
-   # Build the React frontend
+   # Build the Next.js production bundle
    npm run build
 
-   # Start the Express server (serves both API and built React SPA)
+   # Start the production Next.js server
    npm start
    ```
 
 6. **Development Mode**
-   - Backend dev server: `npm run dev`
-   - Frontend Vite dev server with proxy: `npm run dev:frontend`
+   ```bash
+   # Next.js dev server (hot-reloading App Router & Route Handlers)
+   npm run dev
+   ```
 
 ### ☁️ Deploying to Vercel
 
-The project is structured to deploy backend and frontend together directly on Vercel:
+The project is structured as a full-stack Next.js App Router application:
 
 1. Connect your repository to Vercel.
-2. Ensure Root Directory is set to `./` (or `ChatAPI` if part of a monorepo).
-3. Set your environment variables (`DATABASE_URL`, `DEEPSEEK_API_TOKEN`, `API_KEY_ENCRYPTION_SECRET`, `SESSION_SECRET`, etc.) in the Vercel Project Settings.
-4. Deploy! Vercel will run `npm run build` to generate the frontend assets and automatically route API requests to the `/api` serverless handler defined in [`api/index.js`](api/index.js).
+2. Root Directory should be `./` (or `ChatAPI` if monorepo).
+3. Set environment variables (`DATABASE_URL`, `DEEPSEEK_API_TOKEN`, `GEMINI_API_KEY`, `API_KEY_ENCRYPTION_SECRET`, `SESSION_SECRET`, etc.) in Vercel Project Settings.
+4. Deploy! Vercel automatically detects Next.js, compiles with Turbopack, and deploys both static pages and serverless API route handlers.
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Node.js, Express.js (Runs locally & serverless on Vercel)
-- **Frontend**: React, Vite, Tailwind/CSS
+- **Framework**: Next.js (App Router, Turbopack, React 19)
+- **Styling**: Vanilla CSS (Cyberpunk/Glassmorphism theme)
 - **Database**: PostgreSQL (Cloud / Supabase / Neon) or SQLite (Local)
-- **Authentication**: `mbkauthe`
-- **AI Integration**: DeepSeek REST API with encrypted token storage
+- **Authentication**: `mbkauthe` (integrated session & token validation)
+- **AI Integration**: Google Gemini & DeepSeek REST/Streaming APIs with AES-256-GCM encrypted user key vault
 
 ## 📱 API Endpoints
 

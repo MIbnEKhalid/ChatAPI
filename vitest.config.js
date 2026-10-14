@@ -6,11 +6,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./"),
+    },
+  },
   test: {
     setupFiles: ["./tests/setup.js"],
     environment: "node",
     include: ["tests/**/*.test.js"],
-    exclude: ["node_modules", "dist", ".git", "frontend"],
+    exclude: ["node_modules", "dist", ".git", ".next"],
     testTimeout: 10_000,
     hookTimeout: 30_000,
     pool: "forks",

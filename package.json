@@ -1,14 +1,11 @@
 {
   "name": "chat-api",
-  "version": "2.6.1",
-  "main": "src/server.js",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
-    "build": "npm run build:frontend",
-    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "sync_permissions": "node scripts/sync_permissions.js",
     "db:init:postgres": "node scripts/initDb.js --type=postgres",
     "db:init:sqlite": "node scripts/initDb.js --type=sqlite",
@@ -19,6 +16,8 @@
   "dependencies": {
     "better-sqlite3": "13.0.3",
     "compression": "^1.8.2",
+    "cookie": "^2.0.1",
+    "cookie-signature": "^1.2.2",
     "cors": "^2.8.5",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
@@ -26,11 +25,15 @@
     "mbkauthe": "latest",
     "mbkutils": "latest",
     "multer": "^2.4.0",
-    "pg": "^8.23.1"
+    "next": "^16.4.1",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@types/supertest": "^7.2.1",
-    "supertest": "^7.3.1",
     "vite": "^8.3.2",
     "vitest": "5.0.3"
   }

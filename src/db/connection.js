@@ -18,7 +18,7 @@ export const sqlitePath = process.env.SQLITE_PATH || path.join(ROOT_DIR, "data",
 
 // Ensure data directory exists if using SQLite file path
 if (dbType === "sqlite" && sqlitePath !== ":memory:") {
-  const dir = path.dirname(path.resolve(sqlitePath));
+  const dir = path.dirname(path.resolve(/*turbopackIgnore: true*/ sqlitePath));
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }

@@ -4,7 +4,7 @@ import { describe, test, expect, beforeAll, afterAll, vi } from "vitest";
 import { SqliteAdapter, sqliteDialect, applySchema, closeAllConnections } from "mbkauthe";
 
 import { ChatRepository } from "../src/repositories/chat.repository.js";
-import { checkMessageLimit } from "../src/middleware/check-message-limit.js";
+import { checkMessageLimitNext } from "../src/lib/messageLimit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -200,35 +200,21 @@ describe("ChatAPI SQLite Repository & Middleware Integration", () => {
     });
   });
 
-  describe("checkMessageLimit Middleware", () => {
+  describe("checkMessageLimitNext Logic", () => {
     test("bypasses check for superadmin", async () => {
-      const req = {
-        session: { user: { username: "admin", role: "superadmin" } },
-        headers: {},
-      };
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-      let calledNext = false;
-      const next = () => {
-        calledNext = true;
-      };
+      const req = new Request("http://localhost:3000/api/bot-chat");
+      const user = { username: "admin", role: "superadmin" };
 
-      await checkMessageLimit(req, res, next, adapter);
-      expect(calledNext).toBe(true);
+      const result = await checkMessageLimitNext(req, user, adapter);
+      expect(result.allowed).toBe(true);
     });
 
     test("increments message count within transaction and allows request under limit", async () => {
-      const req = {
-        session: { user: { username: "normuser", role: "normaluser" } },
-        headers: {},
-      };
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-      let calledNext = false;
-      const next = () => {
-        calledNext = true;
-      };
+      const req = new Request("http://localhost:3000/api/bot-chat");
+      const user = { username: "normuser", role: "normaluser" };
 
-      await checkMessageLimit(req, res, next, adapter);
-      expect(calledNext).toBe(true);
+      const result = await checkMessageLimitNext(req, user, adapter);
+      expect(result.allowed).toBe(true);
 
       // Verify count in db
       const today = new Date().toISOString().split("T")[0];
@@ -250,31 +236,15 @@ describe("ChatAPI SQLite Repository & Middleware Integration", () => {
         ["cappeduser", today, 1]
       );
 
-      const req = {
-        session: { user: { username: "cappeduser", role: "normaluser" } },
-        headers: {},
-      };
-      let capturedStatus;
-      let capturedBody;
-      const res = {
-        status: vi.fn((code) => {
-          capturedStatus = code;
-          return {
-            json: vi.fn((body) => {
-              capturedBody = body;
-            }),
-          };
-        }),
-      };
-      let calledNext = false;
-      const next = () => {
-        calledNext = true;
-      };
+      const req = new Request("http://localhost:3000/api/bot-chat");
+      const user = { username: "cappeduser", role: "normaluser" };
 
-      await checkMessageLimit(req, res, next, adapter);
-      expect(calledNext).toBe(false);
-      expect(capturedStatus).toBe(429);
-      expect(capturedBody.message).toBe("Daily message limit reached");
+      const result = await checkMessageLimitNext(req, user, adapter);
+      expect(result.allowed).toBe(false);
+      expect(result.errorResponse.status).toBe(429);
+
+      const body = await result.errorResponse.json();
+      expect(body.message).toBe("Daily message limit reached");
     });
   });
 });
