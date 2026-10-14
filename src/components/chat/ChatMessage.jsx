@@ -1,106 +1,136 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 
 const ChatMessage = memo(function ChatMessage({ msg, onStartEdit, showToast }) {
-  const handleCopy = useCallback(() => {
+  const [copiedCode, setCopiedCode] = useState(null);
+  const isUser = msg.role === "user";
+
+  const handleCopyMessage = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(msg.content);
-      showToast?.("Copied to clipboard", "success");
+      showToast?.("Copied message to clipboard", "success");
     }
   }, [msg.content, showToast]);
 
-  const isUser = msg.role === "user";
+  const handleCopyCode = useCallback(
+    (codeText) => {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(codeText);
+        setCopiedCode(codeText);
+        showToast?.("Code copied to clipboard", "success");
+        setTimeout(() => setCopiedCode(null), 2000);
+      }
+    },
+    [showToast]
+  );
 
   return (
     <div className={`msg-row ${isUser ? "msg-row--user" : "msg-row--ai"}`}>
-      {!isUser && (
-        <div className="msg-avatar">
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <circle cx="9" cy="10" r="1.5" />
-            <circle cx="15" cy="10" r="1.5" />
-            <path d="M8 15c0 0 1.5 2 4 2s4-2 4-2" />
-          </svg>
-        </div>
-      )}
-      {/* Wrap bubble + actions vertically for user messages */}
-      <div className={isUser ? "msg-user-col" : undefined}>
+      {/* Avatar */}
+      <div
+        className="msg-avatar"
+        style={{
+          background: isUser
+            ? "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)"
+            : "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+          color: "#ffffff",
+        }}
+      >
+        <i className={`fas ${isUser ? "fa-user" : "fa-sparkles"}`} style={{ fontSize: "0.82rem" }}></i>
+      </div>
+
+      {/* Bubble + Actions Column */}
+      <div className={isUser ? "msg-user-col" : undefined} style={{ flex: 1, minWidth: 0 }}>
         <div className={`msg-bubble ${isUser ? "msg-bubble--user" : "msg-bubble--ai"}`}>
           <div className="msg-text">
             {isUser ? (
               msg.content
             ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const codeString = String(children).replace(/\n$/, "");
+
+                    if (!inline && match) {
+                      const isCopied = copiedCode === codeString;
+                      return (
+                        <div className="code-block-wrapper">
+                          <div className="code-block-header">
+                            <div className="code-block-dots">
+                              <span className="dot red"></span>
+                              <span className="dot yellow"></span>
+                              <span className="dot green"></span>
+                            </div>
+                            <span className="code-block-lang">{match[1]}</span>
+                            <button
+                              type="button"
+                              className="code-copy-btn"
+                              onClick={() => handleCopyCode(codeString)}
+                              title="Copy code"
+                            >
+                              <i className={`fas ${isCopied ? "fa-check" : "fa-copy"}`} style={{ color: isCopied ? "#22c55e" : undefined }}></i>
+                              <span>{isCopied ? "Copied!" : "Copy"}</span>
+                            </button>
+                          </div>
+                          <pre className={className}>
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          </pre>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
                 {msg.content}
               </ReactMarkdown>
             )}
           </div>
-          {/* AI actions stay inside bubble */}
+
+          {/* AI message actions */}
           {!isUser && (
             <div className="msg-actions-row">
-              <button className="msg-action" onClick={handleCopy} title="Copy">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
+              <button className="msg-action" onClick={handleCopyMessage} title="Copy response">
+                <i className="fas fa-copy"></i>
+                <span>Copy</span>
               </button>
             </div>
           )}
         </div>
-        {/* User actions directly below bubble */}
+
+        {/* User message actions below bubble */}
         {isUser && (
           <div className="msg-actions-row msg-actions-row--below">
-            <button className="msg-action" onClick={() => onStartEdit?.(msg.id)} title="Edit">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
+            <button
+              className="msg-action"
+              onClick={() => onStartEdit?.(msg.id)}
+              title="Edit prompt & create branch"
+            >
+              <i className="fas fa-pen-to-square"></i>
+              <span>Branch</span>
             </button>
-            <button className="msg-action" onClick={handleCopy} title="Copy">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" />
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-              </svg>
+            <button className="msg-action" onClick={handleCopyMessage} title="Copy prompt">
+              <i className="fas fa-copy"></i>
+              <span>Copy</span>
             </button>
           </div>
         )}
       </div>
+
       {isUser && <div className="msg-spacer" />}
     </div>
   );

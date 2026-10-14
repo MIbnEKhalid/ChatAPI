@@ -328,6 +328,8 @@ export default function ChatbotClient() {
             onToggleSidebar={toggleSidebar}
             settings={settings}
             updateSettings={updateSettings}
+            userData={userData}
+            onNewChat={newChat}
           />
 
           {messages.length === 0 && !chatLoading ? (
@@ -341,6 +343,7 @@ export default function ChatbotClient() {
                 onSend={handleSend}
                 onCancelEdit={cancelEdit}
                 inputRef={inputRef}
+                modelName={modelName}
               />
             </div>
           ) : (
@@ -363,11 +366,13 @@ export default function ChatbotClient() {
                 onSend={handleSend}
                 onCancelEdit={cancelEdit}
                 inputRef={inputRef}
+                modelName={modelName}
               />
             </>
           )}
         </section>
       </div>
+
 
       {/* Settings */}
       <SettingsModal

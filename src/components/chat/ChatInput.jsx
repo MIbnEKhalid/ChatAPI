@@ -10,6 +10,7 @@ const ChatInput = memo(function ChatInput({
   onSend,
   onCancelEdit,
   inputRef,
+  modelName,
 }) {
   const localRef = useRef(null);
   const ref = inputRef || localRef;
@@ -28,7 +29,7 @@ const ChatInput = memo(function ChatInput({
     (e) => {
       setInputValue(e.target.value);
       e.target.style.height = "auto";
-      e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+      e.target.style.height = Math.min(e.target.scrollHeight, 220) + "px";
     },
     [setInputValue]
   );
@@ -37,46 +38,65 @@ const ChatInput = memo(function ChatInput({
     if (editingNodeId) ref.current?.focus();
   }, [editingNodeId, ref]);
 
+  const hasContent = inputValue.trim().length > 0;
+
   return (
     <div className="input-area">
+      {/* Branching indicator */}
       {editingNodeId && (
         <div className="editing-overlay">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-          <span>Editing — creates a new branch</span>
-          <button className="btn-cancel-edit" onClick={onCancelEdit}>
+          <i className="fas fa-code-branch" style={{ color: "var(--accent)" }}></i>
+          <span>Editing previous message — will create a new branching thread</span>
+          <button type="button" className="btn-cancel-edit" onClick={onCancelEdit}>
+            <i className="fas fa-times" style={{ marginRight: 4 }}></i>
             Cancel
           </button>
         </div>
       )}
 
-      <div className="input-wrapper">
+      {/* Input wrapper */}
+      <div className="input-wrapper" style={{ position: "relative" }}>
         <textarea
           ref={ref}
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Message..."
+          placeholder="Ask anything, write code, analyze data... (Shift+Enter for newline)"
           rows={1}
           disabled={isWaiting}
           className="chat-textarea"
         />
+
         <div className="input-actions">
           <button
+            type="button"
             className="btn-send"
             onClick={onSend}
-            disabled={!inputValue.trim() || isWaiting}
-            title="Send"
+            disabled={!hasContent || isWaiting}
+            title={isWaiting ? "Generating response..." : "Send message (Enter)"}
+            style={{
+              boxShadow: hasContent && !isWaiting ? "0 2px 10px rgba(99, 102, 241, 0.4)" : "none",
+            }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-            </svg>
+            {isWaiting ? (
+              <i className="fas fa-circle-notch fa-spin" style={{ fontSize: "0.95rem" }}></i>
+            ) : (
+              <i className="fas fa-arrow-up" style={{ fontSize: "0.95rem" }}></i>
+            )}
           </button>
         </div>
       </div>
-      <p className="input-disclaimer">MBK Chat can make mistakes. Verify important information.</p>
+
+      {/* Input footer disclaimer and shortcuts */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 800, margin: "8px auto 0", padding: "0 4px", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+        <span>
+          <i className="fas fa-sparkles" style={{ marginRight: 4, color: "var(--accent)" }}></i>
+          Powered by Gemini & DeepSeek
+        </span>
+        <span>
+          Use <kbd style={{ padding: "1px 5px", background: "var(--bg-sidebar)", borderRadius: 3, border: "1px solid var(--border-light)" }}>Shift + Enter</kbd> for newline
+        </span>
+      </div>
     </div>
   );
 });
