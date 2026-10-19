@@ -488,7 +488,7 @@ function AccountPanel({ userData, configuredKeys = {}, saveApiKey, clearApiKey }
           <i className="fas fa-sign-out-alt"></i> Logout
         </button>
         <button
-          onClick={() => window.open("https://portal.mbktech.org", "_blank")}
+          onClick={() => window.open("https://core.mbktech.org", "_blank")}
           className="btn btn-secondary btn-full"
         >
           <i className="fas fa-id-card"></i> Open Account Portal
