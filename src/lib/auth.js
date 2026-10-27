@@ -1,15 +1,5 @@
 import cookieSignature from "cookie-signature";
-import {
-  authRepository,
-  permissionRepository,
-  authorizationService,
-  hashApiToken,
-  decryptSessionId,
-  createSessionAuthContext,
-  createTokenAuthContext,
-  createAnonymousContext,
-  attachSessionPermissions,
-} from "mbkauthe";
+import { authRepository, permissionRepository, authorizationService, hashApiToken, decryptSessionId, createSessionAuthContext, createTokenAuthContext, createAnonymousContext, attachSessionPermissions } from "mbkauthe";
 import { Permissions } from "../permissions.js";
 
 const SESSION_SECRET =

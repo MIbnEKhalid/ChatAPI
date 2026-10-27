@@ -26,9 +26,9 @@ export default function Landing() {
           display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none; outline: none;
         }
         .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 15px rgba(67,97,238,0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(67,97,238,0.4); }
+        .btn-primary:hover { box-shadow: 0 8px 25px rgba(67,97,238,0.4); }
         .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.2); color: white; }
-        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); }
 
         .landing-nav {
           position: fixed; top: 0; width: 100%; z-index: 100; padding: 20px 50px;
@@ -54,7 +54,7 @@ export default function Landing() {
           border-radius: var(--radius-lg); padding: 40px 30px;
           transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
         }
-        .feature-card:hover { transform: translateY(-5px); border-color: rgba(67,97,238,0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+        .feature-card:hover { border-color: rgba(67,97,238,0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
         .feature-icon { width: 60px; height: 60px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
           font-size: 1.5rem; margin-bottom: 20px; }
         .feature-icon.purple { background: rgba(247,37,133,0.1); color: #f72585; }

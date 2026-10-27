@@ -864,7 +864,6 @@ input[type="range"]{width:100%;accent-color:var(--accent);height:4px}
 }
 
 .admin-stat-card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--border-default);
 }
@@ -1172,7 +1171,6 @@ input[type="range"]{width:100%;accent-color:var(--accent);height:4px}
 
 .admin-btn-primary:hover {
   background: var(--accent-hover);
-  transform: translateY(-1px);
 }
 
 .admin-btn-secondary {
@@ -1194,7 +1192,6 @@ input[type="range"]{width:100%;accent-color:var(--accent);height:4px}
 
 .admin-btn-danger:hover {
   opacity: 0.9;
-  transform: translateY(-1px);
 }
 
 .admin-btn-ghost {
